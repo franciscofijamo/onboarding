@@ -7,23 +7,7 @@ import { GlowingEffect } from "@/components/ui/glowing-effect"
 import { useLanguage } from "@/contexts/language"
 
 export function BentoGrid() {
-  const { t } = useLanguage();
-  const isPtMZ = t("nav.dashboard") === "Painel";
-
-  const items = isPtMZ ? [
-    { icon: <FileText className="h-4 w-4 text-sky-500" />, title: "Análise de CV", description: "Compare o seu CV com descrições de vagas e receba nota de adequação detalhada." },
-    { icon: <Target className="h-4 w-4 text-emerald-500" />, title: "Correspondência de Competências", description: "Identifique lacunas e receba recomendações para melhorar o seu perfil." },
-    { icon: <BookOpen className="h-4 w-4 text-purple-500" />, title: "Preparação para Entrevista", description: "Flashcards com perguntas geradas por IA adaptadas à sua função." },
-    { icon: <Mic className="h-4 w-4 text-blue-500" />, title: "Cenários de Trabalho", description: "Simulações áudio de reuniões, apresentações e chamadas com clientes." },
-    { icon: <Bot className="h-4 w-4 text-orange-500" />, title: "Coach de Carreira IA", description: "Conselhos personalizados e coaching de Business English." },
-    { icon: <Globe className="h-4 w-4 text-red-500" />, title: "Business English", description: "Vocabulário profissional, escrita de emails e etiqueta de reuniões." },
-    { icon: <Upload className="h-4 w-4 text-green-500" />, title: "Upload de Documentos", description: "Carregue CV e carta de apresentação para análise completa." },
-    { icon: <Briefcase className="h-4 w-4 text-violet-500" />, title: "Perfil Profissional", description: "Construa o seu perfil de carreira com IA para maximizar oportunidades." },
-    { icon: <BarChart2 className="h-4 w-4 text-indigo-500" />, title: "Análise de Progresso", description: "Acompanhe a sua evolução e identifique áreas de melhoria." },
-    { icon: <Sparkles className="h-4 w-4 text-teal-500" />, title: "Recomendações Inteligentes", description: "Sugestões personalizadas com base no seu perfil e objectivos." },
-    { icon: <MessageCircle className="h-4 w-4 text-yellow-500" />, title: "Chat com IA", description: "Converse com o coach de IA para dúvidas de carreira e Business English." },
-    { icon: <Users className="h-4 w-4 text-amber-500" />, title: "Simulação de Entrevistas", description: "Pratique com cenários realistas e receba feedback detalhado." },
-  ] : [
+  const items = [
     { icon: <FileText className="h-4 w-4 text-sky-500" />, title: "CV Analysis", description: "Compare your CV against job descriptions with detailed fit scoring." },
     { icon: <Target className="h-4 w-4 text-emerald-500" />, title: "Skills Matching", description: "Identify gaps and get recommendations to improve your profile." },
     { icon: <BookOpen className="h-4 w-4 text-purple-500" />, title: "Interview Preparation", description: "AI-generated flashcards with questions tailored to your role." },

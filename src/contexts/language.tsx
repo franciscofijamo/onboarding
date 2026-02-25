@@ -8,15 +8,18 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { type Locale, DEFAULT_LOCALE, translate, getTranslationArray } from "@/i18n";
+import { type Locale, DEFAULT_LOCALE, LOCALES, translate, getTranslationArray, getHint } from "@/i18n";
 
 const STORAGE_KEY = "app.language";
+
+const validLocales = LOCALES.map((l) => l.code) as string[];
 
 interface LanguageContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
   tArray: (key: string) => string[];
+  hint: (key: string) => string | undefined;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -28,8 +31,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved && (saved === "pt-MZ" || saved === "en-US" || saved === "en-GB")) {
+    if (saved && validLocales.includes(saved)) {
       setLocaleState(saved as Locale);
+    } else {
+      window.localStorage.setItem(STORAGE_KEY, DEFAULT_LOCALE);
+      setLocaleState(DEFAULT_LOCALE);
     }
     setHydrated(true);
   }, []);
@@ -55,8 +61,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [locale]
   );
 
+  const hintFn = useCallback(
+    (key: string) => {
+      return getHint(key);
+    },
+    []
+  );
+
   return (
-    <LanguageContext.Provider value={{ locale, setLocale, t, tArray }}>
+    <LanguageContext.Provider value={{ locale, setLocale, t, tArray, hint: hintFn }}>
       {children}
     </LanguageContext.Provider>
   );

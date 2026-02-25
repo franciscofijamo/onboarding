@@ -139,7 +139,7 @@ export function ChatInput({
                 ) : (
                   <Send className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
-                <span className="hidden sm:inline">Enviar</span>
+                <span className="hidden sm:inline">Send</span>
               </Button>
             )}
           </div>

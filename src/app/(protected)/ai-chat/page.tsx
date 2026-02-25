@@ -22,9 +22,9 @@ import { ChatInput } from '@/components/ai-chat/ChatInput'
 import type { UploadItem } from '@/components/ai-chat/FileAttachments'
 
 export default function AIChatPage() {
-  usePageConfig('Chat com IA', 'Converse com diferentes LLMs via OpenRouter.', [
-    { label: 'Início', href: '/dashboard' },
-    { label: 'Chat com IA' },
+  usePageConfig('AI Chat', 'Chat with different LLMs via OpenRouter.', [
+    { label: 'Home', href: '/dashboard' },
+    { label: 'AI Chat' },
   ])
 
   // Chat logic hook

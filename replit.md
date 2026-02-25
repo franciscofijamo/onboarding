@@ -105,11 +105,14 @@ scripts/           - Dev/helper scripts
 - **Analysis Criteria**: Business English proficiency, communication clarity, professionalism, contextual appropriateness, confidence/fluency
 - **Audio Storage**: Replit Object Storage (workplace-scenarios/{userId}/{sessionId}/q{index}.{ext})
 
-## Multi-Language (i18n) System
-- **Languages**: Português de Moçambique (pt-MZ, default), English US (en-US), English UK (en-GB)
-- **Architecture**: Context-based (LanguageProvider), no URL routing, localStorage persistence
-- **Files**: src/i18n/index.ts (translate/getTranslationArray), src/i18n/locales/*.json (dictionaries)
-- **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, feedback.*, dashboard.*, marketing.*)
+## Language & i18n System
+- **Primary Language**: English (US default, UK option via switcher)
+- **Portuguese Hints**: Small pt-MZ guide text shown below key navigation items and UI elements to help Mozambican users navigate
+- **No standalone Portuguese mode**: Portuguese was removed as a full language option; only English is available as the interface language
+- **Architecture**: Context-based (LanguageProvider), localStorage persistence, `hint()` function returns pt-MZ translations for guide text
+- **Files**: src/i18n/index.ts (translate/getHint), src/i18n/locales/*.json (en-US primary, en-GB alternate, pt-MZ for hints only)
+- **AI Responses**: Always in English (US or UK based on user selection); default fallback is en-US
+- **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, scenarios.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
 - 2026-02-25: Major platform refactoring — pivoted from scholarship essay preparation (Chevening/Fulbright) to Business English Job Onboarding Platform

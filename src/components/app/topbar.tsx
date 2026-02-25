@@ -11,8 +11,15 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@cl
 import { CreditStatus } from "@/components/credits/credit-status";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose, SheetFooter } from "@/components/ui/sheet";
 import { navigationItems } from "@/components/app/sidebar";
-import { LanguageSwitcher } from "@/components/app/language-switcher";
 import { useLanguage } from "@/contexts/language";
+import { LOCALES, type Locale } from "@/i18n";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Languages } from "lucide-react";
 
 type TopbarProps = {
   onToggleSidebar: () => void;
@@ -20,7 +27,9 @@ type TopbarProps = {
 };
 
 export function Topbar({ onToggleSidebar }: TopbarProps) {
-  const { t } = useLanguage();
+  const { t, hint, locale, setLocale } = useLanguage();
+  const current = LOCALES.find((l) => l.code === locale) || LOCALES[0];
+
   return (
     <header
       className={cn(
@@ -30,14 +39,13 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
     >
       <div className="glow-separator w-full" aria-hidden="true" />
       <div className="flex h-14 items-center gap-2 px-3 md:px-4">
-        {/* Mobile menu button */}
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Abrir menu"
+                aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />
               </Button>
@@ -51,6 +59,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
               <nav className="flex flex-col gap-1 p-2">
                 {navigationItems.map((item) => {
                   const Icon = item.icon as React.ComponentType<{ className?: string }>;
+                  const ptHint = item.hintKey ? hint(item.hintKey) : undefined;
                   return (
                     <SheetClose asChild key={item.nameKey}>
                       <Link
@@ -58,7 +67,12 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                         className={"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"}
                       >
                         <Icon className="h-4 w-4" />
-                        <span>{t(item.nameKey)}</span>
+                        <div className="flex flex-col">
+                          <span>{t(item.nameKey)}</span>
+                          {ptHint && (
+                            <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                          )}
+                        </div>
                       </Link>
                     </SheetClose>
                   );
@@ -76,10 +90,10 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                     <SignedOut>
                       <div className="flex items-center gap-2">
                         <SignInButton mode="modal">
-                          <Button variant="ghost" size="sm">{t("topbar.signIn") || "Sign In"}</Button>
+                          <Button variant="ghost" size="sm">Sign In</Button>
                         </SignInButton>
                         <SignUpButton mode="modal">
-                          <Button size="sm">{t("topbar.signUp") || "Sign Up"}</Button>
+                          <Button size="sm">Sign Up</Button>
                         </SignUpButton>
                       </div>
                     </SignedOut>
@@ -91,7 +105,6 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           </Sheet>
         </div>
 
-        {/* Brand (mobile) */}
         <Link href="/" className="flex items-center gap-2 md:hidden">
           <div className="h-6 w-6 rounded bg-primary" />
           <span className="text-sm font-semibold">StandOut</span>
@@ -101,25 +114,43 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Alternar barra lateral"
+            aria-label="Toggle sidebar"
             onClick={onToggleSidebar}
           >
             <Menu className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Right side actions */}
         <div className="flex items-center gap-2">
           <SignedIn>
             <CreditStatus />
             <Separator orientation="vertical" className="h-6" />
           </SignedIn>
 
-          <LanguageSwitcher />
-
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="gap-1.5">
+                <span className="text-base leading-none">{current.flag}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[160px]">
+              {LOCALES.map((loc) => (
+                <DropdownMenuItem
+                  key={loc.code}
+                  onClick={() => setLocale(loc.code)}
+                  className={cn(
+                    "flex items-center gap-2.5 cursor-pointer",
+                    locale === loc.code && "bg-accent"
+                  )}
+                >
+                  <span className="text-base leading-none">{loc.flag}</span>
+                  <span className="text-sm">{loc.label}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <SignedIn>
             <UserButton />
@@ -127,14 +158,10 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="ghost" size="sm">
-                {t("topbar.signIn") || "Sign In"}
-              </Button>
+              <Button variant="ghost" size="sm">Sign In</Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button size="sm">
-                {t("topbar.signUp") || "Sign Up"}
-              </Button>
+              <Button size="sm">Sign Up</Button>
             </SignUpButton>
           </SignedOut>
         </div>

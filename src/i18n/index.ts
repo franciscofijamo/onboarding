@@ -2,15 +2,16 @@ import ptMZ from './locales/pt-MZ.json'
 import enUS from './locales/en-US.json'
 import enGB from './locales/en-GB.json'
 
-export type Locale = 'pt-MZ' | 'en-US' | 'en-GB'
+export type Locale = 'en-US' | 'en-GB' | 'pt-MZ'
 
 export const LOCALES: { code: Locale; label: string; flag: string }[] = [
-  { code: 'pt-MZ', label: 'Português (MZ)', flag: '🇲🇿' },
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
 ]
 
-export const DEFAULT_LOCALE: Locale = 'pt-MZ'
+export const DEFAULT_LOCALE: Locale = 'en-US'
+
+export const PT_HINTS_LOCALE: Locale = 'pt-MZ'
 
 const dictionaries: Record<Locale, Record<string, unknown>> = {
   'pt-MZ': ptMZ,
@@ -80,4 +81,9 @@ export function getTranslationArray(locale: Locale, key: string): string[] {
     current = (current as Record<string, unknown>)[k]
   }
   return Array.isArray(current) ? current : []
+}
+
+export function getHint(key: string): string | undefined {
+  const dict = getDictionary(PT_HINTS_LOCALE)
+  return getNestedValue(dict, key)
 }

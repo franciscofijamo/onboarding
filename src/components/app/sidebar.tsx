@@ -30,17 +30,17 @@ type SidebarProps = {
 };
 
 export const navigationItems = [
-  { nameKey: "nav.dashboard", href: "/dashboard", icon: Home },
-  { nameKey: "nav.myProfile", href: "/onboarding", icon: UserCircle },
-  { nameKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare },
-  { nameKey: "nav.scenarios", href: "/scenarios", icon: Mic },
-  { nameKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit },
-  { nameKey: "nav.billing", href: "/billing", icon: CreditCard },
+  { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
+  { nameKey: "nav.myProfile", hintKey: "nav.myProfile", href: "/onboarding", icon: UserCircle },
+  { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare },
+  { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },
+  { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit },
+  { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
 ];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { t } = useLanguage();
+  const { t, hint } = useLanguage();
 
   return (
     <aside
@@ -49,7 +49,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         collapsed ? "w-[64px]" : "w-64",
         "my-4 md:sticky md:top-4 md:h-[calc(100vh-2rem)] md:max-h-[calc(100vh-2rem)] md:overflow-hidden"
       )}
-      aria-label={t("nav.mainSidebar")}
+      aria-label="Main sidebar"
     >
       <div className="flex h-14 items-center gap-2 px-3">
         <Link href="/" className="flex items-center gap-2">
@@ -64,7 +64,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={onToggle}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -73,10 +73,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
       
       <ScrollArea className="flex-1 min-h-0">
-        <nav className="flex flex-col gap-1 p-2" aria-label={t("nav.mainNav")}>
+        <nav className="flex flex-col gap-1 p-2" aria-label="Main navigation">
           {navigationItems.map((item) => {
             const isActive = pathname === item.href;
             const label = t(item.nameKey);
+            const ptHint = hint(item.hintKey);
             const link = (
               <Link
                 key={item.nameKey}
@@ -90,8 +91,15 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     : "hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <item.icon className="h-4 w-4" />
-                {!collapsed && <span>{label}</span>}
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!collapsed && (
+                  <div className="flex flex-col">
+                    <span>{label}</span>
+                    {ptHint && ptHint !== label && (
+                      <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                    )}
+                  </div>
+                )}
               </Link>
             );
 
@@ -101,7 +109,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               <Tooltip key={item.nameKey}>
                 <TooltipTrigger asChild>{link}</TooltipTrigger>
                 <TooltipContent side="right" align="center">
-                  {label}
+                  <div className="flex flex-col">
+                    <span>{label}</span>
+                    {ptHint && ptHint !== label && (
+                      <span className="text-[10px] text-muted-foreground">{ptHint}</span>
+                    )}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             );

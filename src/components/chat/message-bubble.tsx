@@ -183,11 +183,11 @@ function MessageBubbleComponent({ message, className, onRetry, retryIndex, disab
           {!isUser && onRetry && typeof retryIndex === 'number' && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label="Tentar novamente" onClick={handleRetryClick}>
+                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" aria-label="Retry" onClick={handleRetryClick}>
                   <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Gerar novamente</TooltipContent>
+              <TooltipContent>Regenerate</TooltipContent>
             </Tooltip>
           )}
         </div>

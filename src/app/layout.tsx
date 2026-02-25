@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="pt-br" suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning>
         <body
           suppressHydrationWarning
           className={`${onest.variable} ${geistMono.variable} antialiased  text-foreground`}

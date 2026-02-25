@@ -19,7 +19,7 @@ export function PageHeader({ className }: PageHeaderProps) {
   const generateAutoBreadcrumbs = (): BreadcrumbItem[] => {
     const segments = pathname.split("/").filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [
-      { label: "Início", href: "/dashboard" }
+      { label: "Home", href: "/dashboard" }
     ];
     
     segments.forEach((segment, index) => {
