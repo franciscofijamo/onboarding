@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-const datetimeFormatter = new Intl.DateTimeFormat("pt-BR", {
+const datetimeFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "short",
   timeStyle: "short",
 });
@@ -91,12 +91,12 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
         ? "info"
         : "pending";
   const planStepHelper = !clerkEnvReady
-    ? `Configure as chaves do Clerk (${missingClerkEnvLabel}) para continuar`
+    ? `Configure Clerk keys (${missingClerkEnvLabel}) to continue`
     : lastPlanSync
-      ? `Última sincronização manual em ${datetimeFormatter.format(lastPlanSync.date)}`
+      ? `Last manual sync at ${datetimeFormatter.format(lastPlanSync.date)}`
       : hasPlans
-        ? "Planos criados no Clerk. Sincronize para importar."
-        : "Crie e sincronize um plano de teste no Clerk";
+        ? "Plans created in Clerk. Sync to import."
+        : "Create and sync a test plan in Clerk";
   const handleSyncPlans = async () => {
     try {
       const result = await fetchClerkPlans();
@@ -104,15 +104,15 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
       setLastPlanSync({ date: new Date(), count });
 
       toast({
-        title: "Planos sincronizados",
+        title: "Plans synced",
         description:
           count > 0
-            ? `Encontramos ${count} plano(s) no Clerk. Ajuste os créditos em /admin/settings/plans.`
-            : "Nenhum plano foi retornado pelo Clerk. Confirme se você criou ofertas no dashboard.",
+            ? `Found ${count} plan(s) in Clerk. Adjust credits at /admin/settings/plans.`
+            : "No plans returned by Clerk. Confirm you created offers in the dashboard.",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro inesperado ao sincronizar planos";
-      toast({ title: "Falha ao sincronizar", description: message, variant: "destructive" });
+      const message = error instanceof Error ? error.message : "Unexpected error syncing plans";
+      toast({ title: "Sync failed", description: message, variant: "destructive" });
     }
   };
 
@@ -132,24 +132,24 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
       <div className="space-y-6">
         <StepCard
           number={1}
-          title="Checar variáveis de ambiente obrigatórias"
-          description="Certifique-se de que o arquivo .env (ou .env.local) contenha os segredos mínimos para rodar Clerk, webhooks e o app."
+          title="Check required environment variables"
+          description="Make sure the .env (or .env.local) file contains the minimum secrets to run Clerk, webhooks, and the app."
           state={envStats.complete ? "complete" : "pending"}
-          helper={`${envStats.configuredCount}/${envStats.total} variáveis configuradas`}
+          helper={`${envStats.configuredCount}/${envStats.total} variables configured`}
         >
           <EnvChecklist items={envChecklist} />
           <div className="rounded-lg border border-blue-600/20 bg-blue-500 px-4 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-inset ring-blue-700/10 dark:bg-blue-600">
-            Compare com <code>.env.example</code> e ajuste conforme necessário. Recarregue o servidor após alterações.
+            Compare with <code>.env.example</code> and adjust as needed. Restart the server after changes.
           </div>
         </StepCard>
 
         {devMode && (
           <StepCard
             number={2}
-            title="Configurações de marca (Brand Configs)"
-            description="Visualize as configurações atuais da marca e saiba onde alterá-las no código."
+            title="Brand Configurations"
+            description="View the current brand settings and learn where to change them in the code."
             state="info"
-            helper="Modo dev ativo - apenas para desenvolvedores"
+            helper="Dev mode active - developers only"
           >
             <BrandConfigDisplay />
           </StepCard>
@@ -157,39 +157,39 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
 
         <StepCard
           number={devMode ? 3 : 2}
-          title="Configurar planos de assinatura no Clerk"
-          description="Ative o billing beta, crie um plano de teste e mantenha o dashboard em modo de desenvolvimento antes de qualquer sincronização."
+          title="Configure subscription plans in Clerk"
+          description="Enable billing beta, create a test plan, and keep the dashboard in development mode before any sync."
           state={planStepState}
           helper={planStepHelper}
         >
           <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-            <li>Acesse o dashboard do Clerk &gt; Billing &gt; Subscriptions.</li>
-            <li>Ative o recurso de subscriptions no modo <strong>Development</strong>.</li>
-            <li>Crie pelo menos um plano recorrente para testes (recomendo mensal).</li>
+            <li>Go to the Clerk dashboard &gt; Billing &gt; Subscriptions.</li>
+            <li>Enable the subscriptions feature in <strong>Development</strong> mode.</li>
+            <li>Create at least one recurring plan for testing (monthly recommended).</li>
           </ul>
           {!clerkEnvReady && missingClerkEnvKeys.length > 0 && (
             <ClerkEnvBlock missingKeys={missingClerkEnvKeys} />
           )}
           <div className="rounded-lg border border-amber-600/20 bg-amber-500 px-4 py-3 text-sm font-semibold text-amber-950 shadow-md ring-1 ring-inset ring-amber-600/10 dark:bg-amber-600 dark:text-amber-50">
-            ⚠️ Faça primeiro no ambiente de desenvolvimento do Clerk para evitar tocar usuários reais.
+            Do this first in the Clerk development environment to avoid affecting real users.
           </div>
           <div className="flex flex-wrap gap-3">
             <Button variant="ghost" asChild>
               <Link href="https://dashboard.clerk.com/apps" target="_blank" rel="noreferrer">
-                Ver apps Clerk
+                View Clerk apps
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
             </Button>
           </div>
           <div className="space-y-3 border-t border-border/50 pt-4">
             <p className="text-sm text-muted-foreground">
-              O botão abaixo chama <code>/api/admin/clerk/plans</code> e importa os planos diretamente. Depois disso,
-              ajuste os créditos por plano em <code>/admin/settings/plans</code>.
+              The button below calls <code>/api/admin/clerk/plans</code> and imports plans directly. After that,
+              adjust credits per plan at <code>/admin/settings/plans</code>.
             </p>
             {lastPlanSync && (
               <div className="rounded-lg border border-emerald-600/20 bg-emerald-500 px-4 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-inset ring-emerald-700/10 dark:bg-emerald-600">
                 <CheckCircle2 className="mr-2 inline-block h-4 w-4" />
-                Importação registrou {lastPlanSync.count} plano(s).
+                Import registered {lastPlanSync.count} plan(s).
               </div>
             )}
             <div className="flex flex-wrap gap-3">
@@ -197,19 +197,19 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
                 {syncingPlans ? (
                   <>
                     <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                    Sincronizando...
+                    Syncing...
                   </>
                 ) : (
                   <>
                     <RefreshCcw className="mr-2 h-4 w-4" />
-                    Sincronizar agora
+                    Sync now
                   </>
                 )}
               </Button>
               <Button variant="secondary" asChild>
                 <Link href="/admin/settings/plans">
                   <Settings2 className="mr-2 h-4 w-4" />
-                  Ajustar créditos e planos
+                  Adjust credits and plans
                 </Link>
               </Button>
             </div>
@@ -218,24 +218,24 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
 
         <StepCard
           number={devMode ? 4 : 3}
-          title="Sincronizar usuários do Clerk"
-          description="Se você ainda não configurou o webhook local do Clerk, faça uma sincronização manual para popular usuários e vínculos de assinatura no banco."
+          title="Sync users from Clerk"
+          description="If you haven't set up the local Clerk webhook yet, run a manual sync to populate users and subscription bindings in the database."
           state={!clerkEnvReady ? "pending" : lastUserSyncAt ? "complete" : hasUsers ? "info" : "pending"}
           helper={
             !clerkEnvReady
-              ? `Configure as chaves do Clerk (${missingClerkEnvLabel}) para liberar esta etapa`
+              ? `Configure Clerk keys (${missingClerkEnvLabel}) to unlock this step`
               : lastUserSyncAt
-                ? `Rodado em ${datetimeFormatter.format(lastUserSyncAt)}`
+                ? `Ran at ${datetimeFormatter.format(lastUserSyncAt)}`
                 : loadingUsers
-                  ? "Conferindo usuários..."
+                  ? "Checking users..."
                   : hasUsers
-                    ? "Usuários já existem localmente"
-                    : "Nenhum usuário encontrado localmente"
+                    ? "Users already exist locally"
+                    : "No users found locally"
           }
         >
           <p className="text-sm text-muted-foreground">
-            Esta ação chama <code>/api/admin/users/sync</code>, busca usuários e assinaturas no Clerk e opcionalmente cria
-            saldos locais de créditos. Execute sempre que precisar alinhar o estado.
+            This action calls <code>/api/admin/users/sync</code>, fetches users and subscriptions from Clerk, and optionally creates
+            local credit balances. Run whenever you need to align state.
           </p>
           {!clerkEnvReady && missingClerkEnvKeys.length > 0 && (
             <ClerkEnvBlock missingKeys={missingClerkEnvKeys} />
@@ -245,19 +245,19 @@ export function DeveloperOnboarding({ envChecklist, openRouterConfigured }: { en
               {syncFromClerkMutation.isPending ? (
                 <>
                   <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
+                  Syncing...
                 </>
               ) : (
                 <>
                   <Users className="mr-2 h-4 w-4" />
-                  Sincronizar com Clerk
+                  Sync with Clerk
                 </>
               )}
             </Button>
             <Button variant="secondary" asChild>
               <Link href="/admin/users">
                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                Revisar usuários
+                Review users
               </Link>
             </Button>
           </div>
@@ -306,7 +306,7 @@ function StepCard({
       <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-            Etapa {number}
+            Step {number}
           </span>
           <CardTitle className="text-xl text-foreground">{title}</CardTitle>
           <StatusBadge state={state} helper={undefined} />
@@ -323,7 +323,7 @@ function StepCard({
               <ChevronDown
                 className={cn("h-4 w-4 transition-transform", collapsed ? "" : "rotate-180")}
               />
-              {collapsed ? "Expandir detalhes" : "Compactar etapa"}
+              {collapsed ? "Expand details" : "Collapse step"}
             </button>
           )}
         </div>
@@ -351,9 +351,9 @@ function StepCard({
 
 function StatusBadge({ state, helper }: { state: StepState; helper?: string }) {
   const config: Record<StepState, { label: string; variant: "secondary" | "destructive" | "outline"; icon: LucideIcon }> = {
-    complete: { label: "Concluído", variant: "secondary", icon: CheckCircle2 },
-    pending: { label: "Pendente", variant: "destructive", icon: CircleAlert },
-    info: { label: "Em andamento", variant: "outline", icon: ClipboardCheck },
+    complete: { label: "Complete", variant: "secondary", icon: CheckCircle2 },
+    pending: { label: "Pending", variant: "destructive", icon: CircleAlert },
+    info: { label: "In progress", variant: "outline", icon: ClipboardCheck },
   };
 
   const Icon = config[state].icon;
@@ -381,7 +381,6 @@ function EnvChecklist({ items }: { items: EnvChecklistItem[] }) {
   const storageItems = items.filter(item => item.key === 'BLOB_READ_WRITE_TOKEN' || item.key === 'REPLIT_STORAGE_BUCKET_ID');
   const hasStorageConfig = storageItems.some(item => item.isConfigured);
 
-  // Ordenar: não configurados primeiro, depois configurados
   const sortedItems = [...items].sort((a, b) => {
     if (a.isConfigured === b.isConfigured) return 0;
     return a.isConfigured ? 1 : -1;
@@ -417,23 +416,23 @@ function EnvChecklist({ items }: { items: EnvChecklistItem[] }) {
               <p className="text-sm text-muted-foreground">{item.description}</p>
               {showAdminWarning && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  ⚠️ Pelo menos uma das variáveis ADMIN (ADMIN_EMAILS ou ADMIN_USER_IDS) deve estar configurada para acessar o painel admin.
+                  At least one ADMIN variable (ADMIN_EMAILS or ADMIN_USER_IDS) must be configured to access the admin panel.
                 </p>
               )}
               {showStorageWarning && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  ⚠️ Pelo menos uma das variáveis de storage (BLOB_READ_WRITE_TOKEN ou REPLIT_STORAGE_BUCKET_ID) deve estar configurada para uploads de arquivos.
+                  At least one storage variable (BLOB_READ_WRITE_TOKEN or REPLIT_STORAGE_BUCKET_ID) must be configured for file uploads.
                 </p>
               )}
               {isNotConfigured && !showAdminWarning && !showStorageWarning && (
                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded border border-amber-500/20 flex items-center gap-1.5">
                   <CircleAlert className="h-3 w-3" />
-                  Esta variável precisa ser configurada no arquivo .env para o funcionamento correto da aplicação.
+                  This variable must be configured in the .env file for the application to work correctly.
                 </p>
               )}
               {item.docsPath && (
                 <p className="pt-1 text-xs text-muted-foreground">
-                  Referência: <code>{item.docsPath}</code>
+                  Reference: <code>{item.docsPath}</code>
                 </p>
               )}
             </div>
@@ -441,28 +440,27 @@ function EnvChecklist({ items }: { items: EnvChecklistItem[] }) {
               <Badge variant={item.isConfigured ? "secondary" : "destructive"}>
                 {item.isConfigured ? (
                   <>
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Configurada
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Configured
                   </>
                 ) : (
                   <>
-                    <CircleAlert className="h-3.5 w-3.5" /> Pendente
+                    <CircleAlert className="h-3.5 w-3.5" /> Pending
                   </>
                 )}
               </Badge>
               {!item.isConfigured && !isAdminItem && !isStorageItem && (
-                <span className="text-xs text-muted-foreground">Adicione este valor no .env</span>
+                <span className="text-xs text-muted-foreground">Add this value to .env</span>
               )}
             </div>
           </div>
         );
       })}
 
-      {/* Mostrar lista de admins configurados */}
       {hasAdminConfig && (adminEmails.length > 0 || adminUserIds.length > 0) && (
         <div className="rounded-lg border border-emerald-600/20 bg-emerald-500 px-4 py-3 shadow-md ring-1 ring-inset ring-emerald-700/10 dark:bg-emerald-600">
           <h4 className="font-bold text-white mb-3 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" />
-            Admins Configurados
+            Configured Admins
           </h4>
           {adminEmails.length > 0 && (
             <div className="mb-3">
@@ -504,9 +502,9 @@ function ClerkEnvBlock({ missingKeys }: { missingKeys: EnvChecklistItem[] }) {
     <div className="rounded-lg border border-red-600/20 bg-red-500 px-4 py-3 text-sm font-semibold text-white shadow-md ring-1 ring-inset ring-red-700/10 dark:bg-red-600">
       <div className="flex items-center gap-2">
         <CircleAlert className="h-4 w-4" />
-        <p>Configure as variáveis do Clerk para liberar esta ação.</p>
+        <p>Configure the Clerk variables to unlock this action.</p>
       </div>
-      <p className="mt-1 text-xs text-red-100/90 font-medium">Faltando: {list}</p>
+      <p className="mt-1 text-xs text-red-100/90 font-medium">Missing: {list}</p>
     </div>
   );
 }
@@ -519,43 +517,43 @@ function BrandConfigDisplay() {
   const { toast } = useToast();
 
   const generateAIPrompt = () => {
-    return `Altere as configurações de marca no arquivo src/lib/brand-config.ts com as seguintes informações:
+    return `Update the brand settings in the file src/lib/brand-config.ts with the following information:
 
-INFORMAÇÕES BÁSICAS:
-- Nome completo: ${site.name}
-- Nome curto: ${site.shortName}
-- Descrição: ${site.description}
-- Autor: ${site.author}
-- URL base: ${site.url}
+BASIC INFO:
+- Full name: ${site.name}
+- Short name: ${site.shortName}
+- Description: ${site.description}
+- Author: ${site.author}
+- Base URL: ${site.url}
 
-PALAVRAS-CHAVE:
+KEYWORDS:
 ${site.keywords.map(k => `- ${k}`).join('\n')}
 
-LOGOS E ÍCONES:
-- Logo claro: ${site.logo.light || 'Não configurado'}
-- Logo escuro: ${site.logo.dark || 'Não configurado'}
-- Favicon: ${site.icons.favicon || 'Não configurado'}
-- Apple Touch Icon: ${site.icons.apple || 'Não configurado'}
-- Shortcut Icon: ${site.icons.shortcut || 'Não configurado'}
-- Open Graph Image: ${site.ogImage || 'Não configurado'}
+LOGOS AND ICONS:
+- Light logo: ${site.logo.light || 'Not configured'}
+- Dark logo: ${site.logo.dark || 'Not configured'}
+- Favicon: ${site.icons.favicon || 'Not configured'}
+- Apple Touch Icon: ${site.icons.apple || 'Not configured'}
+- Shortcut Icon: ${site.icons.shortcut || 'Not configured'}
+- Open Graph Image: ${site.ogImage || 'Not configured'}
 
-REDES SOCIAIS:
-- Twitter/X: ${site.socials.twitter || 'Não configurado'}
+SOCIAL MEDIA:
+- Twitter/X: ${site.socials.twitter || 'Not configured'}
 
-SUPORTE:
-- Email: ${site.support.email || 'Não configurado'}
+SUPPORT:
+- Email: ${site.support.email || 'Not configured'}
 
-ANALYTICS (variáveis de ambiente - configure no .env):
+ANALYTICS (environment variables - configure in .env):
 - Google Tag Manager: ${site.analytics.gtmId || 'NEXT_PUBLIC_GTM_ID'}
 - Google Analytics 4: ${site.analytics.gaMeasurementId || 'NEXT_PUBLIC_GA_ID'}
 - Facebook Pixel: ${site.analytics.facebookPixelId || 'NEXT_PUBLIC_FACEBOOK_PIXEL_ID'}
 
-INSTRUÇÕES:
-1. Abra o arquivo src/lib/brand-config.ts
-2. Atualize o objeto 'site' com os novos valores acima
-3. Mantenha a estrutura e tipos existentes
-4. Para analytics, as variáveis são lidas de process.env, então apenas atualize os valores padrão se necessário
-5. Consulte .context/docs/brand-config.md para mais detalhes`;
+INSTRUCTIONS:
+1. Open the file src/lib/brand-config.ts
+2. Update the 'site' object with the new values above
+3. Keep the existing structure and types
+4. For analytics, variables are read from process.env, so only update default values if needed
+5. See .context/docs/brand-config.md for more details`;
   };
 
   const handleCopyPrompt = async () => {
@@ -563,14 +561,14 @@ INSTRUÇÕES:
       const prompt = generateAIPrompt();
       await navigator.clipboard.writeText(prompt);
       toast({
-        title: "Prompt copiado!",
-        description: "Cole o prompt na sua IA para alterar as brand configs automaticamente.",
+        title: "Prompt copied!",
+        description: "Paste the prompt into your AI to automatically update brand configs.",
       });
     } catch (error) {
       console.error("Failed to copy AI prompt", error)
       toast({
-        title: "Erro ao copiar",
-        description: "Não foi possível copiar o prompt. Tente novamente.",
+        title: "Copy failed",
+        description: "Could not copy the prompt. Please try again.",
         variant: "destructive",
       });
     }
@@ -581,10 +579,10 @@ INSTRUÇÕES:
       <div className="rounded-lg border border-blue-600/20 bg-blue-500 px-4 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-inset ring-blue-700/10 dark:bg-blue-600">
         <p className="font-bold mb-1 flex items-center gap-2">
           <Settings2 className="h-4 w-4" />
-          Onde alterar:
+          Where to change:
         </p>
-        <p>Edite o arquivo <code className="bg-white/20 px-1 rounded font-mono text-xs">src/lib/brand-config.ts</code> para modificar essas configurações.</p>
-        <p className="mt-1 opacity-90 text-xs">Documentação completa: <code className="bg-white/20 px-1 rounded font-mono">.context/docs/brand-config.md</code></p>
+        <p>Edit the file <code className="bg-white/20 px-1 rounded font-mono text-xs">src/lib/brand-config.ts</code> to modify these settings.</p>
+        <p className="mt-1 opacity-90 text-xs">Full documentation: <code className="bg-white/20 px-1 rounded font-mono">.context/docs/brand-config.md</code></p>
       </div>
 
       <div className="rounded-xl border border-emerald-600/20 bg-emerald-50 p-5 shadow-sm ring-1 ring-inset ring-emerald-600/10 dark:bg-emerald-950/20 transition-all hover:shadow-md">
@@ -594,9 +592,9 @@ INSTRUÇÕES:
               <RefreshCcw className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="font-bold text-emerald-950 dark:text-emerald-50 text-lg leading-tight">Prompt para IA</h4>
+              <h4 className="font-bold text-emerald-950 dark:text-emerald-50 text-lg leading-tight">AI Prompt</h4>
               <p className="text-xs text-emerald-800/70 dark:text-emerald-400 font-medium">
-                Copie e cole na sua IA para automatizar as brand configs.
+                Copy and paste into your AI to automate brand configs.
               </p>
             </div>
           </div>
@@ -607,7 +605,7 @@ INSTRUÇÕES:
             className="shrink-0 bg-white border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-bold dark:bg-emerald-900/50 dark:border-emerald-800 dark:text-emerald-300 shadow-sm"
           >
             <Copy className="h-4 w-4 mr-2" />
-            Copiar prompt
+            Copy prompt
           </Button>
         </div>
         <div className="rounded-lg bg-white/50 backdrop-blur-sm border border-emerald-200/50 dark:bg-black/20 dark:border-emerald-800/50 p-4 max-h-48 overflow-y-auto shadow-inner group">
@@ -618,15 +616,15 @@ INSTRUÇÕES:
       </div>
 
       <div className="space-y-3">
-        <ConfigSection title="Informações básicas">
-          <ConfigItem label="Nome completo" value={site.name} />
-          <ConfigItem label="Nome curto" value={site.shortName} />
-          <ConfigItem label="Descrição" value={site.description} />
-          <ConfigItem label="Autor" value={site.author} />
-          <ConfigItem label="URL base" value={site.url} />
+        <ConfigSection title="Basic information">
+          <ConfigItem label="Full name" value={site.name} />
+          <ConfigItem label="Short name" value={site.shortName} />
+          <ConfigItem label="Description" value={site.description} />
+          <ConfigItem label="Author" value={site.author} />
+          <ConfigItem label="Base URL" value={site.url} />
         </ConfigSection>
 
-        <ConfigSection title="Palavras-chave">
+        <ConfigSection title="Keywords">
           <div className="flex flex-wrap gap-2">
             {site.keywords.map((keyword, idx) => (
               <Badge key={idx} variant="outline" className="text-xs">
@@ -636,37 +634,37 @@ INSTRUÇÕES:
           </div>
         </ConfigSection>
 
-        <ConfigSection title="Redes sociais">
-          <ConfigItem label="Twitter/X" value={site.socials.twitter || "Não configurado"} />
+        <ConfigSection title="Social media">
+          <ConfigItem label="Twitter/X" value={site.socials.twitter || "Not configured"} />
         </ConfigSection>
 
-        <ConfigSection title="Suporte">
-          <ConfigItem label="Email" value={site.support.email || "Não configurado"} />
+        <ConfigSection title="Support">
+          <ConfigItem label="Email" value={site.support.email || "Not configured"} />
         </ConfigSection>
 
-        <ConfigSection title="Analytics (variáveis de ambiente)">
+        <ConfigSection title="Analytics (environment variables)">
           <ConfigItem
             label="Google Tag Manager"
-            value={site.analytics.gtmId || "Não configurado (NEXT_PUBLIC_GTM_ID)"}
+            value={site.analytics.gtmId || "Not configured (NEXT_PUBLIC_GTM_ID)"}
           />
           <ConfigItem
             label="Google Analytics 4"
-            value={site.analytics.gaMeasurementId || "Não configurado (NEXT_PUBLIC_GA_ID)"}
+            value={site.analytics.gaMeasurementId || "Not configured (NEXT_PUBLIC_GA_ID)"}
           />
           <ConfigItem
             label="Facebook Pixel"
-            value={site.analytics.facebookPixelId || "Não configurado (NEXT_PUBLIC_FACEBOOK_PIXEL_ID)"}
+            value={site.analytics.facebookPixelId || "Not configured (NEXT_PUBLIC_FACEBOOK_PIXEL_ID)"}
           />
           <div className="mt-4 rounded-lg border border-amber-600/20 bg-amber-500 px-4 py-3 text-sm font-semibold text-amber-950 shadow-md ring-1 ring-inset ring-amber-600/10 dark:bg-amber-600 dark:text-amber-50">
             <p className="font-bold mb-2 flex items-center gap-2">
               <CircleAlert className="h-4 w-4" />
-              Importante:
+              Important:
             </p>
             <ul className="list-disc list-inside space-y-1.5 opacity-90">
-              <li>Os analytics só são carregados após o usuário aceitar os cookies (LGPD/GDPR)</li>
-              <li>As variáveis são lidas em build time - reinicie o servidor após alterar o .env</li>
-              <li>Para testar: aceite os cookies e verifique o console do navegador</li>
-              <li>Componente: <code className="bg-amber-950/10 dark:bg-white/10 px-1 rounded font-mono">src/components/analytics/pixels.tsx</code></li>
+              <li>Analytics are only loaded after the user accepts cookies (LGPD/GDPR)</li>
+              <li>Variables are read at build time - restart the server after changing .env</li>
+              <li>To test: accept cookies and check the browser console</li>
+              <li>Component: <code className="bg-amber-950/10 dark:bg-white/10 px-1 rounded font-mono">src/components/analytics/pixels.tsx</code></li>
             </ul>
           </div>
         </ConfigSection>
@@ -675,9 +673,9 @@ INSTRUÇÕES:
       <div className="rounded-lg border border-purple-600/20 bg-purple-500 px-4 py-3 text-sm font-medium text-white shadow-sm ring-1 ring-inset ring-purple-700/10 dark:bg-purple-600">
         <p className="font-bold mb-1 flex items-center gap-2">
           <CircleAlert className="h-4 w-4" />
-          Dica:
+          Tip:
         </p>
-        <p className="opacity-90">As configurações de analytics são lidas de variáveis de ambiente. Adicione-as ao <code>.env</code> se necessário.</p>
+        <p className="opacity-90">Analytics settings are read from environment variables. Add them to <code>.env</code> if needed.</p>
       </div>
     </div>
   );

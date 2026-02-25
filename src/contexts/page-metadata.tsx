@@ -50,20 +50,20 @@ export function usePageMetadata() {
   return context;
 }
 
-// Hook para definir metadados da página
+// Hook to set page metadata
 export function useSetPageMetadata(metadata: PageMetadata) {
   const { setMetadata } = usePageMetadata();
   
   React.useEffect(() => {
     setMetadata(metadata);
-    // Dependências específicas ao invés do objeto completo para evitar loops
+    // Specific dependencies instead of the full object to avoid loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     setMetadata,
     metadata.title,
     metadata.description,
     metadata.showBreadcrumbs,
-    // Para arrays, usamos JSON.stringify para comparação profunda
+    // For arrays, we use JSON.stringify for deep comparison
     // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(metadata.breadcrumbs)
   ]);

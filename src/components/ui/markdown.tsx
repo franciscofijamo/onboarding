@@ -86,7 +86,7 @@ export function Markdown({ children, className }: MarkdownProps) {
             <div className="group relative my-3">
               <div className="absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 {lang && <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] uppercase tracking-wide ring-1 ring-border">{lang}</span>}
-                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Copiar código" onClick={handleCopy}>
+                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" aria-label="Copy code" onClick={handleCopy}>
                   {copied ? <span className="text-[10px]">OK</span> : <Copy className="h-3.5 w-3.5" />}
                 </Button>
               </div>

@@ -58,8 +58,8 @@ export function resolvePricing(
       : null
 
   const hasPrice = typeof priceCents === 'number' && priceCents != null
-  const priceLabel = hasPrice ? formatCurrency(priceCents!, plan.currency) : 'Sob consulta'
-  const billingSuffix = hasPrice ? (resolvedPeriod === 'yearly' ? 'ano' : 'mês') : null
+  const priceLabel = hasPrice ? formatCurrency(priceCents!, plan.currency) : 'Contact us'
+  const billingSuffix = hasPrice ? (resolvedPeriod === 'yearly' ? 'year' : 'month') : null
 
   return {
     resolvedPeriod,

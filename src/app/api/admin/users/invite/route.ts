@@ -19,7 +19,7 @@ async function handleAdminInvitePost(request: Request) {
   try {
     const { userId } = await auth()
     if (!userId || !(await isAdmin(userId))) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const json = await request.json()
@@ -55,7 +55,7 @@ async function handleAdminInvitePost(request: Request) {
         })
       }
 
-      return NextResponse.json({ status: "exists", message: "Usuário já existe no Clerk", clerkUserId: user.id })
+      return NextResponse.json({ status: "exists", message: "User already exists in Clerk", clerkUserId: user.id })
     }
 
     // Try to create an invitation for the user to join
@@ -70,13 +70,13 @@ async function handleAdminInvitePost(request: Request) {
     } catch (inviteErr: unknown) {
       console.error("Clerk invitation failed:", inviteErr)
       const err = inviteErr as { errors?: Array<{ message?: string }>; message?: string; status?: number };
-      const message = err?.errors?.[0]?.message || err?.message || "Falha ao enviar convite"
+      const message = err?.errors?.[0]?.message || err?.message || "Failed to send invitation"
       return NextResponse.json({ error: message }, { status: err?.status || 400 })
     }
   } catch (error) {
     console.error("Admin invite user error:", error)
     const err = error as { errors?: Array<{ message?: string }>; message?: string };
-    const message = err?.errors?.[0]?.message || err?.message || "Requisição inválida"
+    const message = err?.errors?.[0]?.message || err?.message || "Invalid request"
     return NextResponse.json({ error: message }, { status: 400 })
   }
 }

@@ -113,7 +113,7 @@ export default function AIChatPage() {
             const required = data?.required ?? ''
             const available = data?.available ?? ''
             appendAssistantMessage(
-              `Você não tem créditos. Necessário ${required}, disponível ${available}.\n\n[Ir para cobrança →](/billing)`,
+              `You don't have enough credits. Required: ${required}, available: ${available}.\n\n[Go to billing →](/billing)`,
               `sys-nocred-${Date.now()}`
             )
             refresh()
@@ -122,10 +122,10 @@ export default function AIChatPage() {
         } catch {
           // fall through to generic error message
         }
-        appendAssistantMessage('Não foi possível obter uma resposta. Tente novamente em instantes.')
+        appendAssistantMessage('Could not get a response. Please try again shortly.')
         return
       }
-      appendAssistantMessage('Não foi possível obter uma resposta. Tente novamente em instantes.')
+      appendAssistantMessage('Could not get a response. Please try again shortly.')
     },
     [appendAssistantMessage, refresh]
   )
@@ -183,17 +183,17 @@ export default function AIChatPage() {
       ])
       clearAttachments()
     } catch (error) {
-      if ((error as Error)?.message?.includes('402') || (error as Error)?.message?.includes('crédito')) {
+      if ((error as Error)?.message?.includes('402') || (error as Error)?.message?.includes('credit')) {
         setMessages(prev => [
           ...prev,
           createTextMessage('user', prompt),
-          createTextMessage('assistant', 'Você não tem créditos suficientes. [Ir para cobrança →](/billing)'),
+          createTextMessage('assistant', 'You don\'t have enough credits. [Go to billing →](/billing)'),
         ])
       } else {
         setMessages(prev => [
           ...prev,
           createTextMessage('user', prompt),
-          createTextMessage('assistant', 'Não foi possível gerar a imagem. Tente novamente.'),
+          createTextMessage('assistant', 'Could not generate the image. Please try again.'),
         ])
       }
     }
@@ -238,7 +238,7 @@ export default function AIChatPage() {
       const hasTip = messages.some(m => m.id?.toString().startsWith('sys-nocred-'))
       if (!hasTip) {
         const id = `sys-nocred-${Date.now()}`
-        appendAssistantMessage('Você não tem mais créditos. [Ir para cobrança →](/billing)', id)
+        appendAssistantMessage('You have no more credits. [Go to billing →](/billing)', id)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -291,7 +291,7 @@ export default function AIChatPage() {
         hasUploadingAttachments={hasUploadingAttachments}
         canSubmit={canSubmit}
         creditCost={getCost(mode === 'image' ? 'image_generation' : 'ai_chat')}
-        creditLabel={mode === 'image' ? 'créditos' : 'crédito'}
+        creditLabel={mode === 'image' ? 'credits' : 'credit'}
         onStop={() => void stop()}
         fileInputRef={fileInputRef}
         onFileSelected={onFileSelected}

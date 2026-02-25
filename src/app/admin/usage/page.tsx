@@ -42,7 +42,6 @@ export default function UsagePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Use TanStack Query hook for usage history data
   const { data, isLoading, error } = useUsageHistory({
     type: filterType !== "all" ? filterType : undefined,
     range: dateRange,
@@ -51,15 +50,14 @@ export default function UsagePage() {
     pageSize,
   });
 
-  // Extract usage history and total from the hook response
   const usageHistory = data?.data || [];
   const total = data?.total || 0;
 
   const exportToCSV = () => {
-    const headers = ["Data", "Usuário", "Email", "Operação", "Créditos"];
+    const headers = ["Date", "User", "Email", "Operation", "Credits"];
     const rows = usageHistory.map(record => [
       new Date(record.timestamp).toLocaleString(),
-      record.user.name || "Desconhecido",
+      record.user.name || "Unknown",
       record.user.email,
       record.operationType.replace(/_/g, " "),
       record.creditsUsed.toString(),
@@ -131,15 +129,15 @@ export default function UsagePage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Histórico de Uso</h1>
-          <p className="text-muted-foreground mt-2">Acompanhe o consumo de créditos e a atividade do usuário</p>
+          <h1 className="text-3xl font-bold text-foreground">Usage History</h1>
+          <p className="text-muted-foreground mt-2">Track credit consumption and user activity</p>
         </div>
         <Button
           variant="outline"
           onClick={exportToCSV}
         >
           <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
+          Export CSV
         </Button>
       </div>
 
@@ -147,7 +145,7 @@ export default function UsagePage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total de Operações</p>
+              <p className="text-muted-foreground text-sm">Total Operations</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {total.toLocaleString()}
               </p>
@@ -159,7 +157,7 @@ export default function UsagePage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Créditos Consumidos</p>
+              <p className="text-muted-foreground text-sm">Credits Used</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {totalCreditsUsed.toLocaleString()}
               </p>
@@ -171,7 +169,7 @@ export default function UsagePage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Média de Créditos/Operação (página)</p>
+              <p className="text-muted-foreground text-sm">Avg Credits/Operation (page)</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {usageHistory.length > 0 
                   ? Math.round(totalCreditsUsed / usageHistory.length)
@@ -189,7 +187,7 @@ export default function UsagePage() {
             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Pesquisar por usuário..."
+              placeholder="Search by user..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => { setPage(1); setSearchTerm(e.target.value) }}
@@ -199,25 +197,25 @@ export default function UsagePage() {
           <Select value={filterType} onValueChange={(v) => { setPage(1); setFilterType(v) }}>
             <SelectTrigger className="w-[180px]">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filtrar por tipo" />
+              <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as Operações</SelectItem>
-              <SelectItem value="AI_TEXT_CHAT">Chat de Texto</SelectItem>
-              <SelectItem value="AI_IMAGE_GENERATION">Geração de Imagem</SelectItem>
+              <SelectItem value="all">All Operations</SelectItem>
+              <SelectItem value="AI_TEXT_CHAT">Text Chat</SelectItem>
+              <SelectItem value="AI_IMAGE_GENERATION">Image Generation</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={dateRange} onValueChange={(v) => { setPage(1); setDateRange(v) }}>
             <SelectTrigger className="w-[150px]">
               <Calendar className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Período" />
+              <SelectValue placeholder="Period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="24hours">Últimas 24 Horas</SelectItem>
-              <SelectItem value="7days">Últimos 7 Dias</SelectItem>
-              <SelectItem value="30days">Últimos 30 Dias</SelectItem>
-              <SelectItem value="all">Desde o Início</SelectItem>
+              <SelectItem value="24hours">Last 24 Hours</SelectItem>
+              <SelectItem value="7days">Last 7 Days</SelectItem>
+              <SelectItem value="30days">Last 30 Days</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -228,7 +226,7 @@ export default function UsagePage() {
         columns={[
           {
             key: "timestamp",
-            header: "Data e Hora",
+            header: "Date & Time",
             render: (record: unknown) => {
               const item = record as UsageRecord;
               return (
@@ -243,13 +241,13 @@ export default function UsagePage() {
           },
           {
             key: "user",
-            header: "Usuário",
+            header: "User",
             render: (record: unknown) => {
               const item = record as UsageRecord;
               return (
                 <div>
                   <p className="font-medium text-foreground">
-                    {item.user.name || "Sem nome"}
+                    {item.user.name || "No name"}
                   </p>
                   <p className="text-sm text-muted-foreground">{item.user.email}</p>
                 </div>
@@ -258,7 +256,7 @@ export default function UsagePage() {
           },
           {
             key: "operationType",
-            header: "Operação",
+            header: "Operation",
             render: (record: unknown) => {
               const item = record as UsageRecord;
               return (
@@ -275,7 +273,7 @@ export default function UsagePage() {
           },
           {
             key: "creditsUsed",
-            header: "Créditos",
+            header: "Credits",
             render: (record: unknown) => {
               const item = record as UsageRecord;
               return (
@@ -287,7 +285,7 @@ export default function UsagePage() {
           },
           {
             key: "details",
-            header: "Detalhes",
+            header: "Details",
             render: (record: unknown) => {
               const item = record as UsageRecord;
               return <JsonCell value={item.details} />;
@@ -296,37 +294,37 @@ export default function UsagePage() {
         ]}
         searchable={false}
         loading={isLoading}
-        countLabel="registros de uso"
-        emptyMessage="Nenhum histórico de uso encontrado para os filtros selecionados"
+        countLabel="usage records"
+        emptyMessage="No usage history found for the selected filters"
         headerContent={
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between w-full">
             <div className="text-sm text-muted-foreground">
               {total > 0 ? (
                 <span>
-                  Mostrando {Math.min((page - 1) * pageSize + 1, total)}–
-                  {Math.min(page * pageSize, total)} de {total}
+                  Showing {Math.min((page - 1) * pageSize + 1, total)}–
+                  {Math.min(page * pageSize, total)} of {total}
                 </span>
               ) : (
-                <span>0 resultados</span>
+                <span>0 results</span>
               )}
             </div>
             <div className="flex items-center gap-2">
               <Select value={String(pageSize)} onValueChange={(v) => { setPage(1); setPageSize(Number(v)) }}>
                 <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Linhas" />
+                  <SelectValue placeholder="Rows" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="10">10 / página</SelectItem>
-                  <SelectItem value="25">25 / página</SelectItem>
-                  <SelectItem value="50">50 / página</SelectItem>
+                  <SelectItem value="10">10 / page</SelectItem>
+                  <SelectItem value="25">25 / page</SelectItem>
+                  <SelectItem value="50">50 / page</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2">
                 <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                  Anterior
+                  Previous
                 </Button>
                 <Button variant="outline" disabled={page * pageSize >= total} onClick={() => setPage((p) => p + 1)}>
-                  Próximo
+                  Next
                 </Button>
               </div>
             </div>
@@ -349,13 +347,13 @@ function JsonCell({ value }: { value: unknown }) {
       <span className="text-muted-foreground text-sm truncate" title={typeof value === 'string' ? value : undefined}>
         {preview}
       </span>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>Ver</Button>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>View</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Detalhes da Operação</DialogTitle>
+            <DialogTitle className="text-foreground">Operation Details</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              JSON completo armazenado no campo details
+              Full JSON stored in the details field
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] rounded border border-border">
@@ -364,7 +362,7 @@ function JsonCell({ value }: { value: unknown }) {
             </pre>
           </ScrollArea>
           <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -383,7 +381,7 @@ function getJsonPreview(v: unknown): string {
     if (Array.isArray(v)) {
       const len = v.length
       const first = len ? getJsonPreview(v[0]) : ''
-      const suffix = len > 1 ? `, … (${len} itens)` : ''
+      const suffix = len > 1 ? `, … (${len} items)` : ''
       return `[ ${first}${suffix} ]`
     }
     if (typeof v === 'object') {
@@ -396,7 +394,7 @@ function getJsonPreview(v: unknown): string {
     }
     return JSON.stringify(v)
   } catch {
-    return '[dados]'
+    return '[data]'
   }
 }
 

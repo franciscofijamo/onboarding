@@ -1,97 +1,68 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { DataTable } from "@/components/ui/data-table";
+import { useState } from "react"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+  Dialog, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog"
+import { DataTable } from "@/components/admin/data-table"
 import {
-  CreditCard,
-  Plus,
-  Minus,
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users
-} from "lucide-react";
-import {
-  useAdminCredits,
-  useAdjustCredits,
-  type CreditBalance
-} from "@/hooks/admin/use-admin-credits";
+  CreditCard, DollarSign, Users, TrendingUp, TrendingDown, Plus, Minus,
+} from "lucide-react"
+import { useCreditBalances, useAdjustCredits } from "@/hooks/admin/use-credits"
 
-export default function CreditsPage() {
-  const [selectedUser, setSelectedUser] = useState<CreditBalance | null>(null);
-  const [creditAmount, setCreditAmount] = useState("");
-  const [adjustmentType, setAdjustmentType] = useState<"add" | "subtract">("add");
-  const [dialogOpen, setDialogOpen] = useState(false);
+interface CreditBalance {
+  id: string;
+  creditsRemaining: number;
+  lastSyncedAt: string;
+  user: { name: string | null; email: string };
+  _count?: { usageHistory: number };
+}
 
-  // TanStack Query hooks
-  const { data: creditsData, isLoading: loading } = useAdminCredits({
-    page: 1,
-    pageSize: 1000,
-    includeUsageCount: true
-  });
+export default function AdminCreditsPage() {
+  const { data: creditBalances = [], isLoading: loading } = useCreditBalances()
+  const adjustCreditsMutation = useAdjustCredits()
 
-  const adjustCreditsMutation = useAdjustCredits();
+  const [selectedUser, setSelectedUser] = useState<CreditBalance | null>(null)
+  const [creditAmount, setCreditAmount] = useState("")
+  const [adjustmentType, setAdjustmentType] = useState<"add" | "subtract">("add")
+  const [dialogOpen, setDialogOpen] = useState(false)
 
-  const creditBalances = creditsData?.creditBalances || [];
+  const totalCredits = (creditBalances as CreditBalance[]).reduce(
+    (sum: number, b: CreditBalance) => sum + b.creditsRemaining, 0
+  )
+  const averageCredits = creditBalances.length
+    ? Math.round(totalCredits / creditBalances.length)
+    : 0
 
   const handleAdjustCredits = () => {
-    if (!selectedUser || !creditAmount) return;
+    if (!selectedUser || !creditAmount) return
+    const amount = parseInt(creditAmount)
+    if (isNaN(amount) || amount <= 0) return
 
-    const amount = parseInt(creditAmount);
-    const finalAmount = adjustmentType === "add" ? amount : -amount;
-
-    adjustCreditsMutation.mutate(
-      {
-        creditBalanceId: selectedUser.id,
-        adjustment: finalAmount
+    adjustCreditsMutation.mutate({
+      balanceId: selectedUser.id,
+      amount: adjustmentType === "add" ? amount : -amount,
+    }, {
+      onSuccess: () => {
+        setDialogOpen(false)
+        setSelectedUser(null)
+        setCreditAmount("")
       },
-      {
-        onSuccess: () => {
-          setDialogOpen(false);
-          setCreditAmount("");
-          setSelectedUser(null);
-        }
-      }
-    );
-  };
-
-  const totalCredits = creditBalances.reduce(
-    (sum, balance) => sum + balance.creditsRemaining,
-    0
-  );
-
-  const averageCredits = creditBalances.length > 0
-    ? Math.round(totalCredits / creditBalances.length)
-    : 0;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+    })
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Créditos</h1>
-          <p className="text-muted-foreground mt-2">Monitore e gerencie os créditos dos usuários</p>
+          <h1 className="text-3xl font-bold text-foreground">Credit Management</h1>
+          <p className="text-muted-foreground mt-2">Monitor and manage user credits</p>
         </div>
       </div>
 
@@ -99,7 +70,7 @@ export default function CreditsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total de Créditos</p>
+              <p className="text-muted-foreground text-sm">Total Credits</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {totalCredits.toLocaleString()}
               </p>
@@ -111,7 +82,7 @@ export default function CreditsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Saldo Médio</p>
+              <p className="text-muted-foreground text-sm">Average Balance</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {averageCredits.toLocaleString()}
               </p>
@@ -123,7 +94,7 @@ export default function CreditsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Usuários Ativos</p>
+              <p className="text-muted-foreground text-sm">Active Users</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {creditBalances.length}
               </p>
@@ -135,7 +106,7 @@ export default function CreditsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Saldo Baixo</p>
+              <p className="text-muted-foreground text-sm">Low Balance</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {creditBalances.filter(b => b.creditsRemaining < 10).length}
               </p>
@@ -150,13 +121,13 @@ export default function CreditsPage() {
         columns={[
           {
             key: "user",
-            header: "Usuário",
+            header: "User",
             render: (balance: unknown) => {
               const b = balance as CreditBalance;
               return (
                 <div>
                   <p className="font-medium text-foreground">
-                    {b.user.name || "Sem nome"}
+                    {b.user.name || "No name"}
                   </p>
                   <p className="text-sm text-muted-foreground">{b.user.email}</p>
                 </div>
@@ -165,7 +136,7 @@ export default function CreditsPage() {
           },
           {
             key: "creditsRemaining",
-            header: "Créditos Restantes",
+            header: "Credits Remaining",
             render: (balance: unknown) => {
               const b = balance as CreditBalance;
               return (
@@ -184,19 +155,19 @@ export default function CreditsPage() {
           },
           {
             key: "usage",
-            header: "Contagem de Uso",
+            header: "Usage Count",
             render: (balance: unknown) => {
               const b = balance as CreditBalance;
               return (
                 <span className="text-muted-foreground">
-                  {b._count?.usageHistory || 0} operações
+                  {b._count?.usageHistory || 0} operations
                 </span>
               );
             },
           },
           {
             key: "lastSyncedAt",
-            header: "Última Sincronização",
+            header: "Last Synced",
             render: (balance: unknown) => {
               const b = balance as CreditBalance;
               return (
@@ -222,15 +193,15 @@ export default function CreditsPage() {
                       : "border-red-500 text-red-500"
                   }
                 >
-                  {b.creditsRemaining > 50 ? "Saudável" :
-                   b.creditsRemaining > 10 ? "Baixo" : "Crítico"}
+                  {b.creditsRemaining > 50 ? "Healthy" :
+                   b.creditsRemaining > 10 ? "Low" : "Critical"}
                 </Badge>
               );
             },
           },
           {
             key: "actions",
-            header: "Ações",
+            header: "Actions",
             className: "text-right",
             render: (balance: unknown) => {
               const b = balance as CreditBalance;
@@ -248,25 +219,25 @@ export default function CreditsPage() {
                     size="sm"
                     onClick={() => setSelectedUser(b)}
                   >
-                    Ajustar
+                    Adjust
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle className="text-foreground">Ajustar Créditos</DialogTitle>
+                    <DialogTitle className="text-foreground">Adjust Credits</DialogTitle>
                     <DialogDescription className="text-muted-foreground">
-                      Ajustar saldo de créditos para {b.user.name || b.user.email}
+                      Adjust credit balance for {b.user.name || b.user.email}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label>Saldo Atual</Label>
+                      <Label>Current Balance</Label>
                       <div className="text-2xl font-bold text-foreground">
-                        {b.creditsRemaining.toLocaleString()} créditos
+                        {b.creditsRemaining.toLocaleString()} credits
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Tipo de Ajuste</Label>
+                      <Label>Adjustment Type</Label>
                       <div className="flex space-x-2">
                         <Button
                           variant={adjustmentType === "add" ? "default" : "outline"}
@@ -274,7 +245,7 @@ export default function CreditsPage() {
                           onClick={() => setAdjustmentType("add")}
                         >
                           <Plus className="h-4 w-4 mr-1" />
-                          Adicionar
+                          Add
                         </Button>
                         <Button
                           variant={adjustmentType === "subtract" ? "default" : "outline"}
@@ -282,18 +253,18 @@ export default function CreditsPage() {
                           onClick={() => setAdjustmentType("subtract")}
                         >
                           <Minus className="h-4 w-4 mr-1" />
-                          Subtrair
+                          Subtract
                         </Button>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="amount">
-                        Quantidade
+                        Amount
                       </Label>
                       <Input
                         id="amount"
                         type="number"
-                        placeholder="Digite a quantidade de créditos"
+                        placeholder="Enter credit amount"
                         value={creditAmount}
                         onChange={(e) => setCreditAmount(e.target.value)}
                         className="pl-3"
@@ -305,14 +276,14 @@ export default function CreditsPage() {
                       variant="outline"
                       onClick={() => setDialogOpen(false)}
                     >
-                      Cancelar
+                      Cancel
                     </Button>
                     <Button
                       onClick={handleAdjustCredits}
                       className="bg-primary hover:bg-primary/90"
                       disabled={adjustCreditsMutation.isPending}
                     >
-                      {adjustCreditsMutation.isPending ? "Aplicando..." : "Aplicar Ajuste"}
+                      {adjustCreditsMutation.isPending ? "Applying..." : "Apply Adjustment"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -322,11 +293,11 @@ export default function CreditsPage() {
           },
         ]}
         searchable={true}
-        searchPlaceholder="Pesquisar por usuário..."
+        searchPlaceholder="Search by user..."
         searchKeys={["user"]}
         loading={loading}
-        countLabel="saldos de crédito"
-        emptyMessage="Nenhum saldo de crédito encontrado"
+        countLabel="credit balances"
+        emptyMessage="No credit balances found"
       />
     </div>
   );

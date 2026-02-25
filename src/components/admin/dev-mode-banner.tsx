@@ -18,7 +18,7 @@ export function DevModeBanner() {
           <AlertTriangle className="h-3.5 w-3.5" />
         </div>
         <span className="tracking-tight">
-          Você está visualizando o painel admin no <span className="font-extrabold uppercase tracking-tighter">modo de desenvolvimento</span>.
+          You are viewing the admin panel in <span className="font-extrabold uppercase tracking-tighter">development mode</span>.
         </span>
       </div>
       <Button
@@ -26,7 +26,7 @@ export function DevModeBanner() {
         size="icon"
         className="h-7 w-7 rounded-full text-amber-950 hover:bg-amber-950/10 dark:text-amber-50 dark:hover:bg-white/10"
         onClick={() => setDevMode(false)}
-        aria-label="Desativar modo de desenvolvimento"
+        aria-label="Disable development mode"
       >
         <X className="h-4 w-4" />
       </Button>

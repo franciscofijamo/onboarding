@@ -33,9 +33,9 @@ export default function SubscribePage() {
       <SimpleTopbar />
       <main className="container mx-auto max-w-5xl px-6 py-12">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-semibold tracking-tight mb-3 text-foreground">Escolha seu plano</h1>
+          <h1 className="text-3xl font-semibold tracking-tight mb-3 text-foreground">Choose your plan</h1>
           <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-            Selecione o plano ideal para suas necessidades. Todos os planos incluem acesso completo à plataforma.
+            Select the plan that fits your needs. All plans include full platform access.
           </p>
         </div>
 
@@ -45,8 +45,8 @@ export default function SubscribePage() {
               <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium text-foreground">Acesso Imediato</p>
-              <p className="text-sm text-muted-foreground">Comece a usar agora</p>
+              <p className="font-medium text-foreground">Instant Access</p>
+              <p className="text-sm text-muted-foreground">Start using right away</p>
             </div>
           </div>
           <div className="flex items-center gap-4 p-5 rounded-xl bg-card border shadow-sm">
@@ -54,8 +54,8 @@ export default function SubscribePage() {
               <Shield className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium text-foreground">Pagamento Seguro</p>
-              <p className="text-sm text-muted-foreground">PIX, Boleto ou Cartão</p>
+              <p className="font-medium text-foreground">Secure Payment</p>
+              <p className="text-sm text-muted-foreground">M-Pesa or Card</p>
             </div>
           </div>
           <div className="flex items-center gap-4 p-5 rounded-xl bg-card border shadow-sm">
@@ -63,8 +63,8 @@ export default function SubscribePage() {
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-medium text-foreground">Cancele a Qualquer Momento</p>
-              <p className="text-sm text-muted-foreground">Sem fidelidade</p>
+              <p className="font-medium text-foreground">Cancel Anytime</p>
+              <p className="text-sm text-muted-foreground">No commitment</p>
             </div>
           </div>
         </div>
@@ -73,10 +73,10 @@ export default function SubscribePage() {
           <CardHeader className="px-0 pt-0 pb-6">
             <CardTitle className="flex items-center gap-2 text-xl">
               <CreditCard className="h-5 w-5" />
-              Planos Disponíveis
+              Available Plans
             </CardTitle>
             <CardDescription className="text-base">
-              Compare os planos e escolha o melhor para você.
+              Compare plans and choose the best one for you.
             </CardDescription>
           </CardHeader>
           <CardContent className="px-0">
@@ -85,7 +85,7 @@ export default function SubscribePage() {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-8">
-          Ao assinar, você concorda com nossos termos de serviço e política de privacidade.
+          By subscribing, you agree to our terms of service and privacy policy.
         </p>
       </main>
     </div>

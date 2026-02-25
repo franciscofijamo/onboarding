@@ -21,10 +21,10 @@ export function SimpleTopbar() {
           </SignedIn>
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="ghost" size="sm">Entrar</Button>
+              <Button variant="ghost" size="sm">Sign In</Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button size="sm">Inscrever-se</Button>
+              <Button size="sm">Sign Up</Button>
             </SignUpButton>
           </SignedOut>
         </div>

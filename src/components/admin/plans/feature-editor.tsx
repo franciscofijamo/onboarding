@@ -18,9 +18,9 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Label className="text-sm font-medium">Recursos em destaque</Label>
+          <Label className="text-sm font-medium">Highlighted features</Label>
           <p className="text-xs text-muted-foreground mt-1">
-            Liste os principais benefícios deste plano
+            List the main benefits of this plan
           </p>
         </div>
         <Button
@@ -31,7 +31,7 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
-          Adicionar
+          Add
         </Button>
       </div>
 
@@ -51,7 +51,7 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
                         <Input
                           value={feature.name}
                           onChange={(e) => onUpdate(feature.id, { name: e.target.value })}
-                          placeholder="Ex: Suporte 24/7"
+                          placeholder="e.g. 24/7 Support"
                           className="font-medium"
                         />
                       </div>
@@ -69,7 +69,7 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
                     <textarea
                       value={feature.description}
                       onChange={(e) => onUpdate(feature.id, { description: e.target.value })}
-                      placeholder="Descrição opcional do recurso"
+                      placeholder="Optional feature description"
                       rows={2}
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     />
@@ -84,12 +84,12 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
                           {feature.included ? (
                             <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                               <Check className="h-3 w-3" />
-                              Incluído no plano
+                              Included in plan
                             </span>
                           ) : (
                             <span className="flex items-center gap-1 text-muted-foreground">
                               <X className="h-3 w-3" />
-                              Não incluído
+                              Not included
                             </span>
                           )}
                         </Label>
@@ -112,9 +112,9 @@ export function FeatureEditor({ features, onAdd, onUpdate, onRemove }: FeatureEd
                 <Plus className="h-5 w-5 text-muted-foreground" />
               </div>
             </div>
-            <p className="text-sm font-medium">Nenhum recurso cadastrado</p>
+            <p className="text-sm font-medium">No features added</p>
             <p className="text-xs text-muted-foreground">
-              Adicione recursos para destacar os benefícios deste plano
+              Add features to highlight the benefits of this plan
             </p>
           </div>
         </Card>

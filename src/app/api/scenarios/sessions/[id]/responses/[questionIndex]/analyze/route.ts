@@ -319,7 +319,8 @@ export async function POST(
       }, { status: 502 })
     }
 
-    const score = typeof feedback.nota_geral === 'number' ? feedback.nota_geral : 5
+    const score = typeof feedback.overall_score === 'number' ? feedback.overall_score
+      : typeof feedback.nota_geral === 'number' ? feedback.nota_geral : 5
 
     await db.workplaceScenarioResponse.update({
       where: { id: response.id },
@@ -417,41 +418,66 @@ INSTRUCTIONS:
 3. List prioritized improvement areas
 4. Provide a model response (how they should ideally respond)
 5. Check for common Business English mistakes
+6. CRITICAL: Annotate the transcript with word-level feedback. For each annotation, provide the EXACT text from the transcript that should be highlighted, the type of annotation, and a short comment. This is the most important part of the analysis.
+
+ANNOTATION TYPES:
+- "grammar_error": Grammatical mistakes (wrong tense, subject-verb disagreement, missing articles, etc.)
+- "vocabulary": Vocabulary issues or suggestions for better/more professional word choice
+- "good_usage": Excellent word choice, professional phrasing, or strong business English
+- "filler": Filler words and hesitations (um, uh, like, you know, etc.)
+- "structure": Sentence structure issues (run-on sentences, awkward phrasing, unclear meaning)
+- "pronunciation_hint": Words that are commonly mispronounced (inferred from transcript patterns)
+
+ANNOTATION RULES:
+- The "text" field must be an EXACT substring from the transcript (case-sensitive match)
+- If the same text appears multiple times, annotate the first occurrence
+- Provide 5-20 annotations covering a mix of errors AND good usage
+- Keep comments concise (under 15 words)
+- For grammar_error and vocabulary types, include a "suggestion" field with the corrected text
+- Annotations should cover the full transcript, not just the beginning
 
 RESPONSE FORMAT (strict JSON):
 {
-  "nota_geral": <number 1-10>,
-  "status": "<COMPETITIVO|REQUER_MELHORIAS|CRITICO>",
-  "criterios": [
+  "overall_score": <number 1-10>,
+  "status": "<STRONG|NEEDS_IMPROVEMENT|CRITICAL>",
+  "transcript_annotations": [
     {
-      "nome": "<criterion name>",
-      "nota": <number 1-10>,
-      "justificativa": "<detailed analysis>"
+      "text": "<exact substring from transcript>",
+      "type": "<grammar_error|vocabulary|good_usage|filler|structure|pronunciation_hint>",
+      "comment": "<short explanation>",
+      "suggestion": "<corrected/improved text or null>"
     }
   ],
-  "pontos_fortes": [
+  "criteria": [
     {
-      "titulo": "<title>",
-      "descricao": "<description>",
-      "citacao": "<quote from transcript>"
+      "name": "<criterion name>",
+      "score": <number 1-10>,
+      "justification": "<detailed analysis>"
     }
   ],
-  "pontos_melhoria": [
+  "strengths": [
     {
-      "prioridade": "<CRITICO|IMPORTANTE|RECOMENDADO>",
-      "problema": "<description>",
-      "recomendacao": "<what to do>",
-      "impacto_esperado": "<how it improves the response>"
+      "title": "<title>",
+      "description": "<description>",
+      "quote": "<quote from transcript>"
     }
   ],
-  "resposta_modelo": "<how the user should ideally respond in this scenario>",
-  "dicas_comunicacao": [
+  "improvements": [
+    {
+      "priority": "<CRITICAL|IMPORTANT|RECOMMENDED>",
+      "issue": "<description>",
+      "recommendation": "<what to do>",
+      "expected_impact": "<how it improves the response>"
+    }
+  ],
+  "model_response": "<how the user should ideally respond in this scenario>",
+  "communication_tips": [
     "<specific tip about improving workplace communication>"
   ],
-  "comentario_final": {
-    "sintese": "<overall summary>",
-    "top_3_prioridades": ["<priority 1>", "<priority 2>", "<priority 3>"],
-    "nivel_prontidao": "<BAIXO|MEDIO|ALTO>"
+  "final_comment": {
+    "summary": "<overall summary>",
+    "top_3_priorities": ["<priority 1>", "<priority 2>", "<priority 3>"],
+    "readiness_level": "<LOW|MEDIUM|HIGH>"
   }
 }
 

@@ -65,7 +65,7 @@ async function handleAdminPlanUpdate(
 ) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const params = await ctx.params
   const identifier = decodeURIComponent(params.clerkId || '')
@@ -91,12 +91,12 @@ async function handleAdminPlanUpdate(
       billingSource?: string | null
     }
     const current = await findPlanByIdentifier(body.planId ?? identifier)
-    if (!current) return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (!current) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     const data: Record<string, unknown> = {}
     if (body.billingSource !== undefined) data.billingSource = normalizeBillingSource(body.billingSource)
     if (body.newClerkId != null) {
       const newId = String(body.newClerkId).trim()
-      if (!newId || !isValidClerkPlanId(newId)) return NextResponse.json({ error: 'newClerkId inválido' }, { status: 400 })
+      if (!newId || !isValidClerkPlanId(newId)) return NextResponse.json({ error: 'Invalid newClerkId' }, { status: 400 })
       data.clerkId = newId
     }
     if (body.clerkId !== undefined) {
@@ -126,11 +126,11 @@ async function handleAdminPlanUpdate(
       clerkName: updated.clerkName || null,
     } })
   } catch (e) {
-    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
-    if (String((e as { code?: string })?.code) === 'P2002') return NextResponse.json({ error: 'newClerkId já existe' }, { status: 409 })
+    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    if (String((e as { code?: string })?.code) === 'P2002') return NextResponse.json({ error: 'newClerkId already exists' }, { status: 409 })
     console.error('[admin/plans] update error', e)
-    const message = e instanceof Error ? e.message : 'Falha ao atualizar plano'
-    return NextResponse.json({ error: message || 'Falha ao atualizar plano' }, { status: 400 })
+    const message = e instanceof Error ? e.message : 'Failed to update plan'
+    return NextResponse.json({ error: message || 'Failed to update plan' }, { status: 400 })
   }
 }
 
@@ -140,20 +140,20 @@ async function handleAdminPlanDelete(
 ) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const params = await ctx.params
   const identifier = decodeURIComponent(params.clerkId || '')
   try {
     const plan = await findPlanByIdentifier(identifier)
-    if (!plan) return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     await db.plan.delete({ where: { id: plan.id } })
     return NextResponse.json({ ok: true })
   } catch (e) {
-    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     console.error('[admin/plans] delete error', e)
-    const message = e instanceof Error ? e.message : 'Falha ao remover plano'
-    return NextResponse.json({ error: message || 'Falha ao remover plano' }, { status: 400 })
+    const message = e instanceof Error ? e.message : 'Failed to delete plan'
+    return NextResponse.json({ error: message || 'Failed to delete plan' }, { status: 400 })
   }
 }
 

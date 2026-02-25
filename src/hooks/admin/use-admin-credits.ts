@@ -124,8 +124,8 @@ export function useAdjustCredits() {
       const amount = Math.abs(variables.adjustment);
 
       toast({
-        title: "Créditos ajustados",
-        description: `${adjustmentType === 'add' ? '+' : '-'}${amount} créditos`
+        title: "Credits adjusted",
+        description: `${adjustmentType === 'add' ? '+' : '-'}${amount} credits`
       });
     },
     onSettled: () => {

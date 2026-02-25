@@ -27,7 +27,7 @@ export function PlanGrid({ plans, currentPlanId }: PlanGridProps) {
   if (!tiers.length) {
     return (
       <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-        Nenhum plano ativo disponível no momento.
+        No active plans available at the moment.
       </div>
     )
   }
@@ -88,10 +88,10 @@ export function PlanGrid({ plans, currentPlanId }: PlanGridProps) {
           )
         }
 
-        const periodLabel = effectivePeriod === 'yearly' ? 'anual' : 'mensal'
+        const periodLabel = effectivePeriod === 'yearly' ? 'yearly' : 'monthly'
         const toggledDifferent = billingPeriod !== effectivePeriod
         const buttonLabel = toggledDifferent
-          ? `${cta.label} (${periodLabel} disponível)`
+          ? `${cta.label} (${periodLabel} available)`
           : `${cta.label} (${periodLabel})`
 
         const handleSubscribe = () => {

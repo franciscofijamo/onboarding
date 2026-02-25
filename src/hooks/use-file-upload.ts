@@ -61,12 +61,12 @@ export function useFileUpload() {
           } catch {
             setAttachments(prev => prev.map(a => 
               a.id === id 
-                ? { ...a, status: 'error', error: 'Resposta inválida do servidor' } 
+                ? { ...a, status: 'error', error: 'Invalid server response' } 
                 : a
             ))
           }
         } else {
-          let msg = 'Falha no upload'
+          let msg = 'Upload failed'
           try { 
             msg = (JSON.parse(xhr.responseText)?.error) || msg 
           } catch {}

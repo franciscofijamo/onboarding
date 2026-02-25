@@ -36,11 +36,11 @@ export function useInviteUser() {
     onSuccess: (data, variables) => {
       const status = (data as { status?: string })?.status || 'ok';
       if (status === 'invited') {
-        toast({ title: 'Convite enviado', description: variables.email });
+        toast({ title: 'Invitation sent', description: variables.email });
       } else if (status === 'exists') {
-        toast({ title: 'Usuário existe', description: 'Usuário já está no sistema' });
+        toast({ title: 'User exists', description: 'User is already in the system' });
       } else {
-        toast({ title: 'Sucesso', description: 'Usuário processado' });
+        toast({ title: 'Success', description: 'User processed' });
       }
 
       // Invalidate both invitations and users queries

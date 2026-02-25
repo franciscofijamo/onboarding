@@ -39,7 +39,7 @@ export const site = {
     twitter: '@standout',
   },
   support: {
-    email: 'suporte@standout.app',
+    email: 'support@standout.app',
   },
   analytics: {
     gtmId: process.env.NEXT_PUBLIC_GTM_ID,

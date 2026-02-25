@@ -37,8 +37,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Painel do Administrador</h1>
-          <p className="text-muted-foreground mt-2">Visão geral do sistema e análises</p>
+          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-muted-foreground mt-2">System overview and analytics</p>
         </div>
         <div />
       </div>
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total de Usuários</p>
+              <p className="text-muted-foreground text-sm">Total Users</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {stats?.totalUsers || 0}
               </p>
@@ -57,14 +57,14 @@ export default function AdminDashboard() {
           <div className="mt-4 flex items-center text-sm">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
             <span className="text-green-500">+12%</span>
-            <span className="text-muted-foreground ml-2">do último mês</span>
+            <span className="text-muted-foreground ml-2">from last month</span>
           </div>
         </Card>
 
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Usuários Ativos</p>
+              <p className="text-muted-foreground text-sm">Active Users</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {stats?.activeUsers || 0}
               </p>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
           <div className="mt-4 flex items-center text-sm">
             <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
             <span className="text-green-500">+8%</span>
-            <span className="text-muted-foreground ml-2">da última semana</span>
+            <span className="text-muted-foreground ml-2">from last week</span>
           </div>
         </Card>
       </div>
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-foreground">MRR</h2>
-              <p className="text-sm text-muted-foreground">Receita Recorrente Mensal</p>
+              <p className="text-sm text-muted-foreground">Monthly Recurring Revenue</p>
             </div>
             {stats?.mrrSeries && <DeltaBadge series={stats.mrrSeries} goodWhenPositive />}
           </div>
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-foreground">ARR</h2>
-              <p className="text-sm text-muted-foreground">Receita Recorrente Anual</p>
+              <p className="text-sm text-muted-foreground">Annual Recurring Revenue</p>
             </div>
             {stats?.arrSeries && <DeltaBadge series={stats.arrSeries} goodWhenPositive />}
           </div>
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Churn</h2>
-              <p className="text-sm text-muted-foreground">Taxa de cancelamento de clientes</p>
+              <p className="text-sm text-muted-foreground">Customer cancellation rate</p>
             </div>
             {stats?.churnSeries && <DeltaBadge series={stats.churnSeries} goodWhenPositive={false} suffix="%" />}
           </div>
@@ -138,11 +138,9 @@ function DeltaBadge({ series, goodWhenPositive = true, suffix = "" }: { series: 
           ? 'border-red-500/20 bg-red-500/10 text-red-600'
           : 'border-muted bg-muted/50 text-foreground/60')
       }
-      title="Variação mês a mês"
+      title="Month-over-month change"
     >
       {`${sign}${deltaPct.toFixed(1)}${suffix} MoM`}
     </span>
   )
 }
-
-// Removed seed/backfill demo buttons to simplify admin surface

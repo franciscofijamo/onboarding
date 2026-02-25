@@ -9,7 +9,7 @@ import { withApiLogging } from '@/lib/logging/api'
 async function handleAdminSettingsGet() {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const featureCosts = await getEffectiveFeatureCosts()
@@ -24,7 +24,7 @@ async function handleAdminSettingsGet() {
 async function handleAdminSettingsPut(req: Request) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
@@ -71,7 +71,7 @@ async function handleAdminSettingsPut(req: Request) {
     return NextResponse.json({ featureCosts, planCredits, billingPlans })
   } catch (e) {
     console.error('PUT /api/admin/settings error', e)
-    return NextResponse.json({ error: 'Dados inválidos' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
   }
 }
 

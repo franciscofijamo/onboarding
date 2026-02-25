@@ -43,21 +43,21 @@ export function CancelSubscriptionDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao cancelar assinatura");
+        throw new Error(data.error || "Error cancelling subscription");
       }
 
-      toast.success("Assinatura cancelada", {
-        description: `Você ainda terá acesso até ${data.effectiveUntil
-          ? new Date(data.effectiveUntil).toLocaleDateString("pt-BR")
-          : "o fim do período atual"
+      toast.success("Subscription cancelled", {
+        description: `You will still have access until ${data.effectiveUntil
+          ? new Date(data.effectiveUntil).toLocaleDateString("en-US")
+          : "the end of the current period"
           }`,
       });
 
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       setOpen(false);
     } catch (error) {
-      toast.error("Erro ao cancelar", {
-        description: error instanceof Error ? error.message : "Tente novamente",
+      toast.error("Cancellation failed", {
+        description: error instanceof Error ? error.message : "Please try again",
       });
     } finally {
       setIsLoading(false);
@@ -69,10 +69,10 @@ export function CancelSubscriptionDialog({
       <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400">
         <XCircle className="h-4 w-4" />
         <span>
-          Cancelamento agendado para{" "}
+          Cancellation scheduled for{" "}
           {effectiveUntil
-            ? new Date(effectiveUntil).toLocaleDateString("pt-BR")
-            : "o fim do período"}
+            ? new Date(effectiveUntil).toLocaleDateString("en-US")
+            : "the end of the period"}
         </span>
       </div>
     );
@@ -87,34 +87,34 @@ export function CancelSubscriptionDialog({
           className="text-white hover:bg-red-700 border-0"
         >
           <XCircle className="h-4 w-4 mr-2 shrink-0" />
-          Cancelar Assinatura
+          Cancel Subscription
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Cancelar Assinatura</AlertDialogTitle>
+          <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>
-              Você está prestes a cancelar sua assinatura do plano{" "}
-              <strong>{planName}</strong>.
+              You are about to cancel your subscription to the{" "}
+              <strong>{planName}</strong> plan.
             </p>
             <p>
-              Você continuará tendo acesso a todos os recursos e créditos até{" "}
+              You will continue to have access to all features and credits until{" "}
               <strong>
                 {effectiveUntil
-                  ? new Date(effectiveUntil).toLocaleDateString("pt-BR")
-                  : "o fim do período atual"}
+                  ? new Date(effectiveUntil).toLocaleDateString("en-US")
+                  : "the end of the current period"}
               </strong>
-              . Após essa data, sua conta será revertida para o plano gratuito.
+              . After that date, your account will revert to the free plan.
             </p>
             <p className="text-orange-600 dark:text-orange-400">
-              Essa ação não pode ser desfeita automaticamente. Para reativar,
-              você precisará assinar novamente.
+              This action cannot be automatically undone. To reactivate,
+              you will need to subscribe again.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Manter Assinatura</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>Keep Subscription</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
@@ -126,10 +126,10 @@ export function CancelSubscriptionDialog({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Cancelando...
+                Cancelling...
               </>
             ) : (
-              "Confirmar Cancelamento"
+              "Confirm Cancellation"
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

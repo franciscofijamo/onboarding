@@ -72,7 +72,7 @@ export function PricingCard({ tier, billingPeriod, renderAction }: PricingCardPr
         {tier.features.length > 0 && (
           <div className="pt-6 border-t border-zinc-100 flex-1">
             <p className="text-sm font-medium text-zinc-700 mb-4">
-              {tier.description ? tier.description.split('.')[0] + ':' : 'Funcionalidades:'}
+              {tier.description ? tier.description.split('.')[0] + ':' : 'Features:'}
             </p>
             <FeatureList features={tier.features} />
           </div>

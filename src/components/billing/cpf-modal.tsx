@@ -65,7 +65,7 @@ export function CpfModal({ open, onOpenChange, onConfirm, isLoading }: CpfModalP
     e.preventDefault()
 
     if (!validateCpfCnpj(cpfCnpj)) {
-      setError('CPF ou CNPJ inválido')
+      setError('Invalid CPF or CNPJ')
       return
     }
 
@@ -78,15 +78,15 @@ export function CpfModal({ open, onOpenChange, onConfirm, isLoading }: CpfModalP
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Informações de pagamento</DialogTitle>
+            <DialogTitle>Payment information</DialogTitle>
             <DialogDescription>
-              Para prosseguir com o pagamento, precisamos do seu CPF ou CNPJ.
-              Você poderá escolher a forma de pagamento (PIX, Boleto ou Cartão) na próxima etapa.
+              To proceed with payment, we need your CPF or CNPJ.
+              You will be able to choose the payment method (PIX, Boleto, or Card) in the next step.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="cpfCnpj">CPF ou CNPJ</Label>
+              <Label htmlFor="cpfCnpj">CPF or CNPJ</Label>
               <Input
                 id="cpfCnpj"
                 placeholder="000.000.000-00"
@@ -99,10 +99,10 @@ export function CpfModal({ open, onOpenChange, onConfirm, isLoading }: CpfModalP
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Processando...' : 'Continuar'}
+              {isLoading ? 'Processing...' : 'Continue'}
             </Button>
           </DialogFooter>
         </form>

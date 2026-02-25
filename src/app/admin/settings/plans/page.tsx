@@ -176,8 +176,8 @@ export default function BillingPlansPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Planos de Assinatura</h1>
-        <p className="text-muted-foreground mt-2">Gerencie os planos de assinatura e configure créditos mensais</p>
+        <h1 className="text-3xl font-bold text-foreground">Subscription Plans</h1>
+        <p className="text-muted-foreground mt-2">Manage subscription plans and configure monthly credits</p>
       </div>
 
       <PlanSummaryCards totalPlans={planCount} activePlans={activePlanCount} />
@@ -186,9 +186,9 @@ export default function BillingPlansPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Planos ativos</CardTitle>
+              <CardTitle>Active Plans</CardTitle>
               <CardDescription className="mt-1">
-                Cadastre planos de assinatura e configure ofertas personalizadas para seus clientes.
+                Create subscription plans and configure custom offers for your clients.
               </CardDescription>
             </div>
           </div>

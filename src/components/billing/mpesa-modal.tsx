@@ -42,7 +42,7 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
     e.preventDefault()
     const normalized = normalizeMsisdn(phone)
     if (!isValidVodacomMsisdn(normalized)) {
-      setError('Número Vodacom inválido. Use +25884xxxxxxx ou +25885xxxxxxx')
+      setError('Invalid Vodacom number. Use +25884xxxxxxx or +25885xxxxxxx')
       return
     }
     onConfirm(normalized)
@@ -53,15 +53,15 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
       <DialogContent className="sm:max-w-[525px]">
         <div className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>Pagamento via M-Pesa</DialogTitle>
+            <DialogTitle>M-Pesa Payment</DialogTitle>
             <DialogDescription>
-              Insira o número de celular Vodacom para receber o pedido de pagamento.
+              Enter your Vodacom phone number to receive the payment request.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
             <div className="space-y-4">
-              <Label htmlFor="digit-0">Número Vodacom</Label>
+              <Label htmlFor="digit-0">Vodacom Number</Label>
               <div className="flex items-center gap-2 justify-center">
                 <span className="text-muted-foreground font-semibold text-lg select-none">+258</span>
                 <div className="flex gap-1.5">
@@ -130,14 +130,14 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
               className="text-white hover:bg-red-700 border-0"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={isLoading || phone.length < 9}
               className="bg-zinc-900 text-white hover:bg-zinc-800"
             >
-              {isLoading ? 'Processando...' : 'Continuar'}
+              {isLoading ? 'Processing...' : 'Continue'}
             </Button>
           </DialogFooter>
         </div>

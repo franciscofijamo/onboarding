@@ -34,20 +34,20 @@ import { cn } from "@/lib/utils";
 type Item = { title: string; href: string; icon: ElementType; requiresDevMode?: boolean };
 
 const overview: Item[] = [
-  { title: "Painel", href: "/admin", icon: LayoutDashboard },
-  { title: "Configurações iniciais", href: "/admin/onboarding", icon: HeartPlus, requiresDevMode: true },
+  { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { title: "Initial Setup", href: "/admin/onboarding", icon: HeartPlus, requiresDevMode: true },
 ];
 const management: Item[] = [
-  { title: "Usuários", href: "/admin/users", icon: Users },
-  { title: "Créditos", href: "/admin/credits", icon: CreditCard },
-  { title: "Armazenamento", href: "/admin/storage", icon: CreditCard },
+  { title: "Users", href: "/admin/users", icon: Users },
+  { title: "Credits", href: "/admin/credits", icon: CreditCard },
+  { title: "Storage", href: "/admin/storage", icon: CreditCard },
 ];
 const reports: Item[] = [
-  { title: "Histórico de Uso", href: "/admin/usage", icon: Activity },
+  { title: "Usage History", href: "/admin/usage", icon: Activity },
 ];
 const settings: Item[] = [
-  { title: "Custos por Funcionalidade", href: "/admin/settings/features", icon: SlidersHorizontal },
-  { title: "Planos de Assinatura", href: "/admin/settings/plans", icon: DollarSign },
+  { title: "Feature Costs", href: "/admin/settings/features", icon: SlidersHorizontal },
+  { title: "Subscription Plans", href: "/admin/settings/plans", icon: DollarSign },
 ];
 
 function NavList({ items, pathname, devMode }: { items: Item[]; pathname: string; devMode: boolean }) {
@@ -103,15 +103,15 @@ export function AdminSidebar() {
               id="dev-mode-toggle"
               checked={devMode}
               onCheckedChange={setDevMode}
-              aria-label="Ativar modo de desenvolvimento"
+              aria-label="Enable development mode"
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            {devMode ? "Recursos de setup liberados." : "Ative para ver configurações extras em modo de desenvolvimento."}
+            {devMode ? "Setup features unlocked." : "Enable to see extra development mode settings."}
           </p>
         </div>
         <SidebarGroup>
-          <SidebarGroupLabel>Visão Geral</SidebarGroupLabel>
+          <SidebarGroupLabel>Overview</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavList items={overview} pathname={pathname} devMode={devMode} />
           </SidebarGroupContent>
@@ -120,21 +120,21 @@ export function AdminSidebar() {
         <SidebarSeparator />
 
         <SidebarGroup>
-          <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavList items={management} pathname={pathname} devMode={devMode} />
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Relatórios</SidebarGroupLabel>
+          <SidebarGroupLabel>Reports</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavList items={reports} pathname={pathname} devMode={devMode} />
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <NavList items={settings} pathname={pathname} devMode={devMode} />
           </SidebarGroupContent>

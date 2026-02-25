@@ -40,11 +40,11 @@ export function CookieConsent() {
       <div className="mx-auto max-w-[900px] rounded-t-xl border bg-card/95 p-4 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/75">
         <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-muted-foreground">
-            Nós usamos cookies para melhorar sua experiência, analisar o uso e entregar conteúdo relevante. Ao clicar em Aceitar, você concorda com nosso uso de cookies.
+            We use cookies to improve your experience, analyze usage, and deliver relevant content. By clicking Accept, you agree to our use of cookies.
           </p>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={onAccept}>
-              Aceitar
+              Accept
             </Button>
           </div>
         </div>

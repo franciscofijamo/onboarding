@@ -64,7 +64,7 @@ function validateAsaasMinimumValue(cents: number | null, currency: string): { va
   if (cents < minCents) {
     return {
       valid: false,
-      error: `O valor mínimo aceito pela Asaas é R$ ${ASAAS_MIN_VALUE.toFixed(2)}. Valor informado: R$ ${(cents / 100).toFixed(2)}. Use R$ 0,00 para planos gratuitos.`
+      error: `Minimum value accepted by Asaas is R$ ${ASAAS_MIN_VALUE.toFixed(2)}. Value entered: R$ ${(cents / 100).toFixed(2)}. Use R$ 0.00 for free plans.`
     }
   }
 
@@ -74,7 +74,7 @@ function validateAsaasMinimumValue(cents: number | null, currency: string): { va
 async function handleAdminPlansGet() {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const plans = await db.plan.findMany({ orderBy: { createdAt: 'asc' } })
   return NextResponse.json({
@@ -109,7 +109,7 @@ function isValidClerkPlanId(clerkId: string) {
 async function handleAdminPlansPost(req: Request) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   try {
     const body = await req.json().catch(() => ({})) as {
@@ -138,9 +138,9 @@ async function handleAdminPlansPost(req: Request) {
     const clerkName = body.clerkName != null ? String(body.clerkName).trim() : null
     const clerkId = (billingSource === 'clerk' && rawClerkId) ? rawClerkId : null
     if (billingSource === 'clerk' && (!clerkId || !isValidClerkPlanId(clerkId))) {
-      return NextResponse.json({ error: 'clerkId inválido' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid clerkId' }, { status: 400 })
     }
-    if (!name) return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
+    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
 
     // Validate Asaas minimum values
     const monthlyPriceCents = toCents(body.priceMonthlyCents)
@@ -149,18 +149,18 @@ async function handleAdminPlansPost(req: Request) {
     const currency = body.currency ? String(body.currency).trim().toLowerCase() : 'brl'
     const monthlyValidation = validateAsaasMinimumValue(monthlyPriceCents, currency)
     if (!monthlyValidation.valid) {
-      return NextResponse.json({ error: `Preço mensal: ${monthlyValidation.error}` }, { status: 400 })
+      return NextResponse.json({ error: `Monthly price: ${monthlyValidation.error}` }, { status: 400 })
     }
 
     const yearlyValidation = validateAsaasMinimumValue(yearlyPriceCents, currency)
     if (!yearlyValidation.valid) {
-      return NextResponse.json({ error: `Preço anual: ${yearlyValidation.error}` }, { status: 400 })
+      return NextResponse.json({ error: `Yearly price: ${yearlyValidation.error}` }, { status: 400 })
     }
 
     // Validate currency - only BRL is supported by Asaas
     if (currency !== 'brl' && currency !== 'mzn') {
       return NextResponse.json({
-        error: 'Apenas as moedas BRL (Asaas) e MZN (M-Pesa) são aceitas.'
+        error: 'Only BRL (Asaas) and MZN (M-Pesa) currencies are accepted.'
       }, { status: 400 })
     }
 
@@ -212,15 +212,15 @@ async function handleAdminPlansPost(req: Request) {
       } }, { status: 201 })
     } catch (e: unknown) {
       if (String((e as { code?: string })?.code) === 'P2002') {
-        return NextResponse.json({ error: 'clerkId já existe' }, { status: 409 })
+        return NextResponse.json({ error: 'clerkId already exists' }, { status: 409 })
       }
       console.error('[admin/plans] create failed', e)
       throw e
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Falha ao criar plano'
+    const message = error instanceof Error ? error.message : 'Failed to create plan'
     console.error('[admin/plans] create error', error)
-    return NextResponse.json({ error: message || 'Falha ao criar plano' }, { status: 400 })
+    return NextResponse.json({ error: message || 'Failed to create plan' }, { status: 400 })
   }
 }
 
@@ -234,7 +234,7 @@ async function findPlanByIdentifier(identifier: string) {
 async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerkId: string }> }) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const params = await ctx.params
   const identifier = decodeURIComponent(params.clerkId || '')
@@ -260,12 +260,12 @@ async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerk
       billingSource?: string | null
     }
     const current = await findPlanByIdentifier(body.planId ?? identifier)
-    if (!current) return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (!current) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     const data: Prisma.PlanUpdateInput = {}
     if (body.billingSource !== undefined) data.billingSource = normalizeBillingSource(body.billingSource)
     if (body.newClerkId != null) {
       const newId = String(body.newClerkId).trim()
-      if (!newId || !isValidClerkPlanId(newId)) return NextResponse.json({ error: 'newClerkId inválido' }, { status: 400 })
+      if (!newId || !isValidClerkPlanId(newId)) return NextResponse.json({ error: 'Invalid newClerkId' }, { status: 400 })
       data.clerkId = newId
     }
     if (body.clerkId !== undefined) {
@@ -279,7 +279,7 @@ async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerk
     const currency = body.currency === null ? 'brl' : String(body.currency).trim().toLowerCase()
       if (currency !== 'brl' && currency !== 'mzn') {
         return NextResponse.json({
-          error: 'Apenas as moedas BRL (Asaas) e MZN (M-Pesa) são aceitas.'
+          error: 'Only BRL (Asaas) and MZN (M-Pesa) currencies are accepted.'
         }, { status: 400 })
       }
       data.currency = currency
@@ -290,7 +290,7 @@ async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerk
       const monthlyPriceCents = body.priceMonthlyCents === null ? null : toCents(body.priceMonthlyCents)
       const monthlyValidation = validateAsaasMinimumValue(monthlyPriceCents, (data.currency as string) || current.currency || 'brl')
       if (!monthlyValidation.valid) {
-        return NextResponse.json({ error: `Preço mensal: ${monthlyValidation.error}` }, { status: 400 })
+        return NextResponse.json({ error: `Monthly price: ${monthlyValidation.error}` }, { status: 400 })
       }
       data.priceMonthlyCents = monthlyPriceCents
     }
@@ -299,7 +299,7 @@ async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerk
       const yearlyPriceCents = body.priceYearlyCents === null ? null : toCents(body.priceYearlyCents)
       const yearlyValidation = validateAsaasMinimumValue(yearlyPriceCents, (data.currency as string) || current.currency || 'brl')
       if (!yearlyValidation.valid) {
-        return NextResponse.json({ error: `Preço anual: ${yearlyValidation.error}` }, { status: 400 })
+        return NextResponse.json({ error: `Yearly price: ${yearlyValidation.error}` }, { status: 400 })
       }
       data.priceYearlyCents = yearlyPriceCents
     }
@@ -325,29 +325,29 @@ async function handleAdminPlansPut(_req: Request, ctx: { params: Promise<{ clerk
     } })
   } catch (e: unknown) {
     const errorCode = (e as { code?: string })?.code;
-    if (String(errorCode) === 'P2025') return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
-    if (String(errorCode) === 'P2002') return NextResponse.json({ error: 'newClerkId já existe' }, { status: 409 })
+    if (String(errorCode) === 'P2025') return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    if (String(errorCode) === 'P2002') return NextResponse.json({ error: 'newClerkId already exists' }, { status: 409 })
     console.error('[admin/plans] update error', e)
-    const message = e instanceof Error ? e.message : 'Falha ao atualizar plano'
-    return NextResponse.json({ error: message || 'Falha ao atualizar plano' }, { status: 400 })
+    const message = e instanceof Error ? e.message : 'Failed to update plan'
+    return NextResponse.json({ error: message || 'Failed to update plan' }, { status: 400 })
   }
 }
 
 async function handleAdminPlansDelete(_req: Request, ctx: { params: Promise<{ clerkId: string }> }) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const params = await ctx.params
   const identifier = decodeURIComponent(params.clerkId || '')
   try {
     const plan = await findPlanByIdentifier(identifier)
-    if (!plan) return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
+    if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
     await db.plan.delete({ where: { id: plan.id } })
     return NextResponse.json({ ok: true })
   } catch (e: unknown) {
-    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plano não encontrado' }, { status: 404 })
-    return NextResponse.json({ error: 'Falha ao remover plano' }, { status: 400 })
+    if (String((e as { code?: string })?.code) === 'P2025') return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Failed to delete plan' }, { status: 400 })
   }
 }
 

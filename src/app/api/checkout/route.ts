@@ -121,25 +121,25 @@ export async function POST(request: NextRequest) {
 
         if (paymentProvider === 'asaas') {
             if (!cpfCnpj) {
-                return NextResponse.json({ error: 'CPF/CNPJ é obrigatório' }, { status: 400 });
+                return NextResponse.json({ error: 'CPF/CNPJ is required' }, { status: 400 });
             }
 
             if (currency !== 'brl') {
                 return NextResponse.json({
-                    error: 'Este plano não está disponível para compra. Apenas planos em BRL (Real brasileiro) podem ser processados pelo Asaas.'
+                    error: 'This plan is not available for purchase. Only BRL (Brazilian Real) plans can be processed by Asaas.'
                 }, { status: 400 });
             }
 
             // All subscriptions use UNDEFINED billing type
             // This allows customers to choose payment method (PIX, Boleto, or Credit Card) on the invoice
             if (billingType !== 'UNDEFINED') {
-                return NextResponse.json({ error: 'Forma de pagamento inválida' }, { status: 400 });
+                return NextResponse.json({ error: 'Invalid payment method' }, { status: 400 });
             }
 
             // Validate minimum value required by Asaas (R$ 5.00)
             if (price < ASAAS_MIN_VALUE) {
                 return NextResponse.json({
-                    error: `O valor mínimo para assinaturas é R$ ${ASAAS_MIN_VALUE.toFixed(2)}. O plano selecionado tem valor de R$ ${price.toFixed(2)}.`
+                    error: `Minimum subscription value is R$ ${ASAAS_MIN_VALUE.toFixed(2)}. Selected plan value is R$ ${price.toFixed(2)}.`
                 }, { status: 400 });
             }
         }
@@ -158,15 +158,15 @@ export async function POST(request: NextRequest) {
 
             const normalized = normalizeMsisdn(String(phoneNumber || ''));
             if (!normalized || !isValidVodacomMsisdn(normalized)) {
-                return NextResponse.json({ error: 'Número Vodacom inválido. Use formato +25884xxxxxxx ou +25885xxxxxxx.' }, { status: 400 });
+                return NextResponse.json({ error: 'Invalid Vodacom number. Use format +25884xxxxxxx or +25885xxxxxxx.' }, { status: 400 });
             }
 
             if (!priceCents || priceCents <= 0) {
-                return NextResponse.json({ error: 'Valor inválido para cobrança' }, { status: 400 });
+                return NextResponse.json({ error: 'Invalid charge amount' }, { status: 400 });
             }
 
             if (priceCents % 100 !== 0) {
-                return NextResponse.json({ error: 'O valor do plano deve ser inteiro em MZN (sem centavos).' }, { status: 400 });
+                return NextResponse.json({ error: 'Plan value must be a whole number in MZN (no cents).' }, { status: 400 });
             }
 
             const amount = String(priceCents / 100);
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
                 });
 
                 return NextResponse.json({
-                    error: (errBody as { output_ResponseDesc?: string })?.output_ResponseDesc || 'Erro ao comunicar com o M-Pesa',
+                    error: (errBody as { output_ResponseDesc?: string })?.output_ResponseDesc || 'Error communicating with M-Pesa',
                     code: (errBody as { output_ResponseCode?: string })?.output_ResponseCode || 'ERROR',
                 }, { status });
             }
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
 
             if ((body as { output_ResponseCode?: string }).output_ResponseCode !== 'INS-0') {
                 return NextResponse.json({
-                    error: (body as { output_ResponseDesc?: string }).output_ResponseDesc || 'Pagamento não autorizado',
+                    error: (body as { output_ResponseDesc?: string }).output_ResponseDesc || 'Payment not authorized',
                     code: (body as { output_ResponseCode?: string }).output_ResponseCode || 'UNKNOWN',
                 }, { status: 400 });
             }
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
         const { isSandbox } = ASAAS_CONFIG;
         let asaasCustomerId = isSandbox ? dbUser.asaasCustomerIdSandbox : dbUser.asaasCustomerIdProduction;
 
-        // Se já tem cliente Asaas mas não tem CPF salvo, atualiza
+        // If customer already exists in Asaas but CPF is not saved, update it
         if (asaasCustomerId && !dbUser.cpfCnpj) {
             await asaasClient.updateCustomer(asaasCustomerId, { cpfCnpj });
             await prisma.user.update({
@@ -304,7 +304,7 @@ export async function POST(request: NextRequest) {
 
             if (existingCustomer) {
                 asaasCustomerId = existingCustomer.id;
-                // Atualizar CPF se não existir no cliente
+                // Update CPF if it doesn't exist on the customer
                 if (!existingCustomer.cpfCnpj) {
                     await asaasClient.updateCustomer(asaasCustomerId, { cpfCnpj });
                 }
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
                 asaasCustomerId = newCustomer.id;
             }
 
-            // Salvar CPF no banco
+            // Save CPF to database
             await prisma.user.update({
                 where: { id: dbUser.id },
                 data: { cpfCnpj },
@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
             console.error('Failed to get payment URL after retries for subscription:', subscription.id);
             // Return subscription ID so frontend can show a message
             return NextResponse.json({ 
-                error: 'Pagamento está sendo processado. Por favor, aguarde alguns segundos e tente novamente.',
+                error: 'Payment is being processed. Please wait a few seconds and try again.',
                 subscriptionId: subscription.id 
             }, { status: 202 });
         }

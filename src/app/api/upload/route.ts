@@ -10,16 +10,16 @@ export const runtime = 'nodejs'
 async function handleUpload(req: Request) {
   try {
     const { userId } = await auth()
-    if (!userId) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const form = await req.formData()
     const file = form.get('file') as File | null
-    if (!file) return NextResponse.json({ error: 'Nenhum arquivo' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
     const maxMb = Number(process.env.BLOB_MAX_SIZE_MB || '25')
     const maxBytes = Math.max(1, maxMb) * 1024 * 1024 // default 25MB (configurable)
     if (file.size > maxBytes) {
-      return NextResponse.json({ error: `Arquivo muito grande (máx ${maxMb}MB)` }, { status: 413 })
+      return NextResponse.json({ error: `File too large (max ${maxMb}MB)` }, { status: 413 })
     }
 
     const ext = file.name?.split('.').pop()?.toLowerCase() || 'bin'
@@ -58,7 +58,7 @@ async function handleUpload(req: Request) {
     })
   } catch (err) {
     console.error('Upload failed:', err)
-    return NextResponse.json({ error: 'Falha no upload' }, { status: 500 })
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
 

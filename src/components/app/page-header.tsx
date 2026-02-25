@@ -15,7 +15,7 @@ export function PageHeader({ className }: PageHeaderProps) {
   const pathname = usePathname();
   const { metadata } = usePageMetadata();
   
-  // Gerar breadcrumbs automaticamente se não forem fornecidos
+  // Auto-generate breadcrumbs if not provided
   const generateAutoBreadcrumbs = (): BreadcrumbItem[] => {
     const segments = pathname.split("/").filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [
@@ -40,7 +40,7 @@ export function PageHeader({ className }: PageHeaderProps) {
   const breadcrumbs = metadata.breadcrumbs || generateAutoBreadcrumbs();
   const showBreadcrumbs = metadata.showBreadcrumbs !== false;
   
-  // Se não houver título e descrição, não renderizar nada
+  // If there's no title or description, don't render anything
   if (!metadata.title && !metadata.description && !showBreadcrumbs) {
     return null;
   }
@@ -69,7 +69,7 @@ export function PageHeader({ className }: PageHeaderProps) {
         </nav>
       )}
       
-      {/* Título e Descrição */}
+      {/* Title and Description */}
       {(metadata.title || metadata.description) && (
         <div>
           {metadata.title && (

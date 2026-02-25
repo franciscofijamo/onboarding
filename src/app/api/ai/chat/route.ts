@@ -55,24 +55,24 @@ async function handleChatPost(req: Request) {
       // Pre-parse to also include in credits usage details if valid
       const parsed = BodySchema.safeParse(await req.json())
       if (!parsed.success) {
-        return NextResponse.json({ error: 'Corpo da requisição inválido', issues: parsed.error.flatten() }, { status: 400 })
+        return NextResponse.json({ error: 'Invalid request body', issues: parsed.error.flatten() }, { status: 400 })
       }
       const { model, messages, temperature = 0.4, attachments } = parsed.data
 
       if (!isAllowedModel(model)) {
-        return NextResponse.json({ error: 'Modelo não permitido' }, { status: 400 })
+        return NextResponse.json({ error: 'Model not allowed' }, { status: 400 })
       }
 
       // quick key presence check
       if (!process.env.OPENROUTER_API_KEY) {
-        return NextResponse.json({ error: 'Chave API ausente para OpenRouter.' }, { status: 400 })
+        return NextResponse.json({ error: 'Missing API key for OpenRouter.' }, { status: 400 })
       }
 
       // If there are attachments, append a user message listing them so the model can reference the files
       const modelMessages: ModelMessage[] = convertToModelMessages(messages as UIMessage[])
       if (attachments && attachments.length > 0) {
         const lines = attachments.map(a => `- ${a.name}: ${a.url}`).join('\n')
-        const attachNote = `Anexos:\n${lines}`
+        const attachNote = `Attachments:\n${lines}`
         modelMessages.push({
           role: 'user',
           content: [{ type: 'text', text: attachNote }],
@@ -114,18 +114,18 @@ async function handleChatPost(req: Request) {
           reason: (providerErr as { message?: string })?.message || 'chat_provider_error',
           details: { model },
         })
-        return NextResponse.json({ error: 'Erro do provedor' }, { status: 502 })
+        return NextResponse.json({ error: 'Provider error' }, { status: 502 })
       }
     } catch (e: unknown) {
       if ((e as { message?: string })?.message === 'Unauthorized') {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
       throw e
     }
   } catch (e: unknown) {
     // Avoid leaking provider errors verbosely
-    console.error('Erro interno do servidor', e)
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+    console.error('Internal server error', e)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

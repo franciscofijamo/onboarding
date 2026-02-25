@@ -67,14 +67,14 @@ export function useUpdateUserCredits() {
       api.put(`/api/admin/users/${userId}/credits`, { credits }),
     onSuccess: (data, variables) => {
       toast({
-        title: "Créditos atualizados",
-        description: `Novo saldo: ${variables.credits}`
+        title: "Credits updated",
+        description: `New balance: ${variables.credits}`
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
     onError: (error) => {
       toast({
-        title: "Erro ao atualizar créditos",
+        title: "Error updating credits",
         description: error.message,
         variant: "destructive"
       });
@@ -89,12 +89,12 @@ export function useDeactivateUser() {
   return useMutation({
     mutationFn: (userId: string) => api.delete(`/api/admin/users/${userId}`),
     onSuccess: () => {
-      toast({ title: 'Usuário desativado' });
+      toast({ title: 'User deactivated' });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
     onError: (error) => {
       toast({
-        title: 'Falha ao desativar usuário',
+        title: 'Failed to deactivate user',
         description: error.message,
         variant: 'destructive'
       });
@@ -109,12 +109,12 @@ export function useActivateUser() {
   return useMutation({
     mutationFn: (userId: string) => api.post(`/api/admin/users/${userId}/activate`),
     onSuccess: () => {
-      toast({ title: 'Usuário ativado' });
+      toast({ title: 'User activated' });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
     onError: (error) => {
       toast({
-        title: 'Erro ao ativar usuário',
+        title: 'Error activating user',
         description: error.message,
         variant: 'destructive'
       });
@@ -140,14 +140,14 @@ export function useEditUser() {
     }) => api.put(`/api/admin/users/${userId}`, { name, email, planId }),
     onSuccess: (data, variables) => {
       toast({
-        title: 'Usuário atualizado',
-        description: variables.planId ? 'Plano e créditos atualizados' : (variables.email || variables.name)
+        title: 'User updated',
+        description: variables.planId ? 'Plan and credits updated' : (variables.email || variables.name)
       });
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
     onError: (error) => {
       toast({
-        title: 'Falha na atualização',
+        title: 'Update failed',
         description: error.message,
         variant: 'destructive'
       });
@@ -192,7 +192,7 @@ export function useSyncFromClerk() {
     },
     onError: (error) => {
       toast({
-        title: 'Falha na sincronização',
+        title: 'Sync failed',
         description: error.message,
         variant: 'destructive'
       });

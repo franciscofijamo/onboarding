@@ -35,6 +35,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnnotatedTranscript } from "@/components/scenarios/annotated-transcript";
 
 interface ResponseData {
   id: string;
@@ -49,14 +50,33 @@ interface ResponseData {
   createdAt: string;
 }
 
+interface TranscriptAnnotation {
+  text: string;
+  type: "grammar_error" | "vocabulary" | "good_usage" | "filler" | "structure" | "pronunciation_hint";
+  comment: string;
+  suggestion?: string | null;
+}
+
 interface FeedbackData {
-  nota_geral: number;
+  overall_score?: number;
+  nota_geral?: number;
   status: string;
-  criterios: { nome: string; nota: number; justificativa: string }[];
-  pontos_fortes: { titulo: string; descricao: string; citacao?: string }[];
-  pontos_melhoria: { prioridade: string; problema: string; recomendacao: string; impacto_esperado?: string }[];
+  transcript_annotations?: TranscriptAnnotation[];
+  criteria?: { name: string; score: number; justification: string }[];
+  criterios?: { nome: string; nota: number; justificativa: string }[];
+  strengths?: { title: string; description: string; quote?: string }[];
+  pontos_fortes?: { titulo: string; descricao: string; citacao?: string }[];
+  improvements?: { priority: string; issue: string; recommendation: string; expected_impact?: string }[];
+  pontos_melhoria?: { prioridade: string; problema: string; recomendacao: string; impacto_esperado?: string }[];
+  model_response?: string;
   resposta_modelo?: string;
+  communication_tips?: string[];
   dicas_comunicacao?: string[];
+  final_comment?: {
+    summary: string;
+    top_3_priorities: string[];
+    readiness_level: string;
+  };
   comentario_final?: {
     sintese: string;
     top_3_prioridades: string[];
@@ -630,19 +650,40 @@ export default function ScenarioSessionPage() {
                 </div>
               )}
 
-              {currentResponse.status === "ANALYZED" && currentResponse.feedback && (
+              {currentResponse.status === "ANALYZED" && currentResponse.feedback && (() => {
+                const fb = currentResponse.feedback;
+                const score = fb.overall_score ?? fb.nota_geral ?? 0;
+                const criteriaList = fb.criteria?.map(c => ({ name: c.name, score: c.score, justification: c.justification }))
+                  || fb.criterios?.map(c => ({ name: c.nome, score: c.nota, justification: c.justificativa }))
+                  || [];
+                const strengthsList = fb.strengths?.map(s => ({ title: s.title, description: s.description, quote: s.quote }))
+                  || fb.pontos_fortes?.map(s => ({ title: s.titulo, description: s.descricao, quote: s.citacao }))
+                  || [];
+                const improvementsList = fb.improvements?.map(i => ({ priority: i.priority, issue: i.issue, recommendation: i.recommendation, expected_impact: i.expected_impact }))
+                  || fb.pontos_melhoria?.map(i => ({ priority: i.prioridade, issue: i.problema, recommendation: i.recomendacao, expected_impact: i.impacto_esperado }))
+                  || [];
+                const modelResponse = fb.model_response || fb.resposta_modelo || "";
+                const tips = fb.communication_tips || fb.dicas_comunicacao || [];
+                const finalComment = fb.final_comment
+                  ? { summary: fb.final_comment.summary, priorities: fb.final_comment.top_3_priorities, readiness: fb.final_comment.readiness_level }
+                  : fb.comentario_final
+                  ? { summary: fb.comentario_final.sintese, priorities: fb.comentario_final.top_3_prioridades, readiness: fb.comentario_final.nivel_prontidao }
+                  : null;
+                const annotations = fb.transcript_annotations || [];
+
+                return (
                 <div className="mt-6 space-y-4">
                   <button
                     onClick={() => setExpandedFeedback(expandedFeedback === activeQuestion ? null : activeQuestion)}
                     className="w-full flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={cn("text-2xl font-bold", getScoreColor(currentResponse.feedback.nota_geral))}>
-                        {currentResponse.feedback.nota_geral}/10
+                      <div className={cn("text-2xl font-bold", getScoreColor(score))}>
+                        {score}/10
                       </div>
                       <div className="text-left">
-                        <p className="font-medium">{t("scenarios.feedbackTitle") || "Detailed Feedback"}</p>
-                        <p className="text-xs text-muted-foreground">{currentResponse.feedback.status}</p>
+                        <p className="font-medium">{"Detailed Feedback"}</p>
+                        <p className="text-xs text-muted-foreground">{fb.status}</p>
                       </div>
                     </div>
                     {expandedFeedback === activeQuestion ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -650,85 +691,100 @@ export default function ScenarioSessionPage() {
 
                   {expandedFeedback === activeQuestion && (
                     <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+
                       {currentResponse.transcript && (
-                        <div className="p-4 bg-muted/20 rounded-xl border border-border/50">
-                          <h4 className="font-medium mb-2 flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4" />
-                            {t("scenarios.transcript") || "Transcript"}
-                          </h4>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{currentResponse.transcript}</p>
+                        <div className="p-5 md:p-6 bg-muted/10 rounded-2xl border border-border/60 shadow-sm">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <MessageSquare className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-base">Your Response</h4>
+                              <p className="text-xs text-muted-foreground">Click highlighted words for detailed feedback</p>
+                            </div>
+                          </div>
+                          {annotations.length > 0 ? (
+                            <AnnotatedTranscript
+                              transcript={currentResponse.transcript}
+                              annotations={annotations}
+                            />
+                          ) : (
+                            <div className="p-5 bg-card rounded-xl border border-border/60">
+                              <p className="text-[15px] leading-[1.9] text-foreground/90 whitespace-pre-wrap">{currentResponse.transcript}</p>
+                            </div>
+                          )}
                         </div>
                       )}
 
                       <div className="grid gap-2">
                         <h4 className="font-medium flex items-center gap-2">
                           <Target className="h-4 w-4" />
-                          {t("scenarios.criteria") || "Evaluation Criteria"}
+                          Evaluation Criteria
                         </h4>
-                        {currentResponse.feedback.criterios?.map((c, i) => (
+                        {criteriaList.map((c, i) => (
                           <div key={i} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border/50">
                             <div>
-                              <span className="text-sm font-medium">{c.nome}</span>
-                              <p className="text-xs text-muted-foreground mt-0.5">{c.justificativa}</p>
+                              <span className="text-sm font-medium">{c.name}</span>
+                              <p className="text-xs text-muted-foreground mt-0.5">{c.justification}</p>
                             </div>
-                            <span className={cn("text-lg font-bold ml-4", getScoreColor(c.nota))}>{c.nota}</span>
+                            <span className={cn("text-lg font-bold ml-4", getScoreColor(c.score))}>{c.score}</span>
                           </div>
                         ))}
                       </div>
 
-                      {currentResponse.feedback.pontos_fortes?.length > 0 && (
+                      {strengthsList.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
                             <Star className="h-4 w-4 text-yellow-500" />
-                            {t("scenarios.strengths") || "Strengths"}
+                            Strengths
                           </h4>
-                          {currentResponse.feedback.pontos_fortes.map((p, i) => (
+                          {strengthsList.map((p, i) => (
                             <div key={i} className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800 mb-2">
-                              <p className="text-sm font-medium text-green-800 dark:text-green-300">{p.titulo}</p>
-                              <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">{p.descricao}</p>
-                              {p.citacao && <p className="text-xs italic text-green-600 dark:text-green-500 mt-1">&ldquo;{p.citacao}&rdquo;</p>}
+                              <p className="text-sm font-medium text-green-800 dark:text-green-300">{p.title}</p>
+                              <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">{p.description}</p>
+                              {p.quote && <p className="text-xs italic text-green-600 dark:text-green-500 mt-1">&ldquo;{p.quote}&rdquo;</p>}
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {currentResponse.feedback.pontos_melhoria?.length > 0 && (
+                      {improvementsList.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-orange-500" />
-                            {t("scenarios.improvements") || "Improvements"}
+                            Improvements
                           </h4>
-                          {currentResponse.feedback.pontos_melhoria.map((p, i) => (
+                          {improvementsList.map((p, i) => (
                             <div key={i} className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-2">
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="text-[10px] h-5">{p.prioridade}</Badge>
-                                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">{p.problema}</p>
+                                <Badge variant="outline" className="text-[10px] h-5">{p.priority}</Badge>
+                                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">{p.issue}</p>
                               </div>
-                              <p className="text-xs text-orange-700 dark:text-orange-400">{p.recomendacao}</p>
-                              {p.impacto_esperado && <p className="text-xs text-orange-600 dark:text-orange-500 mt-1">Impact: {p.impacto_esperado}</p>}
+                              <p className="text-xs text-orange-700 dark:text-orange-400">{p.recommendation}</p>
+                              {p.expected_impact && <p className="text-xs text-orange-600 dark:text-orange-500 mt-1">Impact: {p.expected_impact}</p>}
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {currentResponse.feedback.resposta_modelo && (
+                      {modelResponse && (
                         <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
                           <h4 className="font-medium mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-300">
                             <Lightbulb className="h-4 w-4" />
-                            {t("scenarios.modelResponse") || "Model Response"}
+                            Model Response
                           </h4>
-                          <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">{currentResponse.feedback.resposta_modelo}</p>
+                          <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">{modelResponse}</p>
                         </div>
                       )}
 
-                      {currentResponse.feedback.dicas_comunicacao?.length && currentResponse.feedback.dicas_comunicacao.length > 0 && (
+                      {tips.length > 0 && (
                         <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
                           <h4 className="font-medium mb-2 flex items-center gap-2 text-purple-800 dark:text-purple-300">
                             <MessageSquare className="h-4 w-4" />
-                            {t("scenarios.communicationTips") || "Communication Tips"}
+                            Communication Tips
                           </h4>
                           <ul className="space-y-1">
-                            {currentResponse.feedback.dicas_comunicacao.map((tip, i) => (
+                            {tips.map((tip, i) => (
                               <li key={i} className="text-sm text-purple-700 dark:text-purple-400 flex items-start gap-2">
                                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400 shrink-0" />
                                 {tip}
@@ -738,18 +794,18 @@ export default function ScenarioSessionPage() {
                         </div>
                       )}
 
-                      {currentResponse.feedback.comentario_final && (
+                      {finalComment && (
                         <div className="p-4 bg-muted/30 rounded-xl border border-border/50">
-                          <h4 className="font-medium mb-2">{t("scenarios.finalComment") || "Final Comment"}</h4>
-                          <p className="text-sm text-muted-foreground mb-2">{currentResponse.feedback.comentario_final.sintese}</p>
+                          <h4 className="font-medium mb-2">Final Comment</h4>
+                          <p className="text-sm text-muted-foreground mb-2">{finalComment.summary}</p>
                           <div className="flex items-center gap-2 mt-2">
-                            <Badge>{currentResponse.feedback.comentario_final.nivel_prontidao}</Badge>
+                            <Badge>{finalComment.readiness}</Badge>
                           </div>
-                          {currentResponse.feedback.comentario_final.top_3_prioridades?.length > 0 && (
+                          {finalComment.priorities?.length > 0 && (
                             <div className="mt-2">
-                              <p className="text-xs font-medium mb-1">{t("scenarios.topPriorities") || "Top Priorities"}:</p>
+                              <p className="text-xs font-medium mb-1">Top Priorities:</p>
                               <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-0.5">
-                                {currentResponse.feedback.comentario_final.top_3_prioridades.map((p, i) => (
+                                {finalComment.priorities.map((p, i) => (
                                   <li key={i}>{p}</li>
                                 ))}
                               </ol>
@@ -760,7 +816,8 @@ export default function ScenarioSessionPage() {
                     </div>
                   )}
                 </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 

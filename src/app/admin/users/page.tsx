@@ -81,7 +81,6 @@ export default function UsersPage() {
   const [editPlanId, setEditPlanId] = useState<string>("");
   const [confirmOpen, setConfirmOpen] = useState(false)
 
-  // TanStack Query hooks
   const { data: usersData, isLoading: usersLoading } = useAdminUsers({
     page: 1,
     pageSize: 1000,
@@ -116,8 +115,8 @@ export default function UsersPage() {
   };
 
   const promptAndUpdateCredits = async (userId: string, current?: number) => {
-    const prefix = 'Definir novo saldo de crédito'
-    const suffix = typeof current === 'number' ? ` (atual: ${current})` : ''
+    const prefix = 'Set new credit balance'
+    const suffix = typeof current === 'number' ? ` (current: ${current})` : ''
     const message = `${prefix}${suffix}:`
     const input = window.prompt(
       message,
@@ -126,14 +125,14 @@ export default function UsersPage() {
     if (input == null) return
     const value = Number(input)
     if (!Number.isFinite(value) || value < 0) {
-      alert('Por favor, insira um número não negativo válido')
+      alert('Please enter a valid non-negative number')
       return
     }
     updateCreditsMutation.mutate({ userId, credits: Math.floor(value) });
   }
 
   const handleDeactivateUser = (userId: string) => {
-    if (!confirm("Tem certeza de que deseja desativar este usuário?")) return;
+    if (!confirm("Are you sure you want to deactivate this user?")) return;
     deactivateUserMutation.mutate(userId);
   };
 
@@ -189,33 +188,33 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Usuários</h1>
-          <p className="text-muted-foreground mt-2">Gerenciar todos os usuários registrados</p>
+          <h1 className="text-3xl font-bold text-foreground">Users</h1>
+          <p className="text-muted-foreground mt-2">Manage all registered users</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={()=> setConfirmOpen(true)}>Sincronizar do Clerk</Button>
+          <Button variant="outline" onClick={()=> setConfirmOpen(true)}>Sync from Clerk</Button>
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Sincronizar Usuários do Clerk</AlertDialogTitle>
+                <AlertDialogTitle>Sync Users from Clerk</AlertDialogTitle>
                 <AlertDialogDescription asChild>
                   <div className="space-y-2 text-left">
-                    <p className="text-sm">Esta ação irá:</p>
+                    <p className="text-sm">This action will:</p>
                     <ul className="list-disc pl-5 space-y-1">
-                      <li>Criar usuários do Clerk que ainda não existem no banco de dados</li>
-                      <li>Atualizar nome e email de usuários existentes</li>
-                      <li>Criar saldo de créditos (0 por padrão) para novos usuários</li>
+                      <li>Create Clerk users that don't exist in the database yet</li>
+                      <li>Update name and email of existing users</li>
+                      <li>Create credit balance (0 by default) for new users</li>
                     </ul>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Nota: Planos e créditos são gerenciados pelo sistema de pagamentos (Asaas), não pelo Clerk.
+                      Note: Plans and credits are managed by the payment system, not by Clerk.
                     </p>
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={runSync} disabled={syncFromClerkMutation.isPending}>
-                  {syncFromClerkMutation.isPending ? 'Sincronizando...' : 'Sincronizar' }
+                  {syncFromClerkMutation.isPending ? 'Syncing...' : 'Sync' }
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -224,19 +223,19 @@ export default function UsersPage() {
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90">
                 <UserPlus className="h-4 w-4 mr-2" />
-                Adicionar Usuário
+                Add User
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="text-foreground">Convidar Usuário</DialogTitle>
+                <DialogTitle className="text-foreground">Invite User</DialogTitle>
                 <DialogDescription className="text-muted-foreground">
-                  Envie um convite para participar via e-mail. Se o usuário já existir, garantiremos que ele apareça na lista.
+                  Send an invitation to join via email. If the user already exists, we'll ensure they appear in the list.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="inviteEmail">E-mail</Label>
+                  <Label htmlFor="inviteEmail">Email</Label>
                   <Input
                     id="inviteEmail"
                     type="email"
@@ -247,7 +246,7 @@ export default function UsersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="inviteName">Nome (opcional)</Label>
+                  <Label htmlFor="inviteName">Name (optional)</Label>
                   <Input
                     id="inviteName"
                     placeholder="Jane Doe"
@@ -262,14 +261,14 @@ export default function UsersPage() {
                   variant="outline"
                   onClick={() => setInviteOpen(false)}
                 >
-                  Cancelar
+                  Cancel
                 </Button>
                 <Button
                   className="bg-primary hover:bg-primary/90"
                   onClick={handleInviteUser}
                   disabled={inviteUserMutation.isPending}
                 >
-                  {inviteUserMutation.isPending ? 'Enviando...' : 'Enviar Convite'}
+                  {inviteUserMutation.isPending ? 'Sending...' : 'Send Invite'}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -279,8 +278,8 @@ export default function UsersPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="users">Todos os Usuários</TabsTrigger>
-          <TabsTrigger value="invites">Convites Pendentes</TabsTrigger>
+          <TabsTrigger value="users">All Users</TabsTrigger>
+          <TabsTrigger value="invites">Pending Invitations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -289,7 +288,7 @@ export default function UsersPage() {
             columns={[
               {
                 key: "user",
-                header: "Usuário",
+                header: "User",
                 render: (item: unknown) => {
                   const user = item as User;
                   return (
@@ -300,7 +299,7 @@ export default function UsersPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">{user.name || "Sem nome"}</p>
+                        <p className="font-medium text-foreground">{user.name || "No name"}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
@@ -309,7 +308,7 @@ export default function UsersPage() {
               },
               {
                 key: "credits",
-                header: "Créditos",
+                header: "Credits",
                 render: (item: unknown) => {
                   const user = item as User;
                   return (
@@ -324,19 +323,19 @@ export default function UsersPage() {
               },
               {
                 key: "usage",
-                header: "Uso",
+                header: "Usage",
                 render: (item: unknown) => {
                   const user = item as User;
                   return (
                     <span className="text-muted-foreground">
-                      {user._count?.usageHistory || 0} operações
+                      {user._count?.usageHistory || 0} operations
                     </span>
                   );
                 },
               },
               {
                 key: "createdAt",
-                header: "Entrou",
+                header: "Joined",
                 render: (item: unknown) => {
                   const user = item as User;
                   return (
@@ -356,16 +355,16 @@ export default function UsersPage() {
                   const user = item as User;
                   return (
                     user.isActive !== false ? (
-                      <Badge variant="outline" className="border-green-500 text-green-500">Ativo</Badge>
+                      <Badge variant="outline" className="border-green-500 text-green-500">Active</Badge>
                     ) : (
-                      <Badge variant="outline" className="border-gray-500 text-gray-400">Inativo</Badge>
+                      <Badge variant="outline" className="border-gray-500 text-gray-400">Inactive</Badge>
                     )
                   );
                 },
               },
               {
                 key: "actions",
-                header: "Ações",
+                header: "Actions",
                 className: "text-right",
                 render: (item: unknown) => {
                   const user = item as User;
@@ -379,17 +378,17 @@ export default function UsersPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => openEdit(user)}>
                           <Edit className="h-4 w-4 mr-2" />
-                          Editar Usuário
+                          Edit User
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => promptAndUpdateCredits(user.id, user.creditBalance?.creditsRemaining)}
                         >
                           <CreditCard className="h-4 w-4 mr-2" />
-                          Ajustar Créditos
+                          Adjust Credits
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-gray-300 hover:text-white" onClick={() => { if (user.email) window.location.href = `mailto:${user.email}` }}>
                           <Mail className="h-4 w-4 mr-2" />
-                          Enviar E-mail
+                          Send Email
                         </DropdownMenuItem>
                         {user.isActive === false ? (
                           <DropdownMenuItem
@@ -397,7 +396,7 @@ export default function UsersPage() {
                             onClick={() => activateUserMutation.mutate(user.id)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Ativar Usuário
+                            Activate User
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem
@@ -405,7 +404,7 @@ export default function UsersPage() {
                             onClick={() => handleDeactivateUser(user.id)}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Desativar Usuário
+                            Deactivate User
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -415,13 +414,13 @@ export default function UsersPage() {
               },
             ]}
             searchable={true}
-            searchPlaceholder="Pesquisar usuários..."
+            searchPlaceholder="Search users..."
             searchKeys={["name", "email"]}
             searchTerm={searchTerm}
             onSearch={setSearchTerm}
             loading={loading}
-            countLabel="usuários"
-            emptyMessage="Nenhum usuário encontrado"
+            countLabel="users"
+            emptyMessage="No users found"
           />
         </TabsContent>
 
@@ -431,7 +430,7 @@ export default function UsersPage() {
             columns={[
               {
                 key: "emailAddress",
-                header: "E-mail",
+                header: "Email",
                 render: (item: unknown) => {
                   const inv = item as Invitation;
                   return <span className="text-foreground">{inv.emailAddress}</span>;
@@ -453,7 +452,7 @@ export default function UsersPage() {
               },
               {
                 key: "createdAt",
-                header: "Convidado",
+                header: "Invited",
                 render: (item: unknown) => {
                   const inv = item as Invitation;
                   return (
@@ -465,7 +464,7 @@ export default function UsersPage() {
               },
               {
                 key: "expiresAt",
-                header: "Expira",
+                header: "Expires",
                 render: (item: unknown) => {
                   const inv = item as Invitation;
                   return (
@@ -477,7 +476,7 @@ export default function UsersPage() {
               },
               {
                 key: "actions",
-                header: "Ações",
+                header: "Actions",
                 className: "text-right",
                 render: (item: unknown) => {
                   const inv = item as Invitation;
@@ -491,18 +490,18 @@ export default function UsersPage() {
                         disabled={disabled || resendInvitationMutation.isPending}
                         onClick={() => resendInvitationMutation.mutate(inv.id)}
                       >
-                        {resendInvitationMutation.isPending ? 'Reenviando...' : 'Reenviar'}
+                        {resendInvitationMutation.isPending ? 'Resending...' : 'Resend'}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         disabled={disabled || revokeInvitationMutation.isPending}
                         onClick={() => {
-                          if (!confirm('Revogar este convite?')) return;
+                          if (!confirm('Revoke this invitation?')) return;
                           revokeInvitationMutation.mutate(inv.id);
                         }}
                       >
-                        {revokeInvitationMutation.isPending ? 'Revogando...' : 'Revogar'}
+                        {revokeInvitationMutation.isPending ? 'Revoking...' : 'Revoke'}
                       </Button>
                     </div>
                   );
@@ -511,67 +510,66 @@ export default function UsersPage() {
             ]}
             searchable={false}
             loading={invLoading}
-            countLabel="convites"
-            emptyMessage="Nenhum convite pendente"
+            countLabel="invitations"
+            emptyMessage="No pending invitations"
             headerContent={
               <Button
                 variant="outline"
-                onClick={() => {/* refresh will happen automatically through TanStack Query */}}
+                onClick={() => {}}
                 disabled={invLoading}
               >
-                {invLoading ? 'Atualizando...' : 'Atualizar'}
+                {invLoading ? 'Refreshing...' : 'Refresh'}
               </Button>
             }
           />
         </TabsContent>
       </Tabs>
 
-      {/* Edit User Dialog */}
       <Dialog open={editOpen} onOpenChange={(o)=>{ setEditOpen(o); if(!o){ setEditId(null) } }}>
         <DialogContent className="bg-gray-800 border-gray-700">
           <DialogHeader>
-            <DialogTitle className="text-white">Editar Usuário</DialogTitle>
-            <DialogDescription className="text-gray-400">Atualizar informações do perfil do usuário.</DialogDescription>
+            <DialogTitle className="text-white">Edit User</DialogTitle>
+            <DialogDescription className="text-gray-400">Update user profile information.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editName" className="text-gray-300">Nome</Label>
+              <Label htmlFor="editName" className="text-gray-300">Name</Label>
               <Input id="editName" className="bg-gray-900 border-gray-700 text-white" value={editName} onChange={(e)=>setEditName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editEmail" className="text-gray-300">E-mail</Label>
+              <Label htmlFor="editEmail" className="text-gray-300">Email</Label>
               <Input id="editEmail" type="email" className="bg-gray-900 border-gray-700 text-white" value={editEmail} onChange={(e)=>setEditEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editPlan" className="text-gray-300">Plano</Label>
+              <Label htmlFor="editPlan" className="text-gray-300">Plan</Label>
               <Select value={editPlanId || "none"} onValueChange={(val) => setEditPlanId(val === "none" ? "" : val)}>
                 <SelectTrigger id="editPlan" className="bg-gray-900 border-gray-700 text-white">
-                  <SelectValue placeholder="Selecione um plano" />
+                  <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="none" className="text-gray-300">Nenhum plano</SelectItem>
+                  <SelectItem value="none" className="text-gray-300">No plan</SelectItem>
                   {plans.filter(p => p.active).map((plan) => (
                     <SelectItem key={plan.id} value={plan.id} className="text-white">
-                      {plan.name} ({plan.credits} créditos)
+                      {plan.name} ({plan.credits} credits)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500">
-                Ao alterar o plano, os créditos do usuário serão automaticamente atualizados
+                Changing the plan will automatically update the user's credits
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Cancelar
+              Cancel
             </Button>
             <Button
               className="bg-primary hover:bg-primary/90"
               onClick={saveEdit}
               disabled={editUserMutation.isPending}
             >
-              {editUserMutation.isPending ? 'Salvando...' : 'Salvar'}
+              {editUserMutation.isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </DialogContent>

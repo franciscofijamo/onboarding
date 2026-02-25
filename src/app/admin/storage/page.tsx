@@ -18,7 +18,6 @@ export default function AdminStoragePage() {
   const [userFilter, setUserFilter] = useState<string>("")
   const [searchParams, setSearchParams] = useState({ q: "", type: "", userId: "" })
 
-  // Use TanStack Query hooks
   const { data: storageData, isLoading: loading, refetch } = useStorage({
     q: searchParams.q,
     type: searchParams.type,
@@ -44,11 +43,11 @@ export default function AdminStoragePage() {
   const userOptions = uniqueUsers.map(id => items.find(i => i.user?.id === id)!.user)
 
   const onDelete = async (id: string) => {
-    if (!confirm('Excluir este objeto? Isso removerá o acesso público e o marcará como excluído.')) return
+    if (!confirm('Delete this object? This will remove public access and mark it as deleted.')) return
     deleteStorageMutation.mutate(id, {
       onSuccess: () => {
-        toast({ title: 'Objeto excluído' })
-        refetch() // Refresh the data after deletion
+        toast({ title: 'Object deleted' })
+        refetch()
       }
     })
   }
@@ -64,36 +63,36 @@ export default function AdminStoragePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Armazenamento</h1>
-          <p className="text-muted-foreground mt-2">Navegue e gerencie os objetos enviados</p>
+          <h1 className="text-3xl font-bold text-foreground">Storage</h1>
+          <p className="text-muted-foreground mt-2">Browse and manage uploaded objects</p>
         </div>
         <Button variant="outline" onClick={() => refetch()} disabled={loading}>
-          <RefreshCw className="h-4 w-4 mr-2" /> Atualizar
+          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
         </Button>
       </div>
 
       <Card className="p-6">
         <form onSubmit={onSearch} className="flex flex-col md:flex-row gap-3 mb-4">
-          <Input className="flex-1" placeholder="Pesquisar por nome, tipo, URL, nome/email do usuário..." value={q} onChange={(e)=>setQ(e.target.value)} />
+          <Input className="flex-1" placeholder="Search by name, type, URL, user name/email..." value={q} onChange={(e)=>setQ(e.target.value)} />
           <Select value={typeFilter} onValueChange={(v)=>{ setTypeFilter(v === 'all' ? '' : v); }}>
-            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Todos os tipos" /></SelectTrigger>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="All types" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {uniqueTypes.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={userFilter} onValueChange={(v)=>{ setUserFilter(v === 'all' ? '' : v); }}>
-            <SelectTrigger className="w-[240px]"><SelectValue placeholder="Todos os usuários" /></SelectTrigger>
+            <SelectTrigger className="w-[240px]"><SelectValue placeholder="All users" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os usuários</SelectItem>
+              <SelectItem value="all">All users</SelectItem>
               {userOptions.map((u) => (
                 <SelectItem key={u.id} value={u.id}>{u.name || u.email || u.clerkId}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button type="submit" disabled={loading}>Pesquisar</Button>
+          <Button type="submit" disabled={loading}>Search</Button>
         </form>
       </Card>
 
@@ -102,7 +101,7 @@ export default function AdminStoragePage() {
         columns={[
           {
             key: "name",
-            header: "Nome",
+            header: "Name",
             render: (item: unknown) => {
               const i = item as StorageItem;
               return (
@@ -115,7 +114,7 @@ export default function AdminStoragePage() {
           },
           {
             key: "contentType",
-            header: "Tipo",
+            header: "Type",
             render: (item: unknown) => {
               const i = item as StorageItem;
               return <span className="text-muted-foreground">{i.contentType || '—'}</span>;
@@ -123,7 +122,7 @@ export default function AdminStoragePage() {
           },
           {
             key: "size",
-            header: "Tamanho",
+            header: "Size",
             render: (item: unknown) => {
               const i = item as StorageItem;
               return <span className="text-muted-foreground">{formatSize(i.size)}</span>;
@@ -131,12 +130,12 @@ export default function AdminStoragePage() {
           },
           {
             key: "user",
-            header: "Enviado por",
+            header: "Uploaded by",
             render: (item: unknown) => {
               const i = item as StorageItem;
               return (
                 <div className="flex flex-col">
-                  <span className="text-foreground">{i.user.name || 'Desconhecido'}</span>
+                  <span className="text-foreground">{i.user.name || 'Unknown'}</span>
                   <span className="text-xs text-muted-foreground">{i.user.email || i.user.clerkId}</span>
                 </div>
               );
@@ -144,7 +143,7 @@ export default function AdminStoragePage() {
           },
           {
             key: "createdAt",
-            header: "Data",
+            header: "Date",
             render: (item: unknown) => {
               const i = item as StorageItem;
               return <span className="text-muted-foreground">{new Date(i.createdAt).toLocaleString()}</span>;
@@ -152,7 +151,7 @@ export default function AdminStoragePage() {
           },
           {
             key: "actions",
-            header: "Ações",
+            header: "Actions",
             className: "text-right",
             render: (item: unknown) => {
               const i = item as StorageItem;
@@ -173,14 +172,14 @@ export default function AdminStoragePage() {
         ]}
         searchable={false}
         loading={loading}
-        countLabel="arquivos"
-        emptyMessage="Nenhum arquivo encontrado"
+        countLabel="files"
+        emptyMessage="No files found"
         headerContent={
           <div className="flex justify-center">
             {nextCursor ? (
-              <span className="text-xs text-muted-foreground">Mais resultados disponíveis - ajuste os filtros para refinar</span>
+              <span className="text-xs text-muted-foreground">More results available — adjust filters to refine</span>
             ) : (
-              <span className="text-xs text-muted-foreground">Não há mais resultados</span>
+              <span className="text-xs text-muted-foreground">No more results</span>
             )}
           </div>
         }

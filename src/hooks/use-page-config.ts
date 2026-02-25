@@ -4,22 +4,22 @@ import { useMemo } from "react";
 import { useSetPageMetadata, PageMetadata } from "@/contexts/page-metadata";
 
 /**
- * Hook helper para configurar metadados da página de forma mais simples
+ * Helper hook to configure page metadata in a simpler way
  * 
  * @example
- * // Uso básico
- * usePageConfig("Minha Página", "Descrição da página");
+ * // Basic usage
+ * usePageConfig("My Page", "Page description");
  * 
- * // Com breadcrumbs customizados
- * usePageConfig("Perfil", "Gerencie seu perfil", [
- *   { label: "Início", href: "/dashboard" },
- *   { label: "Perfil" }
+ * // With custom breadcrumbs
+ * usePageConfig("Profile", "Manage your profile", [
+ *   { label: "Home", href: "/dashboard" },
+ *   { label: "Profile" }
  * ]);
  * 
- * // Com objeto completo
+ * // With full object
  * usePageConfig({
  *   title: "Dashboard",
- *   description: "Visão geral",
+ *   description: "Overview",
  *   showBreadcrumbs: false
  * });
  */
@@ -28,7 +28,6 @@ export function usePageConfig(
   description?: string,
   breadcrumbs?: PageMetadata["breadcrumbs"]
 ) {
-  // Memoizar o objeto metadata para evitar recriações desnecessárias
   const metadata = useMemo<PageMetadata>(() => {
     return typeof titleOrConfig === "string"
       ? {

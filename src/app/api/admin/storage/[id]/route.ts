@@ -11,11 +11,11 @@ async function handleAdminStorageDelete(
 ) {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const { id } = await params
   const obj = await db.storageObject.findUnique({ where: { id } })
-  if (!obj || obj.deletedAt) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
+  if (!obj || obj.deletedAt) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   try {
     const storage = getStorageProvider()

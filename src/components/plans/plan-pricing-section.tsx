@@ -26,8 +26,8 @@ type PlanPricingSectionProps = {
 
 export function PlanPricingSection({
   tiers,
-  title = 'Preços simples e transparentes',
-  subtitle = 'Comece mensalmente ou economize com a cobrança anual.',
+  title = 'Simple, transparent pricing',
+  subtitle = 'Start monthly or save with annual billing.',
   className,
   layout = 'default',
   renderAction,

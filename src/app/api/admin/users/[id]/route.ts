@@ -13,33 +13,31 @@ async function handleAdminUserDelete(
     const { userId } = await auth();
 
     if (!userId || !(await isAdmin(userId))) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await ctx.params
     const existing = await db.user.findUnique({ where: { id } })
     if (!existing) {
-      return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     try {
       const updated = await db.user.update({ where: { id }, data: { isActive: false } })
       return NextResponse.json({ success: true, user: { id: updated.id, isActive: updated.isActive } })
     } catch (e: unknown) {
-      const msg = (e && ((e as { message?: string }).message || e.toString())) || 'Falha na atualização'
-      // Provide a clearer hint if the DB schema hasn't been migrated yet
+      const msg = (e && ((e as { message?: string }).message || e.toString())) || 'Update failed'
       if (msg.includes('isActive') || msg.toLowerCase().includes('column') || msg.toLowerCase().includes('unknown')) {
         return NextResponse.json(
-          { error: 'Schema do banco de dados desatualizado. Execute as migrações para adicionar `User.isActive` (npm run db:migrate).' },
+          { error: 'Database schema outdated. Run migrations to add `User.isActive` (npm run db:migrate).' },
           { status: 409 }
         )
       }
       throw e
     }
   } catch {
-    // console.error("Failed to delete user:", error);
     return NextResponse.json(
-      { error: "Falha ao excluir usuário" },
+      { error: "Failed to delete user" },
       { status: 500 }
     );
   }
@@ -60,23 +58,22 @@ async function handleAdminUserUpdate(
   try {
     const { userId } = await auth();
     if (!userId || !(await isAdmin(userId))) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json().catch(() => null);
     const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Dados inválidos", issues: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json({ error: "Invalid data", issues: parsed.error.flatten() }, { status: 400 });
     }
     const data = parsed.data;
 
     const { id } = await params;
     const existing = await db.user.findUnique({ where: { id } });
     if (!existing) {
-      return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // If planId is provided, validate it exists and update credits
     let planCredits: number | undefined;
     if (data.planId) {
       const plan = await db.plan.findUnique({
@@ -85,17 +82,16 @@ async function handleAdminUserUpdate(
       });
 
       if (!plan) {
-        return NextResponse.json({ error: "Plano não encontrado" }, { status: 404 });
+        return NextResponse.json({ error: "Plan not found" }, { status: 404 });
       }
 
       if (!plan.active) {
-        return NextResponse.json({ error: "Plano inativo" }, { status: 400 });
+        return NextResponse.json({ error: "Plan is inactive" }, { status: 400 });
       }
 
       planCredits = plan.credits;
     }
 
-    // Update user data
     const updated = await db.user.update({
       where: { id },
       data: {
@@ -112,7 +108,6 @@ async function handleAdminUserUpdate(
       },
     });
 
-    // Update credits if plan was changed
     if (data.planId && planCredits !== undefined) {
       await db.creditBalance.upsert({
         where: { userId: id },
@@ -132,7 +127,7 @@ async function handleAdminUserUpdate(
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Failed to update user:", error);
-    return NextResponse.json({ error: "Falha ao atualizar usuário" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
   }
 }
 

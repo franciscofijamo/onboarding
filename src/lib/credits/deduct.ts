@@ -31,7 +31,7 @@ export async function validateCreditsForFeature(
     }
     return { available, needed }
   } catch (error) {
-    console.error('Erro ao validar créditos:', error)
+    console.error('Error validating credits:', error)
     throw error
   }
 }
@@ -60,7 +60,7 @@ export async function deductCreditsForFeature({
               },
             })
           } catch (error) {
-            console.error('Erro ao criar saldo de créditos:', error)
+            console.error('Error creating credit balance:', error)
             throw error
           }
         }
@@ -76,7 +76,7 @@ export async function deductCreditsForFeature({
             },
           })
         } catch (error) {
-          console.error('Erro ao criar histórico de uso:', error)
+          console.error('Error creating usage history:', error)
           throw error
         }
 
@@ -92,21 +92,21 @@ export async function deductCreditsForFeature({
             throw new InsufficientCreditsError(creditsToUse, creditBalance.creditsRemaining)
           }
         } catch (error) {
-          console.error('Erro ao atualizar saldo de créditos:', error)
+          console.error('Error updating credit balance:', error)
           throw error
         }
 
         const after = await tx.creditBalance.findUnique({ where: { id: creditBalance.id } })
         return { creditsRemaining: after!.creditsRemaining }
       } catch (error) {
-        console.error('Erro na transação:', error)
+        console.error('Transaction error:', error)
         throw error
       }
     })
 
     return result
   } catch (error) {
-    console.error('Erro ao deduzir créditos:', error)
+    console.error('Error deducting credits:', error)
     throw error
   }
 }
@@ -164,7 +164,7 @@ export async function refundCreditsForFeature({
 
     return result
   } catch (error) {
-    console.error('Erro ao reembolsar créditos:', error)
+    console.error('Error refunding credits:', error)
     return null
   }
 }

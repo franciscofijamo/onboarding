@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 async function handlePlansRefresh() {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   return NextResponse.json({ message: 'Sync with Clerk is disabled. Please manage plans manually or via Asaas integration.' })

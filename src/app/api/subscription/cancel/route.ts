@@ -9,7 +9,7 @@ export async function POST() {
         const { userId } = await auth();
 
         if (!userId) {
-            return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const user = await db.user.findUnique({
@@ -17,7 +17,7 @@ export async function POST() {
         });
 
         if (!user) {
-            return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 });
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
         let currentPlan = null;
@@ -34,13 +34,13 @@ export async function POST() {
 
         if (isFreePlan) {
             return NextResponse.json({ 
-                error: 'Você não possui uma assinatura ativa para cancelar' 
+                error: 'You do not have an active subscription to cancel' 
             }, { status: 400 });
         }
 
         if (user.cancellationScheduled) {
             return NextResponse.json({ 
-                error: 'Sua assinatura já está agendada para cancelamento',
+                error: 'Your subscription is already scheduled for cancellation',
                 scheduledFor: user.billingPeriodEnd?.toISOString()
             }, { status: 400 });
         }
@@ -72,7 +72,7 @@ export async function POST() {
 
             return NextResponse.json({
                 success: true,
-                message: 'Assinatura cancelada com sucesso',
+                message: 'Subscription cancelled successfully',
                 effectiveUntil: user.billingPeriodEnd?.toISOString(),
             });
         }
@@ -83,7 +83,7 @@ export async function POST() {
 
         if (!customerId && !user.asaasCustomerId) {
             return NextResponse.json({ 
-                error: 'Cliente Asaas não encontrado' 
+                error: 'Asaas customer not found' 
             }, { status: 404 });
         }
 
@@ -97,7 +97,7 @@ export async function POST() {
                 if (!result.deleted) {
                     console.error(`[Cancel] Asaas did not confirm deletion for ${user.asaasSubscriptionId}`);
                     return NextResponse.json({ 
-                        error: 'Não foi possível cancelar a assinatura no provedor de pagamento. Tente novamente.' 
+                        error: 'Could not cancel the subscription with the payment provider. Please try again.' 
                     }, { status: 502 });
                 }
                 cancelledSubscriptionId = user.asaasSubscriptionId;
@@ -105,7 +105,7 @@ export async function POST() {
             } catch (asaasError) {
                 console.error('[Cancel] Asaas error:', asaasError);
                 return NextResponse.json({ 
-                    error: 'Erro ao comunicar com o provedor de pagamento. Tente novamente mais tarde.' 
+                    error: 'Error communicating with the payment provider. Please try again later.' 
                 }, { status: 502 });
             }
         } else if (effectiveCustomerId) {
@@ -118,7 +118,7 @@ export async function POST() {
                 if (activeSubscriptions.length === 0) {
                     console.error(`[Cancel] No active subscriptions found for customer ${effectiveCustomerId}`);
                     return NextResponse.json({ 
-                        error: 'Nenhuma assinatura ativa encontrada no provedor de pagamento. Entre em contato com o suporte se você acredita que isso é um erro.' 
+                        error: 'No active subscription found with the payment provider. Please contact support if you believe this is an error.' 
                     }, { status: 404 });
                 }
 
@@ -127,7 +127,7 @@ export async function POST() {
                     if (!result.deleted) {
                         console.error(`[Cancel] Asaas did not confirm deletion for ${sub.id}`);
                         return NextResponse.json({ 
-                            error: 'Não foi possível cancelar a assinatura no provedor de pagamento. Tente novamente.' 
+                            error: 'Could not cancel the subscription with the payment provider. Please try again.' 
                         }, { status: 502 });
                     }
                     cancelledSubscriptionId = sub.id;
@@ -136,20 +136,20 @@ export async function POST() {
             } catch (asaasError) {
                 console.error('[Cancel] Asaas error:', asaasError);
                 return NextResponse.json({ 
-                    error: 'Erro ao comunicar com o provedor de pagamento. Tente novamente mais tarde.' 
+                    error: 'Error communicating with the payment provider. Please try again later.' 
                 }, { status: 502 });
             }
         } else {
             console.error(`[Cancel] No subscription ID or customer ID found for user ${userId}`);
             return NextResponse.json({ 
-                error: 'Não foi possível encontrar informações de assinatura. Entre em contato com o suporte.' 
+                error: 'Could not find subscription information. Please contact support.' 
             }, { status: 404 });
         }
 
         if (!cancelledSubscriptionId) {
             console.error(`[Cancel] Failed to cancel subscription - no confirmation received for user ${userId}`);
             return NextResponse.json({ 
-                error: 'Não foi possível confirmar o cancelamento. Tente novamente.' 
+                error: 'Could not confirm the cancellation. Please try again.' 
             }, { status: 500 });
         }
 
@@ -181,13 +181,13 @@ export async function POST() {
 
         return NextResponse.json({
             success: true,
-            message: 'Assinatura cancelada com sucesso',
+            message: 'Subscription cancelled successfully',
             effectiveUntil: user.billingPeriodEnd?.toISOString(),
         });
     } catch (error) {
         console.error('[Cancel] Error:', error);
         return NextResponse.json(
-            { error: 'Erro ao cancelar assinatura' },
+            { error: 'Error cancelling subscription' },
             { status: 500 }
         );
     }

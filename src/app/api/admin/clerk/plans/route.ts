@@ -7,16 +7,16 @@ import { withApiLogging } from '@/lib/logging/api'
 async function handleAdminClerkPlans() {
   const { userId } = await auth()
   if (!userId || !(await isAdmin(userId))) {
-    return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
     const plans = await fetchCommercePlans()
     return NextResponse.json({ plans })
   } catch (error) {
-    const message = (error as Error)?.message || 'Falha ao obter planos do Clerk'
+    const message = (error as Error)?.message || 'Failed to fetch Clerk plans'
     const lower = message.toLowerCase()
-    const status = lower.includes('not configured') || lower.includes('não configurado') ? 501 : 502
+    const status = lower.includes('not configured') ? 501 : 502
     return NextResponse.json({ error: message }, { status })
   }
 }

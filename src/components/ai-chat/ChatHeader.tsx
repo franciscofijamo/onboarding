@@ -21,7 +21,7 @@ export function ChatHeader({
     <div className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-background/90 px-3 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-5 sm:py-4">
       <div className="flex flex-col gap-2">
         <span className="text-[11px] uppercase tracking-wide text-muted-foreground sm:text-[12px]">
-          Sessão atual
+          Current session
         </span>
       </div>
       <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
@@ -34,11 +34,11 @@ export function ChatHeader({
         />
         <Button
           variant="ghost"
-           aria-label="Limpar chat"
+           aria-label="Clear chat"
           onClick={onClearChat}
           className="ml-auto sm:ml-0"
         >
-          Reiniciar <Trash2 className="h-4 w-4" />
+          Restart <Trash2 className="h-4 w-4" />
         </Button>
       </div>
     </div>

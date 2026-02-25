@@ -139,7 +139,7 @@ export function PlansTable({
     },
     {
       key: 'credits',
-      header: 'Créditos/Mês',
+      header: 'Credits/Month',
       render: (plan: BillingPlan & { id: string }) => (
         <div className="font-mono text-sm">
           {plan.credits.toLocaleString()}
@@ -149,15 +149,15 @@ export function PlansTable({
     },
     {
       key: 'pricing',
-      header: 'Preços',
+      header: 'Pricing',
       render: (plan: BillingPlan & { id: string }) => (
         <div className="flex flex-col gap-1 text-sm">
           <div>
-            <span className="text-muted-foreground">Mensal: </span>
+            <span className="text-muted-foreground">Monthly: </span>
             {formatPrice(plan.priceMonthlyCents, plan.currency)}
           </div>
           <div>
-            <span className="text-muted-foreground">Anual: </span>
+            <span className="text-muted-foreground">Yearly: </span>
             {formatPrice(plan.priceYearlyCents, plan.currency)}
           </div>
         </div>
@@ -170,11 +170,11 @@ export function PlansTable({
       render: (plan: BillingPlan & { id: string }) => (
         <div className="flex flex-col gap-1">
           <Badge variant={plan.active ?? true ? 'default' : 'secondary'}>
-            {plan.active ?? true ? 'Ativo' : 'Inativo'}
+            {plan.active ?? true ? 'Active' : 'Inactive'}
           </Badge>
           {plan.highlight && (
             <Badge variant="outline" className="w-fit text-xs">
-              Destaque
+              Highlighted
             </Badge>
           )}
         </div>
@@ -194,18 +194,18 @@ export function PlansTable({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(plan.id, plan)}>
               <Edit className="h-4 w-4 mr-2" />
-              Editar
+              Edit
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onToggleActive(plan.id)}>
               {plan.active ?? true ? (
                 <>
                   <EyeOff className="h-4 w-4 mr-2" />
-                  Desativar
+                  Deactivate
                 </>
               ) : (
                 <>
                   <Eye className="h-4 w-4 mr-2" />
-                  Ativar
+                  Activate
                 </>
               )}
             </DropdownMenuItem>
@@ -214,7 +214,7 @@ export function PlansTable({
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Excluir
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -231,27 +231,27 @@ export function PlansTable({
         loading={loading}
         searchable={true}
         searchKeys={['name', 'clerkId', 'description']}
-        searchPlaceholder="Buscar planos..."
-        emptyMessage="Nenhum plano encontrado"
+        searchPlaceholder="Search plans..."
+        emptyMessage="No plans found"
         showCount={true}
-        countLabel="planos"
+        countLabel="plans"
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir plano?</AlertDialogTitle>
+            <AlertDialogTitle>Delete plan?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O plano "{planToDelete?.name}" será removido permanentemente.
+              This action cannot be undone. The plan "{planToDelete?.name}" will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Excluir
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

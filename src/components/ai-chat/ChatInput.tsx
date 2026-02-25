@@ -122,10 +122,10 @@ export function ChatInput({
                 variant="secondary"
                 size="sm"
                 className="gap-1 sm:gap-2"
-                aria-label="Parar geração"
+                aria-label="Stop generation"
               >
                 <Square className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Parar</span>
+                <span className="hidden sm:inline">Stop</span>
               </Button>
             ) : (
               <Button
