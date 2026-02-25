@@ -3,14 +3,14 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 
-const CreateResumeSchema = z.object({
+const CreateCoverLetterSchema = z.object({
   title: z.string().max(200).optional(),
   content: z.string().min(1).max(50000),
   fileUrl: z.string().url().optional(),
   filePath: z.string().optional(),
 })
 
-const UpdateResumeSchema = z.object({
+const UpdateCoverLetterSchema = z.object({
   id: z.string(),
   title: z.string().max(200).optional(),
   content: z.string().max(50000).optional(),
@@ -29,26 +29,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const parsed = CreateResumeSchema.safeParse(body)
+    const parsed = CreateCoverLetterSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', issues: parsed.error.flatten() }, { status: 400 })
     }
 
     const { title, content, fileUrl, filePath } = parsed.data
 
-    const resume = await db.resume.create({
+    const coverLetter = await db.coverLetter.create({
       data: {
         userId: user.id,
-        title: title || 'My Resume',
+        title: title || 'My Cover Letter',
         content,
         fileUrl,
         filePath,
       },
     })
 
-    return NextResponse.json({ resume }, { status: 201 })
+    return NextResponse.json({ coverLetter }, { status: 201 })
   } catch (error) {
-    console.error('Error creating resume:', error)
+    console.error('Error creating cover letter:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -65,14 +65,14 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const resumes = await db.resume.findMany({
+    const coverLetters = await db.coverLetter.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ resumes })
+    return NextResponse.json({ coverLetters })
   } catch (error) {
-    console.error('Error fetching resumes:', error)
+    console.error('Error fetching cover letters:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
@@ -90,19 +90,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const parsed = UpdateResumeSchema.safeParse(body)
+    const parsed = UpdateCoverLetterSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid input', issues: parsed.error.flatten() }, { status: 400 })
     }
 
-    const existing = await db.resume.findFirst({
+    const existing = await db.coverLetter.findFirst({
       where: { id: parsed.data.id, userId: user.id },
     })
     if (!existing) {
-      return NextResponse.json({ error: 'Resume not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Cover letter not found' }, { status: 404 })
     }
 
-    const resume = await db.resume.update({
+    const coverLetter = await db.coverLetter.update({
       where: { id: parsed.data.id },
       data: {
         ...(parsed.data.title !== undefined && { title: parsed.data.title }),
@@ -110,9 +110,9 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ resume })
+    return NextResponse.json({ coverLetter })
   } catch (error) {
-    console.error('Error updating resume:', error)
+    console.error('Error updating cover letter:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
