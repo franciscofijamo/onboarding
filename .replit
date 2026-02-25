@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "nix", "postgresql-16"]
+modules = ["web", "nix", "nodejs-22"]
 [agent]
 expertMode = true
 integrations = ["javascript_object_storage:2.0.0"]
