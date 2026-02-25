@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { Client } from '@replit/object-storage'
+import { Storage } from '@google-cloud/storage'
 
 export const runtime = 'nodejs'
 
@@ -51,15 +51,10 @@ export async function GET(
       return NextResponse.json({ error: 'Audio not found' }, { status: 404 })
     }
 
-    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || ''
-    const storageClient = new Client({ bucketId })
+    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || ''
+    const gcs = new Storage()
+    const [buffer] = await gcs.bucket(bucketId).file(response.audioPath).download()
 
-    const result = await storageClient.downloadAsBytes(response.audioPath)
-    if (!result.ok) {
-      return NextResponse.json({ error: 'Failed to download audio' }, { status: 500 })
-    }
-
-    const buffer = result.value[0]
     const contentType = getMimeType(response.audioPath)
 
     return new NextResponse(buffer, {

@@ -7,7 +7,7 @@ import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { wrapPromptWithLanguage } from '@/lib/ai-language'
 import { ScenarioResponseStatus } from '@/lib/prisma-types'
-import { Client } from '@replit/object-storage'
+import { Storage } from '@google-cloud/storage'
 import { execFile } from 'child_process'
 import { writeFile, readFile, unlink } from 'fs/promises'
 import { randomUUID } from 'crypto'
@@ -213,15 +213,13 @@ export async function POST(
       return NextResponse.json({ error: 'Audio file path not found' }, { status: 400 })
     }
 
-    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || ''
-    const storageClient = new Client({ bucketId })
+    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || ''
+    const gcs = new Storage()
+    const bucket = gcs.bucket(bucketId)
     let audioBuffer: Buffer
     try {
-      const result = await storageClient.downloadAsBytes(audioPath)
-      if (!result.ok) {
-        throw new Error(result.error?.message || 'Failed to download audio')
-      }
-      audioBuffer = result.value[0]
+      const [contents] = await bucket.file(audioPath).download()
+      audioBuffer = contents
     } catch (downloadErr) {
       console.error('Audio download error:', downloadErr)
       if (creditsDeducted) {

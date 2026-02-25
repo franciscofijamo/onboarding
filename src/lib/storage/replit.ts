@@ -1,29 +1,68 @@
-import { Client } from '@replit/object-storage'
+import { Storage } from '@google-cloud/storage'
 import type { StorageProvider, UploadResult, UploadOptions } from './types'
 
-/**
- * Implementação do StorageProvider usando o Replit App Storage SDK oficial.
- * Documentação: https://docs.replit.com/reference/object-storage-javascript-sdk
- */
 export class ReplitAppStorage implements StorageProvider {
   private readonly bucketId: string
-  private readonly client: Client
+  private readonly storage: Storage
+  private readonly bucket: ReturnType<Storage['bucket']>
 
   constructor(bucketId?: string) {
     const resolvedBucketId = bucketId || process.env.REPLIT_STORAGE_BUCKET_ID || ''
 
     if (!resolvedBucketId) {
-      throw new Error('REPLIT_STORAGE_BUCKET_ID não configurado')
+      throw new Error('REPLIT_STORAGE_BUCKET_ID is not configured')
     }
 
     this.bucketId = resolvedBucketId
-    this.client = new Client({ bucketId: this.bucketId })
+    this.storage = new Storage()
+    this.bucket = this.storage.bucket(this.bucketId)
   }
 
-  private buildPublicUrl(pathname: string) {
-    const customBase = process.env.REPLIT_STORAGE_PUBLIC_BASE_URL?.replace(/\/$/, '')
-    if (customBase) return `${customBase}/${pathname}`
-    return `https://storage.googleapis.com/${this.bucketId}/${pathname}`
+  async upload(
+    key: string,
+    file: File | Blob,
+    _options?: UploadOptions
+  ): Promise<UploadResult> {
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const gcsFile = this.bucket.file(key)
+
+    await gcsFile.save(buffer, {
+      contentType: (file as File).type || 'application/octet-stream',
+      resumable: false,
+    })
+
+    return {
+      url: `https://storage.googleapis.com/${this.bucketId}/${key}`,
+      pathname: key,
+    }
+  }
+
+  async delete(identifier: string): Promise<void> {
+    const objectName = this.extractPath(identifier)
+    const gcsFile = this.bucket.file(objectName)
+    try {
+      await gcsFile.delete({ ignoreNotFound: true })
+    } catch (error: unknown) {
+      const status = (error as { code?: number })?.code
+      if (status === 404) return
+      throw error
+    }
+  }
+
+  async getSignedUrl(key: string, expiresInMs = 60 * 60 * 1000): Promise<string> {
+    const gcsFile = this.bucket.file(key)
+    const [url] = await gcsFile.getSignedUrl({
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + expiresInMs,
+    })
+    return url
+  }
+
+  async downloadAsBuffer(key: string): Promise<Buffer> {
+    const gcsFile = this.bucket.file(key)
+    const [contents] = await gcsFile.download()
+    return contents
   }
 
   private extractPath(identifier: string) {
@@ -40,40 +79,6 @@ export class ReplitAppStorage implements StorageProvider {
     }
 
     return pathname
-  }
-
-  async upload(
-    key: string,
-    file: File | Blob,
-    _options?: UploadOptions
-  ): Promise<UploadResult> {
-    void _options
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const result = await this.client.uploadFromBytes(key, buffer)
-
-    if (!result.ok) {
-      const message = result.error?.message ?? 'erro desconhecido'
-      throw new Error(`Falha ao enviar arquivo para o Replit App Storage: ${message}`)
-    }
-
-    return {
-      url: this.buildPublicUrl(key),
-      pathname: key,
-    }
-  }
-
-  async delete(identifier: string): Promise<void> {
-    const objectName = this.extractPath(identifier)
-    const result = await this.client.delete(objectName, { ignoreNotFound: true })
-
-    if (!result.ok) {
-      if (result.error?.statusCode === 404) {
-        return
-      }
-
-      const message = result.error?.message ?? 'erro desconhecido'
-      throw new Error(`Falha ao deletar arquivo do Replit App Storage: ${message}`)
-    }
   }
 
   getProviderName(): string {
