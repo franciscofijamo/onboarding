@@ -1,0 +1,11 @@
+Coding Between the Cloud and the Earth
+
+I grew up in a community where "cloud" meant only the promise of rain for the crops, not data storage. As the son of farmers in a rural area, my childhood was marked by the uncertainty of nature. I watched my father lose entire harvests not for lack of effort, but for lack of timely information about pests. That sense of helplessness was the catalyst for my intellectual journey.
+
+My first contact with a computer, at age 14 in the school library, was a revelation. I realized the screen wasn't just a window to the world, but a control panel. If I could write the right instructions, I could bring predictability to chaos. This passion led me to be the first in my family to attend university, where I studied Computer Engineering.
+
+At university, however, I felt a cultural disconnect. The curriculum focused on creating software for banks and large Western corporations, ignoring the reality I came from. While my peers were building fintech apps, I spent my nights trying to adapt cheap humidity sensors to send SMS alerts to farmers. This duality—living between high academic technology and low rural technology—defined my professional identity.
+
+My professional career accelerated when I became a Tech Lead at a startup. There, I realized that imported technology often failed the "last mile". Leading teams taught me that innovation isn't just technical; it's empathetic. I vividly remember explaining to a farmer that the algorithm wasn't "guessing", but analyzing patterns. The spark of understanding in his eyes confirmed my mission: to be the translator between the complexity of silicon and the simplicity of the soil.
+
+I am applying for the Fulbright scholarship because I believe in the power of cultural exchange to solve global problems. I want to absorb the "maker" culture and fearless innovation of the United States, not to become an American, but to become a better citizen of my country. I want to prove that a programmer from a rural area can dialogue with the world's best scientists and bring solutions that respect both the code and the local culture. My journey began looking at the clouds waiting for rain; now, I want to use the digital "cloud" to ensure the harvest is never lost again.

@@ -1,0 +1,70 @@
+modules = ["nodejs-20", "web", "nix", "postgresql-16"]
+[agent]
+expertMode = true
+integrations = ["javascript_object_storage:2.0.0"]
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+NEXT_PUBLIC_APP_URL = "https://ff9b1350-ab95-4873-8db4-e8c106d13d36-00-1jn1cgw6rjuh2.picard.replit.dev"
+NEXT_PUBLIC_CLERK_SIGN_IN_URL = "/sign-in"
+NEXT_PUBLIC_CLERK_SIGN_UP_URL = "/sign-up"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = "/dashboard"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = "/dashboard"
+PAYMENT_PROVIDER = "auto"
+API_LOGGING = "false"
+NEXT_PUBLIC_API_LOGGING = "false"
+ADMIN_EMAILS = "valuu.apps@gmail.com"
+ADMIN_USER_IDS = ""
+BLOB_MAX_SIZE_MB = "25"
+MPESA_BASE_URL = "https://api.vm.co.mz:18352"
+MPESA_C2B_PATH = "/ipg/v1x/c2bPayment/singleStage/"
+MPESA_ORIGIN = "developer.mpesa.vm.co.mz"
+MPESA_SERVICE_PROVIDER_CODE = "901819"
+MPESA_TIMEOUT_MS = "65000"
+API_LOG_LEVEL = "warn"
+API_LOG_MIN_STATUS = "400"
+DEBUG_CLERK_SYNC = "0"
+IMAGE_DEBUG = "0"
+E2E_AUTH_BYPASS = "0"
+NEXT_PUBLIC_E2E_TEST = "0"
+ASAAS_API_URL = "https://sandbox.asaas.com/api/v3"
+STORAGE_PROVIDER = "replit"
+REPLIT_STORAGE_BUCKET_ID = "replit-objstore-8239f291-0ba7-468b-aa8b-362faa75daaa"
+FREE_CREDITS_ON_SIGNUP = "20"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]

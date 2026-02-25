@@ -1,0 +1,93 @@
+Uncaught (in promise) NotSupportedError: The element has no supported sources.
+toggleAudio @ page.tsx:680
+executeDispatch @ react-dom-client.development.js:20543
+runWithFiberInDEV @ react-dom-client.development.js:986
+processDispatchQueue @ react-dom-client.development.js:20593
+(anonymous) @ react-dom-client.development.js:21164
+batchedUpdates$1 @ react-dom-client.development.js:3377
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20747
+dispatchEvent @ react-dom-client.development.js:25693
+dispatchDiscreteEvent @ react-dom-client.development.js:25661
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
+Button @ button.tsx:61
+react_stack_bottom_frame @ react-dom-client.development.js:28038
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10501
+beginWork @ react-dom-client.development.js:12136
+runWithFiberInDEV @ react-dom-client.development.js:986
+performUnitOfWork @ react-dom-client.development.js:18997
+workLoopSync @ react-dom-client.development.js:18825
+renderRootSync @ react-dom-client.development.js:18806
+performWorkOnRoot @ react-dom-client.development.js:17835
+performSyncWorkOnRoot @ react-dom-client.development.js:20399
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:20241
+processRootScheduleInMicrotask @ react-dom-client.development.js:20280
+(anonymous) @ react-dom-client.development.js:20418
+<Button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
+FeedbackSection @ page.tsx:782
+react_stack_bottom_frame @ react-dom-client.development.js:28038
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10501
+beginWork @ react-dom-client.development.js:12136
+runWithFiberInDEV @ react-dom-client.development.js:986
+performUnitOfWork @ react-dom-client.development.js:18997
+workLoopSync @ react-dom-client.development.js:18825
+renderRootSync @ react-dom-client.development.js:18806
+performWorkOnRoot @ react-dom-client.development.js:17835
+performSyncWorkOnRoot @ react-dom-client.development.js:20399
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:20241
+processRootScheduleInMicrotask @ react-dom-client.development.js:20280
+(anonymous) @ react-dom-client.development.js:20418
+<FeedbackSection>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
+AudioSessionPage @ page.tsx:614
+react_stack_bottom_frame @ react-dom-client.development.js:28038
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10501
+beginWork @ react-dom-client.development.js:12136
+runWithFiberInDEV @ react-dom-client.development.js:986
+performUnitOfWork @ react-dom-client.development.js:18997
+workLoopSync @ react-dom-client.development.js:18825
+renderRootSync @ react-dom-client.development.js:18806
+performWorkOnRoot @ react-dom-client.development.js:17835
+performSyncWorkOnRoot @ react-dom-client.development.js:20399
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:20241
+processRootScheduleInMicrotask @ react-dom-client.development.js:20280
+(anonymous) @ react-dom-client.development.js:20418
+<AudioSessionPage>
+exports.jsx @ react-jsx-runtime.development.js:342
+ClientPageRoot @ client-page.tsx:83
+react_stack_bottom_frame @ react-dom-client.development.js:28038
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10501
+beginWork @ react-dom-client.development.js:12085
+runWithFiberInDEV @ react-dom-client.development.js:986
+performUnitOfWork @ react-dom-client.development.js:18997
+workLoopSync @ react-dom-client.development.js:18825
+renderRootSync @ react-dom-client.development.js:18806
+performWorkOnRoot @ react-dom-client.development.js:17835
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
+performWorkUntilDeadline @ scheduler.development.js:45
+"use client"
+Function.all @ VM6447 <anonymous>:1
+Function.all @ VM6447 <anonymous>:1
+Function.all @ VM6447 <anonymous>:1
+initializeElement @ react-server-dom-turbopack-client.browser.development.js:1940
+(anonymous) @ react-server-dom-turbopack-client.browser.development.js:4623
+initializeModelChunk @ react-server-dom-turbopack-client.browser.development.js:1828
+readChunk @ react-server-dom-turbopack-client.browser.development.js:1450
+react_stack_bottom_frame @ react-dom-client.development.js:28145
+resolveLazy @ react-dom-client.development.js:6320
+reconcileChildFibersImpl @ react-dom-client.development.js:7291
+(anonymous) @ react-dom-client.development.js:7410
+reconcileChildren @ react-dom-client.development.js:10036
+beginWork @ react-dom-client.development.js:12531
+runWithFiberInDEV @ react-dom-client.development.js:986
+performUnitOfWork @ react-dom-client.development.js:18997
+workLoopSync @ react-dom-client.development.js:18825
+renderRootSync @ react-dom-client.development.js:18806
+performWorkOnRoot @ react-dom-client.development.js:17835
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20384
+performWorkUntilDeadline @ scheduler.development.js:45Understand this error

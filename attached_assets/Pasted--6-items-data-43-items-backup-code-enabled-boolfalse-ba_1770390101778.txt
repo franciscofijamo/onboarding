@@ -1,0 +1,75 @@
+{6 items
+"data":{43 items
+"backup_code_enabled":boolfalse
+"banned":boolfalse
+"bypass_client_trust":boolfalse
+"create_organization_enabled":booltrue
+"created_at":float1770387764221
+"delete_self_enabled":booltrue
+"email_addresses":[1 item
+0:{9 items
+"created_at":float1770387751773
+"email_address":string"bootstrapper258@gmail.com"
+"id":string"idn_39Idvrifxt5c2lt5dXNqeqIScG8"
+"linked_to":[]0 items
+"matches_sso_connection":boolfalse
+"object":string"email_address"
+"reserved":boolfalse
+"updated_at":float1770387764227
+"verification":{5 items
+"attempts":int1
+"expire_at":float1770388352401
+"object":string"verification_otp"
+"status":string"verified"
+"strategy":string"email_code"
+}
+}
+]
+"enterprise_accounts":[]0 items
+"external_accounts":[]0 items
+"external_id":NULL
+"first_name":string"Play"
+"has_image":boolfalse
+"id":string"user_39IdxQJ994lxZjl79LBizsGVZ0z"
+"image_url":string"https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18zOUFXNFpzNDBIeFZ2NjhFQms3NDloSTNyY0kiLCJyaWQiOiJ1c2VyXzM5SWR4UUo5OTRseFpqbDc5TEJpenNHVloweiIsImluaXRpYWxzIjoiUEcifQ"
+"last_active_at":float1770387764220
+"last_name":string"Ground"
+"last_sign_in_at":NULL
+"legal_accepted_at":NULL
+"locale":NULL
+"locked":boolfalse
+"lockout_expires_in_seconds":NULL
+"mfa_disabled_at":NULL
+"mfa_enabled_at":NULL
+"object":string"user"
+"passkeys":[]0 items
+"password_enabled":booltrue
+"password_last_updated_at":float1770387764221
+"phone_numbers":[]0 items
+"primary_email_address_id":string"idn_39Idvrifxt5c2lt5dXNqeqIScG8"
+"primary_phone_number_id":NULL
+"primary_web3_wallet_id":NULL
+"private_metadata":{}0 items
+"profile_image_url":string"https://www.gravatar.com/avatar?d=mp"
+"public_metadata":{}0 items
+"requires_password_reset":boolfalse
+"saml_accounts":[]0 items
+"totp_enabled":boolfalse
+"two_factor_enabled":boolfalse
+"unsafe_metadata":{}0 items
+"updated_at":float1770387764248
+"username":NULL
+"verification_attempts_remaining":int100
+"web3_wallets":[]0 items
+}
+"event_attributes":{1 item
+"http_request":{2 items
+"client_ip":string"160.242.37.236"
+"user_agent":string"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
+}
+}
+"instance_id":string"ins_39AW4Zs40HxVv68EBk749hI3rcI"
+"object":string"event"
+"timestamp":float1770387764274
+"type":string"user.created"
+}
