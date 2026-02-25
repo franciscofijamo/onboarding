@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { EssayType } from '../../../../../prisma/generated/client'
 
-// GET - User's mock interview progress stats
 export async function GET() {
     try {
         const { userId: clerkId } = await auth()
@@ -16,7 +14,6 @@ export async function GET() {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        // Get all decks with stats
         const decks = await db.flashcardDeck.findMany({
             where: { userId: user.id },
             include: {
@@ -24,7 +21,6 @@ export async function GET() {
             },
         })
 
-        // Get total study sessions with duration
         const sessions = await db.studySession.findMany({
             where: { deck: { userId: user.id } },
             select: { duration: true, createdAt: true },
@@ -36,7 +32,6 @@ export async function GET() {
         const totalSessions = sessions.length
         const totalDuration = sessions.reduce((sum, s) => sum + s.duration, 0)
 
-        // Calculate streak (consecutive days with study sessions)
         let streak = 0
         const today = new Date()
         today.setHours(0, 0, 0, 0)
@@ -48,9 +43,8 @@ export async function GET() {
                     d.setHours(0, 0, 0, 0)
                     return d.getTime()
                 })
-            )].sort((a, b) => b - a) // Sort descending
+            )].sort((a, b) => b - a)
 
-            // Check if studied today or yesterday
             const latestSession = sessionDates[0]
             const diffDays = Math.floor((today.getTime() - latestSession) / (1000 * 60 * 60 * 24))
 
@@ -67,28 +61,21 @@ export async function GET() {
             }
         }
 
-        // Check if user can generate decks (has 4 analyzed Chevening essays)
-        // Note: Essays created before scholarship field may have null or 'chevening' as default
-        const cheveningEssayTypes = [
-            EssayType.LEADERSHIP,
-            EssayType.NETWORKING,
-            EssayType.COURSE_CHOICES,
-            EssayType.CAREER_PLAN,
-        ]
-
-        const analyzedEssays = await db.essay.count({
-            where: {
-                userId: user.id,
-                type: { in: cheveningEssayTypes },
-                analysisCount: { gt: 0 },
-                // Don't filter by scholarship to support legacy essays
-                // Chevening essays are identified by their type (4 specific types)
-            },
+        const hasResume = await db.resume.count({
+            where: { userId: user.id },
         })
 
+        const hasJobApplication = await db.jobApplication.count({
+            where: { userId: user.id },
+        })
+
+        const canGenerate = hasResume > 0 && hasJobApplication > 0
+
         return NextResponse.json({
-            canGenerate: analyzedEssays >= 4,
-            essaysAnalyzed: analyzedEssays,
+            canGenerate,
+            profileComplete: canGenerate,
+            resumeCount: hasResume,
+            jobApplicationCount: hasJobApplication,
             stats: {
                 totalDecks: decks.length,
                 totalCards,

@@ -3,20 +3,13 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 
 const CATEGORY_LABELS: Record<string, string> = {
-    validation: 'Validação',
-    deepening: 'Aprofundamento',
-    situational: 'Situacional',
-    consistency: 'Consistência',
+    behavioral: 'Behavioral',
+    technical: 'Technical',
+    situational: 'Situational',
+    culture_fit: 'Culture Fit',
+    business_english: 'Business English',
 }
 
-const ESSAY_LABELS: Record<number, string> = {
-    1: 'Leadership & Influencing',
-    2: 'Networking',
-    3: 'Course Choices',
-    4: 'Career Plan',
-}
-
-// GET - Export deck as PDF (returns JSON for client-side PDF generation)
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -47,11 +40,10 @@ export async function GET(
             return NextResponse.json({ error: 'Deck not found' }, { status: 404 })
         }
 
-        // Return structured data for client-side PDF generation
         return NextResponse.json({
             export: {
                 title: deck.name,
-                subtitle: 'Mock Interview Flashcards - Chevening',
+                subtitle: 'Interview Prep Flashcards',
                 createdAt: deck.createdAt,
                 totalCards: deck.totalCards,
                 cards: deck.flashcards.map((f, i) => ({
@@ -59,7 +51,7 @@ export async function GET(
                     question: f.question,
                     answer: f.answer,
                     category: CATEGORY_LABELS[f.category] || f.category,
-                    relatedEssay: f.relatedEssay ? ESSAY_LABELS[f.relatedEssay] : null,
+                    relatedSkill: f.relatedSkill,
                     tips: f.tips,
                 })),
             },

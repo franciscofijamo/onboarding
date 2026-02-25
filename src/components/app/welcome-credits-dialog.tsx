@@ -11,7 +11,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, CheckCircle2, PartyPopper } from "lucide-react";
+import { Sparkles, PartyPopper } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function WelcomeCreditsDialog() {
@@ -38,13 +38,6 @@ export function WelcomeCreditsDialog() {
         }
     }, [isLoaded, user, isLoadingProfile, isProfileComplete]);
 
-    const handleClose = (isOpen: boolean) => {
-        if (!isOpen) {
-            setOpen(false);
-            localStorage.setItem("welcome-credits-seen", "true");
-        }
-    };
-
     const handleStart = () => {
         setOpen(false);
         localStorage.setItem("welcome-credits-seen", "true");
@@ -59,12 +52,9 @@ export function WelcomeCreditsDialog() {
             >
                 <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl">
 
-                    {/* Decorative background gradients */}
-                    {/* Decorative background gradients */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
 
                     <div className="relative flex flex-col items-center p-8 text-center pt-10">
-                        {/* Animated Icon Container */}
                         <motion.div
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -76,21 +66,20 @@ export function WelcomeCreditsDialog() {
 
                         <DialogHeader className="mb-4 space-y-3">
                             <DialogTitle className="text-2xl font-bold tracking-tight text-zinc-900">
-                                Bem-vindo(a) ao StandOut! <span className="inline-block animate-wave">👋</span>
+                                Welcome to StandOut!
                             </DialogTitle>
                             <div className="space-y-4">
                                 <p className="text-zinc-500 leading-relaxed">
-                                    Estamos felizes em tê-lo(a) conosco. Para celebrar o início da sua jornada rumo à bolsa dos seus sonhos, preparamos um presente especial para você.
+                                    We're happy to have you! To celebrate the start of your Business English journey, we've prepared a special gift for you.
                                 </p>
 
-                                {/* Credit Highlight Box */}
                                 <div className="mx-auto flex flex-col items-center justify-center px-6 py-4 rounded-xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-50 to-amber-100/50 shadow-sm">
                                     <span className="text-xs font-semibold uppercase tracking-wider text-amber-600/80 mb-1">
-                                        Seu presente de boas-vindas
+                                        Your welcome gift
                                     </span>
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-3xl font-extrabold text-amber-600">20</span>
-                                        <span className="text-sm font-bold text-amber-700">Créditos Grátis</span>
+                                        <span className="text-sm font-bold text-amber-700">Free Credits</span>
                                     </div>
                                 </div>
                             </div>
@@ -102,12 +91,12 @@ export function WelcomeCreditsDialog() {
                                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 h-11 rounded-xl"
                             >
                                 <Sparkles className="mr-2 h-4 w-4" />
-                                Resgatar e Começar
+                                Claim & Get Started
                             </Button>
                         </DialogFooter>
 
                         <p className="mt-4 text-xs text-zinc-400">
-                            Use seus créditos para gerar análises detalhadas de essays.
+                            Use your credits for AI-powered analyses, interview prep, and more.
                         </p>
                     </div>
                 </div>

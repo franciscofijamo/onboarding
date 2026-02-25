@@ -21,10 +21,10 @@ export const site = {
   name: 'StandOut',
   shortName: 'StandOut',
   description:
-    'StandOut — A plataforma inteligente para candidatos a bolsas de estudo. Avaliação de essays com IA, feedback detalhado e ferramentas para se destacar.',
+    'StandOut — The intelligent platform for Business English job onboarding. AI-powered CV analysis, interview preparation, and workplace scenario simulations.',
   url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   author: 'StandOut',
-  keywords: ['StandOut', 'Chevening', 'Bolsa de estudo', 'Essay', 'IA', 'Avaliação', 'Feedback'],
+  keywords: ['StandOut', 'Business English', 'Job Onboarding', 'CV Analysis', 'Interview Prep', 'AI', 'Career'],
   ogImage: '/og-image.png',
   logo: {
     light: '/logo-light.svg',

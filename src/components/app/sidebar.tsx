@@ -9,8 +9,10 @@ import {
   Home,
   CreditCard,
   Settings,
-  GraduationCap,
-  Globe,
+  UserCircle,
+  MessageSquare,
+  Mic,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,10 +31,12 @@ type SidebarProps = {
 
 export const navigationItems = [
   { nameKey: "nav.dashboard", href: "/dashboard", icon: Home },
-  { nameKey: "nav.chevening", href: "/chevening", icon: GraduationCap },
-  { nameKey: "nav.fulbright", href: "/fulbright", icon: Globe },
+  { nameKey: "nav.myProfile", href: "/onboarding", icon: UserCircle },
+  { nameKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare },
+  { nameKey: "nav.scenarios", href: "/scenarios", icon: Mic },
+  { nameKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit },
   { nameKey: "nav.billing", href: "/billing", icon: CreditCard },
- ];
+];
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();

@@ -1,14 +1,15 @@
 # StandOut
 
 ## Overview
-StandOut — Plataforma inteligente para candidatos a bolsas de estudo. Avaliação de essays com IA (Chevening e Fulbright), feedback detalhado, sistema de créditos, pagamentos (Asaas/M-Pesa), e painel admin. Built with Next.js 16, Clerk auth, Prisma/PostgreSQL, Tailwind CSS v4, Radix UI, and React Query.
+StandOut — Business English Job Onboarding Platform. AI-powered career preparation for English-speaking job environments. Features include CV/resume analysis, job application optimization, interview preparation flashcards, workplace scenario simulations, and an AI career coach with specialized skills. Built with Next.js 16, Clerk auth, Prisma/PostgreSQL, Tailwind CSS v4, Radix UI, and React Query.
 
 ## Project Architecture
 - **Framework**: Next.js 16 (App Router) with TypeScript
 - **Styling**: Tailwind CSS v4 + Radix UI components
 - **Auth**: Clerk (`@clerk/nextjs`)
 - **Database**: PostgreSQL via Prisma ORM (client generated to `prisma/generated/client`)
-- **AI**: OpenRouter AI SDK
+- **AI**: OpenRouter AI SDK (google/gemini-2.0-flash-001)
+- **AI Agent System**: Orchestrator + 5 specialized skills
 - **Payments**: Asaas (sandbox) + M-Pesa (sandbox) integrations
 - **Storage**: Replit Object Storage (`@replit/object-storage`)
 - **State Management**: React Query (`@tanstack/react-query`)
@@ -17,14 +18,18 @@ StandOut — Plataforma inteligente para candidatos a bolsas de estudo. Avaliaç
 ```
 src/
   app/
-    (protected)/   - Auth-required pages (dashboard, billing, ai-chat)
+    (protected)/   - Auth-required pages (dashboard, onboarding, interview-prep, scenarios, ai-chat, billing)
     (public)/      - Public pages (landing, sign-in, sign-up)
     admin/         - Admin dashboard pages
-    api/           - API routes (admin, ai, checkout, credits, fulbright, webhooks)
+    api/           - API routes (resume, job-application, mock-interview, scenarios, ai, admin, webhooks)
   components/      - UI and feature components
   contexts/        - React contexts
   hooks/           - Custom hooks
-  lib/             - Shared utilities (storage, asaas, mpesa, clerk, etc.)
+  lib/
+    agents/        - AI Agent orchestrator and skills
+      skills/      - Individual skill modules (job-hunter, application-optimizer, market-fit, business-english, resume-builder)
+    credits/       - Credit system (deduct, refund, feature-config)
+    storage/       - File storage utilities
 prisma/
   schema.prisma    - Database schema
   migrations/      - Database migrations
@@ -55,109 +60,64 @@ scripts/           - Dev/helper scripts
 - `REPLIT_STORAGE_BUCKET_ID` - Replit storage bucket ID
 - `BLOB_MAX_SIZE_MB` - Upload size limit (25MB)
 - `PAYMENT_PROVIDER` - Payment provider selection (auto)
-- `ASAAS_API_URL` - Asaas API URL (sandbox)
-- `MPESA_BASE_URL` / `MPESA_C2B_PATH` / `MPESA_ORIGIN` / `MPESA_SERVICE_PROVIDER_CODE` / `MPESA_TIMEOUT_MS` - M-Pesa config
-- `API_LOGGING` / `API_LOG_LEVEL` / `API_LOG_MIN_STATUS` - Logging config
 - `FREE_CREDITS_ON_SIGNUP` - Number of free credits granted to new users (default: 20)
-- `DEBUG_CLERK_SYNC` / `IMAGE_DEBUG` / `E2E_AUTH_BYPASS` / `NEXT_PUBLIC_E2E_TEST` - Debug flags
 
 ### Configured as Secrets
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` / `CLERK_WEBHOOK_SECRET` - Clerk auth
 - `OPENROUTER_API_KEY` - AI features
 - `ASAAS_API_KEY` / `ASAAS_WEBHOOK_SECRET` - Asaas payments
 - `MPESA_API_KEY` / `MPESA_PUBLIC_KEY` - M-Pesa payments
-- `USER_WEBHOOK_SECRET` - User webhook secret
 
-## Chevening Essay Evaluator
-- **Feature**: AI-powered essay evaluation for Chevening scholarship applicants
-- **Models**: Essay, EssayVersion, EssayAnalysis (Prisma schema)
-- **Credits**: ESSAY_ANALYSIS costs 10 credits per analysis
-- **AI Model**: google/gemini-2.0-flash-001 via OpenRouter
-- **Pages**: /chevening (dashboard), /chevening/essay/[type] (editor), /chevening/essay/[type]/feedback
-- **Essay Types**: LEADERSHIP, NETWORKING, COURSE_CHOICES, CAREER_PLAN
-- **Word Limits**: 100 min, 300 max
-- **Auto-save**: Every 30 seconds, keeps last 10 versions
-- **Credit Flow**: Deduct first → perform analysis → refund on failure (with .catch guards)
-- **Access**: Available without active subscription (added to allowedPaths)
+## AI Agent & Skills System
+- **Architecture**: Orchestrator pattern — main orchestrator routes user requests to specialized skills
+- **Location**: `src/lib/agents/`
+- **Skills**:
+  - **Job Hunter** (5 credits) — Job search strategies, market trends, salary insights
+  - **Application Optimizer** (10 credits) — CV vs job description comparison, match scoring, improvement recommendations
+  - **Market Fit** (10 credits) — Skills gap analysis, upskilling paths, competitive positioning
+  - **Business English** (5 credits) — Level-adaptive English coaching (beginner to proficient)
+  - **Resume Builder** (10 credits) — Resume building, ATS optimization, STAR method bullet points
+- **Skill Detection**: Keyword-based + context-based skill detection from user message
+- **Integration**: Called from API routes via `routeToSkill()` which returns system message, user prompt, and credit cost
 
-## Mock Interview Flashcards
-- **Feature**: AI-generated flashcards for Chevening interview preparation
+## Job Onboarding Flow
+- **Feature**: Multi-step onboarding for job preparation
+- **Pages**: `/onboarding` (4-step wizard: Upload CV → Cover Letter → Job Description → AI Analysis)
+- **Models**: Resume, CoverLetter, JobApplication, ApplicationAnalysis (Prisma schema)
+- **Credits**: CV_ANALYSIS costs 10 credits per analysis
+- **Analysis Output**: Fit score, matching skills, missing skills, strengths, improvements, recommendations
+
+## Interview Preparation (Flashcards)
+- **Feature**: AI-generated job interview flashcards based on user's CV and target job
 - **Models**: FlashcardDeck, Flashcard, StudySession (Prisma schema)
-- **Credits**: MOCK_INTERVIEW_DECK costs 15 credits per deck generation
-- **AI Model**: google/gemini-2.0-flash-001 via OpenRouter
-- **Pages**: /chevening/mock-interview (dashboard), /chevening/mock-interview/study/[deckId] (study interface)
-- **Prerequisites**: User must have all 4 Chevening essays analyzed
-- **Deck Generation**: 18 flashcards per deck with questions based on user's essays
-- **Question Categories**: validation (40%), deepening (30%), situational (20%), consistency (10%)
-- **Anti-Duplication**: AI avoids repeating questions from existing user decks
+- **Credits**: INTERVIEW_PREP costs 15 credits per deck generation
+- **Pages**: `/interview-prep` (dashboard), `/interview-prep/study/[deckId]` (study interface)
+- **Prerequisites**: User must have uploaded CV and job description
+- **Categories**: behavioral, technical, situational, culture_fit, business_english
 - **Study Modes**: Sequential and Random (Fisher-Yates shuffle)
-- **Tracking**: Cards studied, study sessions, duration, streak (consecutive days)
-- **Export**: JSON endpoint for client-side PDF generation
-- **Credit Flow**: Deduct first → generate flashcards → refund on AI failure
 
-## Audio Mock Interview (Chevening)
-- **Feature**: AI-powered audio interview practice for Chevening scholarship applicants
-- **Models**: AudioInterviewSession, AudioInterviewResponse (Prisma schema)
-- **Credits**: AUDIO_INTERVIEW costs 15 credits per session generation (5 questions), ESSAY_ANALYSIS costs 10 credits per individual response analysis
-- **AI Model**: google/gemini-2.0-flash-001 via OpenRouter
-- **Pages**: /chevening/mock-interview/audio (dashboard), /chevening/mock-interview/audio/[sessionId] (interview + feedback)
-- **Prerequisites**: User must have all 4 Chevening essays analyzed
-- **Session Generation**: 5 AI-generated interview questions based on user's essays (like flashcards)
-- **Question Categories**: validation (2), deepening (1), situational (1), consistency (1)
-- **Anti-Duplication**: AI avoids repeating questions from existing user sessions
-- **Audio Recording**: MediaRecorder API (browser) + file upload fallback (max 25MB)
-- **Audio Storage**: Replit Object Storage (audio-interviews/{userId}/{sessionId}/q{index}.{ext})
-- **Analysis Pipeline**: Upload audio → Transcribe with AI → Analyze with AI → Store feedback
-- **Feedback**: Score (1-10), 6 criteria (clarity, content, fluency, confidence, examples, Chevening alignment), strengths, improvements, model answer, communication tips
-- **Credit Flow**: Deduct first → generate questions/analyze → refund on AI failure
-- **New OperationType**: AUDIO_INTERVIEW enum value in Prisma schema
-
-## Fulbright Essay Evaluator
-- **Feature**: AI-powered essay evaluation for Fulbright scholarship applicants
-- **Models**: Reuses Essay, EssayVersion, EssayAnalysis (with scholarship='fulbright' discriminator)
-- **Credits**: ESSAY_ANALYSIS costs 10 credits per analysis
-- **AI Model**: google/gemini-2.0-flash-001 via OpenRouter
-- **Pages**: /fulbright (dashboard), /fulbright/essay/[type] (editor), /fulbright/essay/[type]/feedback
-- **Essay Types**: GRANT_PURPOSE, PERSONAL_STATEMENT
-- **Word Limits**: 50 min, 1000 max
-- **Categories**: FulbrightCategory enum (STUDENT, YOUNG_PROFESSIONAL, RESEARCHER) - affects analysis weighting
-- **Host Institution**: Optional field for host institution compatibility analysis
-- **Evaluation Criteria**: 6 axes (clareza_projeto, viabilidade, preparo_academico, impacto_intercultural, adaptabilidade, escrita_persuasiva)
-- **Feedback Extras**: viabilidade_projeto section (project viability + host compatibility), readiness_entrevista in final comments
-- **Credit Flow**: Deduct first → perform analysis → refund on failure (with .catch guards)
-- **Access**: Available without active subscription (added to allowedPaths)
-
-## M-Pesa Production Config
-- **BASE_URL**: https://api.vm.co.mz:18352
-- **SERVICE_PROVIDER_CODE**: 901819
-- **C2B_PATH**: /ipg/v1x/c2bPayment/singleStage/
+## Workplace Scenario Simulations (Audio)
+- **Feature**: AI-powered workplace scenario practice via audio recording
+- **Models**: WorkplaceScenarioSession, WorkplaceScenarioResponse (Prisma schema)
+- **Credits**: SCENARIO_SIMULATION costs 15 credits per session, 10 credits per analysis
+- **Pages**: `/scenarios` (dashboard), `/scenarios/[sessionId]` (recording + feedback)
+- **Scenario Types**: TEAM_MEETING, CLIENT_CALL, PRESENTATION, EMAIL_DICTATION, CONFLICT_RESOLUTION, PERFORMANCE_REVIEW, NEGOTIATION
+- **Analysis Criteria**: Business English proficiency, communication clarity, professionalism, contextual appropriateness, confidence/fluency
+- **Audio Storage**: Replit Object Storage (workplace-scenarios/{userId}/{sessionId}/q{index}.{ext})
 
 ## Multi-Language (i18n) System
 - **Languages**: Português de Moçambique (pt-MZ, default), English US (en-US), English UK (en-GB)
 - **Architecture**: Context-based (LanguageProvider), no URL routing, localStorage persistence
 - **Files**: src/i18n/index.ts (translate/getTranslationArray), src/i18n/locales/*.json (dictionaries)
-- **Context**: src/contexts/language.tsx → useLanguage() hook provides { locale, setLocale, t, tArray }
-- **Switcher**: src/components/app/language-switcher.tsx (flag icons in topbar)
-- **AI Language**: src/lib/ai-language.ts → wrapPromptWithLanguage(prompt, locale) prepends language instruction
-- **Translation Keys**: Hierarchical (common.*, nav.*, chevening.*, fulbright.*, editor.*, feedback.*, topbar.*, dashboard.*, marketing.*)
-- **Variable Interpolation**: t("key", { var: value }) replaces {var} in strings
-- **Array Translations**: tArray("key") for arrays like analysis steps
-- **AI Responses**: Frontend sends `{ language: locale }` in POST body to analyze endpoints; API wraps prompt with language instruction
-- **JSON Keys**: AI response JSON keys (nota_geral, criterios, etc.) stay constant; only text values translate
+- **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
-- 2026-02-09: Built complete Audio Mock Interview module (Chevening) - schema, API routes, dashboard, session page with audio recorder, AI analysis + feedback, i18n translations
-- 2026-02-06: Free plan with 20 credits on signup - created "Grátis" plan, updated Clerk + custom webhooks to grant FREE_CREDITS_ON_SIGNUP credits automatically
-- 2026-02-06: Full multi-language support (pt-MZ, en-US, en-GB) - i18n context, translation dictionaries, language switcher, all pages translated, AI responses in user's language
-- 2026-02-06: Built complete Fulbright Essay Evaluator module (schema, API routes, dashboard, editor, feedback pages, sidebar nav)
-- 2026-02-06: Rebranded entire app from "SaaS Template/STKV2" to "StandOut" - brand config, sidebar, topbar, header, footer, hero, FAQ, marketing sections
-- 2026-02-06: Improved error handling in essay analysis - deduct credits first with proper rollback, .catch guards on refund/status reset
-- 2026-02-06: Built complete Chevening Essay Evaluator MVP (schema, API, dashboard, editor, feedback pages)
-- 2026-02-06: Updated M-Pesa to production URLs and service provider code
-- 2026-02-06: Full environment migration from .env.example to Replit secrets and env vars
-- 2026-02-06: Configured Replit Object Storage (bucket created, STORAGE_PROVIDER=replit)
-- 2026-02-06: Fixed allowedDevOrigins for Replit proxy (wildcard subdomain patterns)
-- 2026-02-06: Initial Replit setup - configured port 5000, PostgreSQL, Prisma migrations
-
-## User Preferences
-- Language: Multi-language support (pt-MZ default, en-US, en-GB), choice persisted in localStorage
+- 2026-02-25: Major platform refactoring — pivoted from scholarship essay preparation (Chevening/Fulbright) to Business English Job Onboarding Platform
+  - New AI Agent & Skills system (orchestrator + 5 specialized skills)
+  - New onboarding flow (CV upload, cover letter, job description, AI analysis)
+  - Adapted flashcards to job interview Q&A based on career/industry
+  - Adapted audio module to workplace scenario simulations
+  - Updated database schema (new models: Resume, CoverLetter, JobApplication, ApplicationAnalysis, WorkplaceScenarioSession)
+  - Removed all Chevening/Fulbright/scholarship references
+  - Updated all navigation, branding, i18n, and marketing content
+- 2026-02-25: Initial Replit environment setup — installed Node.js 22, all npm packages, configured workflows

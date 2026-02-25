@@ -26,9 +26,11 @@ model User {
   usageHistory       UsageHistory[]
   storageObjects     StorageObject[]
   subscriptionEvents SubscriptionEvent[]
-  essays             Essay[]
+  resumes            Resume[]
+  coverLetters       CoverLetter[]
+  jobApplications    JobApplication[]
   flashcardDecks     FlashcardDeck[]
-  audioInterviewSessions AudioInterviewSession[]
+  workplaceScenarioSessions WorkplaceScenarioSession[]
   asaasCustomerId    String?   @unique
   asaasCustomerIdSandbox    String?   @unique
   asaasCustomerIdProduction String?   @unique
@@ -38,14 +40,23 @@ model User {
   billingPeriodEnd      DateTime?
   cancellationScheduled Boolean  @default(false)
   cancellationDate      DateTime?
-  
-  // Profile completion fields
+
+  // Profile fields
   province         String?
   birthYear        Int?
   gender           String?
   course           String?
   university       String?
   profileComplete  Boolean  @default(false)
+
+  // Extended career profile fields
+  careerPath       String?
+  industry         String?
+  experienceLevel  ExperienceLevel?
+  englishLevel     EnglishLevel?
+  targetRole       String?
+  currentRole      String?
+  skills           String[]
 
   @@index([email])
   @@index([name])
@@ -54,6 +65,31 @@ model User {
   @@index([currentPlanId])
 }
 
+enum ExperienceLevel {
+  ENTRY
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  EXECUTIVE
+}
+
+enum EnglishLevel {
+  BEGINNER
+  ELEMENTARY
+  INTERMEDIATE
+  UPPER_INTERMEDIATE
+  ADVANCED
+  PROFICIENT
+}
+
+enum AgentSkill {
+  JOB_HUNTER
+  APPLICATION_OPTIMIZER
+  MARKET_FIT
+  BUSINESS_ENGLISH
+  RESUME_BUILDER
+}
 
 // Workspace features and linkage to projects
 model Feature {
@@ -73,7 +109,7 @@ model CreditBalance {
   id                String   @id @default(cuid())
   userId            String   @unique
   clerkUserId       String   @unique
-  creditsRemaining  Int      @default(100)  // Cached from Clerk
+  creditsRemaining  Int      @default(100)
   lastSyncedAt      DateTime @default(now())
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -87,7 +123,6 @@ model CreditBalance {
   @@index([lastSyncedAt])
 }
 
-// Track individual usage events
 model UsageHistory {
   id              String   @id @default(cuid())
   userId          String
@@ -111,31 +146,11 @@ model UsageHistory {
 enum OperationType {
   AI_TEXT_CHAT
   AI_IMAGE_GENERATION
-  ESSAY_ANALYSIS
-  MOCK_INTERVIEW_DECK
-  AUDIO_INTERVIEW
-}
-
-enum EssayType {
-  LEADERSHIP
-  NETWORKING
-  COURSE_CHOICES
-  CAREER_PLAN
-  GRANT_PURPOSE
-  PERSONAL_STATEMENT
-}
-
-enum FulbrightCategory {
-  STUDENT
-  YOUNG_PROFESSIONAL
-  RESEARCHER
-}
-
-enum EssayStatus {
-  DRAFT
-  ANALYZING
-  ANALYZED
-  FINALIZED
+  CV_ANALYSIS
+  JOB_MATCH
+  INTERVIEW_PREP
+  SCENARIO_SIMULATION
+  BUSINESS_ENGLISH_SESSION
 }
 
 // Singleton row storing admin-configurable credit settings
@@ -149,15 +164,13 @@ model AdminSettings {
 // Subscription plans managed manually and optionally linked to payment providers
 model Plan {
   id        String   @id @default(cuid())
-  asaasId   String?  @unique // Asaas plan ID for payment processing
-  clerkId   String?  @unique // Legacy Clerk plan ID (deprecated)
-  clerkName String?  // Legacy field
+  asaasId   String?  @unique
+  clerkId   String?  @unique
+  clerkName String?
   name      String
   credits   Int
   active    Boolean  @default(true)
   sortOrder Int      @default(0)
-  // Pricing configuration (amounts in cents)
-  // Asaas only supports BRL (Brazilian Real)
   currency           String?  @default("brl")
   priceMonthlyCents  Int?
   priceYearlyCents   Int?
@@ -201,66 +214,96 @@ model StorageObject {
   @@index([name])
 }
 
-// Essay - one per type per user (Chevening + Fulbright)
-model Essay {
-  id        String      @id @default(cuid())
-  userId    String
-  type      EssayType
-  status    EssayStatus @default(DRAFT)
-  title     String?
-  content   String      @db.Text
-  wordCount Int         @default(0)
-  latestScore Float?
-  analysisCount Int     @default(0)
-  scholarship String    @default("chevening")
-  fulbrightCategory FulbrightCategory?
-  hostInstitution   String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+// Resume - stores uploaded CV content/file reference and parsed data
+model Resume {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String?
+  content       String?  @db.Text
+  fileUrl       String?
+  filePath      String?
+  parsedData    Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  user      User        @relation(fields: [userId], references: [id])
-  versions  EssayVersion[]
-  analyses  EssayAnalysis[]
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplications JobApplication[]
 
-  @@unique([userId, type])
   @@index([userId])
-  @@index([type])
-  @@index([status])
-  @@index([scholarship])
+  @@index([createdAt])
 }
 
-// Versioned snapshots of essay content
-model EssayVersion {
-  id        String   @id @default(cuid())
-  essayId   String
-  version   Int
-  content   String   @db.Text
-  wordCount Int      @default(0)
-  createdAt DateTime @default(now())
+// CoverLetter - optional uploaded cover letter
+model CoverLetter {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String?
+  content       String?  @db.Text
+  fileUrl       String?
+  filePath      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  essay     Essay    @relation(fields: [essayId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplications JobApplication[]
 
-  @@index([essayId])
-  @@index([essayId, version])
+  @@index([userId])
+  @@index([createdAt])
 }
 
-// AI analysis results for an essay
-model EssayAnalysis {
+// JobApplication - stores job description text, company info, and links to resume
+model JobApplication {
   id              String   @id @default(cuid())
-  essayId         String
-  versionNumber   Int
-  score           Float
-  status          String   @default("completed")
-  feedback        Json
-  contentSnapshot String   @db.Text
-  wordCount       Int      @default(0)
-  creditsUsed     Int      @default(10)
+  userId          String
+  resumeId        String?
+  coverLetterId   String?
+  jobTitle        String?
+  companyName     String?
+  jobDescription  String   @db.Text
+  companyInfo     String?  @db.Text
+  status          JobApplicationStatus @default(DRAFT)
   createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  essay           Essay    @relation(fields: [essayId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume          Resume?  @relation(fields: [resumeId], references: [id])
+  coverLetter     CoverLetter? @relation(fields: [coverLetterId], references: [id])
+  analyses        ApplicationAnalysis[]
 
-  @@index([essayId])
-  @@index([essayId, createdAt])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum JobApplicationStatus {
+  DRAFT
+  ANALYZING
+  ANALYZED
+  APPLIED
+  INTERVIEWING
+  OFFERED
+  REJECTED
+  ACCEPTED
+}
+
+// ApplicationAnalysis - AI comparison results (resume vs job description)
+model ApplicationAnalysis {
+  id                String   @id @default(cuid())
+  jobApplicationId  String
+  fitScore          Float?
+  skillsMatch       Json?
+  missingSkills     Json?
+  strengths         Json?
+  improvements      Json?
+  recommendations   Json?
+  agentSkill        AgentSkill?
+  creditsUsed       Int      @default(10)
+  createdAt         DateTime @default(now())
+
+  jobApplication    JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobApplicationId])
+  @@index([jobApplicationId, createdAt])
 }
 
 // Track subscription lifecycle events for revenue analytics
@@ -281,11 +324,12 @@ model SubscriptionEvent {
   @@index([userId, occurredAt])
 }
 
-// Deck de flashcards para Mock Interview
+// FlashcardDeck for job interview preparation
 model FlashcardDeck {
   id           String   @id @default(cuid())
   userId       String
-  name         String   @default("Deck")
+  name         String   @default("Interview Prep Deck")
+  category     InterviewCategory?
   totalCards   Int      @default(0)
   studiedCards Int      @default(0)
   creditsUsed  Int      @default(15)
@@ -300,14 +344,22 @@ model FlashcardDeck {
   @@index([createdAt])
 }
 
-// Flashcard individual
+enum InterviewCategory {
+  BEHAVIORAL
+  TECHNICAL
+  SITUATIONAL
+  CULTURE_FIT
+  BUSINESS_ENGLISH
+}
+
+// Flashcard for interview Q&A
 model Flashcard {
   id           String    @id @default(cuid())
   deckId       String
   question     String    @db.Text
   answer       String    @db.Text
-  category     String    // validation, deepening, situational, consistency
-  relatedEssay Int?      // 1-4
+  category     String
+  relatedSkill String?
   tips         String?   @db.Text
   order        Int       @default(0)
   studied      Boolean   @default(false)
@@ -320,13 +372,13 @@ model Flashcard {
   @@index([deckId, order])
 }
 
-// Sessão de estudo
+// Study session
 model StudySession {
   id           String   @id @default(cuid())
   deckId       String
   cardsStudied Int      @default(0)
-  duration     Int      @default(0) // segundos
-  mode         String   @default("sequential") // sequential, random
+  duration     Int      @default(0)
+  mode         String   @default("sequential")
   createdAt    DateTime @default(now())
 
   deck FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
@@ -335,7 +387,7 @@ model StudySession {
   @@index([createdAt])
 }
 
-enum AudioResponseStatus {
+enum ScenarioResponseStatus {
   PENDING
   RECORDED
   ANALYZING
@@ -343,10 +395,12 @@ enum AudioResponseStatus {
   FAILED
 }
 
-model AudioInterviewSession {
+// WorkplaceScenarioSession - simulates real workplace scenarios
+model WorkplaceScenarioSession {
   id            String   @id @default(cuid())
   userId        String
-  name          String   @default("Sessão")
+  name          String   @default("Workplace Scenario")
+  scenarioType  ScenarioType?
   totalQuestions Int     @default(5)
   answeredCount Int     @default(0)
   analyzedCount Int     @default(0)
@@ -355,30 +409,41 @@ model AudioInterviewSession {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  responses AudioInterviewResponse[]
+  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses WorkplaceScenarioResponse[]
 
   @@index([userId])
   @@index([createdAt])
 }
 
-model AudioInterviewResponse {
-  id          String              @id @default(cuid())
+enum ScenarioType {
+  TEAM_MEETING
+  CLIENT_CALL
+  PRESENTATION
+  EMAIL_DICTATION
+  CONFLICT_RESOLUTION
+  PERFORMANCE_REVIEW
+  NEGOTIATION
+}
+
+// WorkplaceScenarioResponse - individual responses within a scenario session
+model WorkplaceScenarioResponse {
+  id          String                @id @default(cuid())
   sessionId   String
   questionIndex Int
-  question    String              @db.Text
+  prompt      String                @db.Text
   audioUrl    String?
   audioPath   String?
   duration    Int?
-  transcript  String?             @db.Text
-  status      AudioResponseStatus @default(PENDING)
+  transcript  String?               @db.Text
+  status      ScenarioResponseStatus @default(PENDING)
   score       Float?
   feedback    Json?
-  creditsUsed Int                 @default(0)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  creditsUsed Int                   @default(0)
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
 
-  session AudioInterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session WorkplaceScenarioSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, questionIndex])
   @@index([sessionId])

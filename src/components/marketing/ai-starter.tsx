@@ -13,10 +13,10 @@ export function AIStarter() {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mt-4 bg-gradient-to-b from-foreground to-foreground/70 bg-clip-text text-3xl font-semibold tracking-tight text-transparent md:text-4xl">
-            Por que o StandOut?
+            Why StandOut?
           </h2>
           <p className="mt-3 text-base text-muted-foreground">
-            Ferramentas inteligentes para maximizar suas chances de aprovação em bolsas de estudo.
+            Smart tools to maximize your success in English-speaking job environments.
           </p>
         </div>
 
@@ -29,8 +29,8 @@ export function AIStarter() {
                   <Sparkles className="h-4 w-4 text-sky-500" />
                 </span>
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold">Feedback com IA</h3>
-                  <p className="text-sm text-muted-foreground">Avaliação detalhada dos seus essays com critérios reais do Chevening e sugestões práticas.</p>
+                  <h3 className="text-base font-semibold">AI-Powered Analysis</h3>
+                  <p className="text-sm text-muted-foreground">Get detailed feedback on your CV, cover letter, and job fit with actionable recommendations.</p>
                 </div>
               </div>
             </div>
@@ -42,8 +42,8 @@ export function AIStarter() {
                   <Bot className="h-4 w-4 text-emerald-500" />
                 </span>
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold">Sugestões de reescrita</h3>
-                  <p className="text-sm text-muted-foreground">Comparação lado a lado do original com versões melhoradas e explicação de cada mudança.</p>
+                  <h3 className="text-base font-semibold">Interview Preparation</h3>
+                  <p className="text-sm text-muted-foreground">Practice with AI-generated interview questions tailored to your role and industry.</p>
                 </div>
               </div>
             </div>
@@ -55,8 +55,8 @@ export function AIStarter() {
                   <Zap className="h-4 w-4 text-amber-500" />
                 </span>
                 <div className="space-y-2">
-                  <h3 className="text-base font-semibold">Probabilidade de aprovação</h3>
-                  <p className="text-sm text-muted-foreground">Saiba onde seu essay se posiciona e o que melhorar para aumentar suas chances.</p>
+                  <h3 className="text-base font-semibold">Workplace Scenarios</h3>
+                  <p className="text-sm text-muted-foreground">Practice real workplace situations with audio simulations and get Business English feedback.</p>
                 </div>
               </div>
             </div>

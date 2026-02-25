@@ -6,7 +6,6 @@ import { InsufficientCreditsError } from '@/lib/credits/errors'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { wrapPromptWithLanguage } from '@/lib/ai-language'
-import { EssayType } from '../../../../../prisma/generated/client'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -15,21 +14,14 @@ const PROVIDER = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY,
 })
 
-const ESSAY_TYPE_LABELS: Record<string, string> = {
-    LEADERSHIP: 'Leadership & Influencing',
-    NETWORKING: 'Networking',
-    COURSE_CHOICES: 'Course Choices',
-    CAREER_PLAN: 'Career Plan',
+const CATEGORY_LABELS: Record<string, string> = {
+    behavioral: 'Behavioral',
+    technical: 'Technical',
+    situational: 'Situational',
+    culture_fit: 'Culture Fit',
+    business_english: 'Business English',
 }
 
-const CHEVENING_ESSAY_TYPES = [
-    EssayType.LEADERSHIP,
-    EssayType.NETWORKING,
-    EssayType.COURSE_CHOICES,
-    EssayType.CAREER_PLAN,
-]
-
-// GET - List user's decks
 export async function GET() {
     try {
         const { userId: clerkId } = await auth()
@@ -50,7 +42,6 @@ export async function GET() {
             },
         })
 
-        // Get aggregate stats
         const totalCards = decks.reduce((sum, d) => sum + d.totalCards, 0)
         const totalStudied = decks.reduce((sum, d) => sum + d.studiedCards, 0)
         const totalSessions = decks.reduce((sum, d) => sum + d._count.sessions, 0)
@@ -59,6 +50,7 @@ export async function GET() {
             decks: decks.map(d => ({
                 id: d.id,
                 name: d.name,
+                category: d.category,
                 totalCards: d.totalCards,
                 studiedCards: d.studiedCards,
                 progress: d.totalCards > 0 ? Math.round((d.studiedCards / d.totalCards) * 100) : 0,
@@ -80,7 +72,6 @@ export async function GET() {
     }
 }
 
-// POST - Generate new deck
 export async function POST(request: NextRequest) {
     try {
         const { userId: clerkId } = await auth()
@@ -93,45 +84,46 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        // Check if user has 4 analyzed Chevening essays
-        // Note: Don't filter by scholarship to support legacy essays
-        const essays = await db.essay.findMany({
-            where: {
-                userId: user.id,
-                type: { in: CHEVENING_ESSAY_TYPES },
-                analysisCount: { gt: 0 },
-            },
-            orderBy: { type: 'asc' },
+        const latestResume = await db.resume.findFirst({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
         })
 
-        if (essays.length < 4) {
+        if (!latestResume || !latestResume.content) {
             return NextResponse.json({
-                error: 'Você precisa ter os 4 essays analisados para gerar flashcards.',
-                required: 4,
-                current: essays.length,
+                error: 'You need to upload a CV/resume first.',
             }, { status: 400 })
         }
 
-        // Get existing questions to avoid duplicates
+        const latestJobApp = await db.jobApplication.findFirst({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+        })
+
+        if (!latestJobApp) {
+            return NextResponse.json({
+                error: 'You need to add a job description first.',
+            }, { status: 400 })
+        }
+
         const existingDecks = await db.flashcardDeck.findMany({
             where: { userId: user.id },
             include: { flashcards: { select: { question: true } } },
         })
         const existingQuestions = existingDecks.flatMap(d => d.flashcards.map(f => f.question))
 
-        // Deduct credits
         let creditsDeducted = false
         try {
             await deductCreditsForFeature({
                 clerkUserId: clerkId,
-                feature: 'mock_interview_deck',
+                feature: 'interview_prep',
                 details: { userId: user.id },
             })
             creditsDeducted = true
         } catch (deductErr) {
             if (deductErr instanceof InsufficientCreditsError) {
                 return NextResponse.json({
-                    error: 'Créditos insuficientes',
+                    error: 'Insufficient credits',
                     required: deductErr.required,
                     available: deductErr.available,
                 }, { status: 402 })
@@ -139,24 +131,30 @@ export async function POST(request: NextRequest) {
             throw deductErr
         }
 
-        // Build prompt
         let language: string | null = null
         try {
             const body = await request.json().catch(() => ({}))
             language = body?.language || null
         } catch { }
 
-        const basePrompt = buildFlashcardPrompt(essays, existingQuestions)
+        const basePrompt = buildFlashcardPrompt(
+            latestResume.content,
+            latestJobApp.jobDescription,
+            latestJobApp.jobTitle || undefined,
+            latestJobApp.companyName || undefined,
+            user.industry || undefined,
+            user.experienceLevel || undefined,
+            existingQuestions
+        )
         const prompt = wrapPromptWithLanguage(basePrompt, language)
 
-        // Generate flashcards via AI
         let flashcardsData: { flashcards: FlashcardData[] }
         try {
             const result = await generateText({
                 model: PROVIDER('google/gemini-2.0-flash-001'),
                 prompt,
                 temperature: 0.4,
-                maxTokens: 8000,
+                maxOutputTokens: 8000,
             })
 
             const text = result.text.trim()
@@ -166,7 +164,6 @@ export async function POST(request: NextRequest) {
             }
             flashcardsData = JSON.parse(jsonMatch[0])
 
-            // Validate minimum cards
             if (!flashcardsData.flashcards || flashcardsData.flashcards.length < 15) {
                 throw new Error('AI generated less than 15 flashcards')
             }
@@ -176,7 +173,7 @@ export async function POST(request: NextRequest) {
             if (creditsDeducted) {
                 await refundCreditsForFeature({
                     clerkUserId: clerkId,
-                    feature: 'mock_interview_deck',
+                    feature: 'interview_prep',
                     quantity: 1,
                     reason: aiError instanceof Error ? aiError.message : 'ai_generation_error',
                     details: { userId: user.id },
@@ -184,30 +181,29 @@ export async function POST(request: NextRequest) {
             }
 
             return NextResponse.json({
-                error: 'Erro ao gerar flashcards. Seus créditos foram reembolsados.',
+                error: 'Error generating flashcards. Your credits have been refunded.',
             }, { status: 502 })
         }
 
-        // Remove duplicates
         const uniqueFlashcards = flashcardsData.flashcards.filter(
             (f, i, arr) =>
                 !existingQuestions.includes(f.question) &&
                 arr.findIndex(x => x.question === f.question) === i
         )
 
-        // Create deck and flashcards
         const deckNumber = existingDecks.length + 1
         const deck = await db.flashcardDeck.create({
             data: {
                 userId: user.id,
-                name: `Deck ${deckNumber}`,
+                name: `Interview Prep Deck ${deckNumber}`,
+                category: 'BEHAVIORAL',
                 totalCards: uniqueFlashcards.length,
                 flashcards: {
                     create: uniqueFlashcards.map((card, index) => ({
                         question: card.question,
                         answer: card.answer,
-                        category: card.category || 'validation',
-                        relatedEssay: card.related_essay || null,
+                        category: card.category || 'behavioral',
+                        relatedSkill: card.related_skill || null,
                         tips: card.tips || null,
                         order: index,
                     })),
@@ -237,62 +233,70 @@ interface FlashcardData {
     question: string
     answer: string
     category: string
-    related_essay?: number
+    related_skill?: string
     tips?: string
 }
 
 function buildFlashcardPrompt(
-    essays: { type: string; content: string }[],
-    existingQuestions: string[]
+    resumeText: string,
+    jobDescription: string,
+    jobTitle?: string,
+    companyName?: string,
+    industry?: string,
+    experienceLevel?: string,
+    existingQuestions: string[] = []
 ): string {
-    const essayContents = essays.map((e, i) => {
-        const label = ESSAY_TYPE_LABELS[e.type] || e.type
-        return `--- ESSAY ${i + 1}: ${label} ---\n${e.content}\n`
-    }).join('\n')
+    const jobContext = [
+        jobTitle ? `Job Title: ${jobTitle}` : '',
+        companyName ? `Company: ${companyName}` : '',
+        industry ? `Industry: ${industry}` : '',
+        experienceLevel ? `Experience Level: ${experienceLevel}` : '',
+    ].filter(Boolean).join('\n')
 
     const existingSection = existingQuestions.length > 0
-        ? `\nPERGUNTAS JÁ EXISTENTES (NÃO REPETIR):\n${existingQuestions.slice(0, 50).map(q => `- ${q}`).join('\n')}\n`
+        ? `\nEXISTING QUESTIONS (DO NOT REPEAT):\n${existingQuestions.slice(0, 50).map(q => `- ${q}`).join('\n')}\n`
         : ''
 
-    return `Você é um especialista em preparação para entrevistas Chevening com mais de 10 anos de experiência. Sua tarefa é criar flashcards de estudo para ajudar o candidato a se preparar para a entrevista real.
+    return `You are an expert job interview coach with 10+ years of experience preparing candidates for professional interviews. Your task is to create flashcards to help the candidate prepare for their job interview.
 
-CONTEXTO SOBRE A ENTREVISTA CHEVENING:
-- Painel de 2-3 avaliadores, duração de 20-30 minutos
-- Os entrevistadores LEEM os essays ANTES da entrevista
-- Perguntas são baseadas no conteúdo específico dos essays do candidato
-- Formato: perguntas comportamentais (STAR), situacionais e de aprofundamento
+CONTEXT:
+${jobContext}
 
-ESSAYS DO CANDIDATO:
-${essayContents}
+CANDIDATE'S CV/RESUME:
+${resumeText}
+
+JOB DESCRIPTION:
+${jobDescription}
 ${existingSection}
 
-INSTRUÇÕES:
-1. Gere exatamente 18 flashcards únicos
-2. Distribua nas categorias:
-   - validation (40%, ~7 cards): Perguntas sobre experiências específicas mencionadas nos essays
-   - deepening (30%, ~5 cards): Perguntas de aprofundamento (desafios, métricas, aprendizados)
-   - situational (20%, ~4 cards): Cenários hipotéticos baseados no perfil
-   - consistency (10%, ~2 cards): Perguntas que conectam informações entre diferentes essays
+INSTRUCTIONS:
+1. Generate exactly 18 unique flashcards based on the candidate's CV and the job description
+2. Distribute across categories:
+   - behavioral (30%, ~5 cards): Questions about past experiences using STAR method (Situation, Task, Action, Result)
+   - technical (25%, ~5 cards): Questions about technical skills and knowledge relevant to the role
+   - situational (20%, ~4 cards): Hypothetical workplace scenarios the candidate might face
+   - culture_fit (15%, ~2 cards): Questions about values, teamwork, and company culture alignment
+   - business_english (10%, ~2 cards): Questions testing professional English communication
 
-3. Para cada flashcard, forneça:
-   - question: Pergunta realística de entrevista
-   - answer: Resposta modelo usando estrutura STAR (2-3 parágrafos)
-   - category: Uma das 4 categorias acima
-   - related_essay: Número do essay (1-4) relacionado
-   - tips: Dica breve para o candidato
+3. For each flashcard, provide:
+   - question: A realistic interview question tailored to this specific role and candidate
+   - answer: A model answer using STAR method adapted for professional context (2-3 paragraphs)
+   - category: One of the 5 categories above
+   - related_skill: The skill or competency being assessed (e.g., "leadership", "python", "communication")
+   - tips: Brief tip for the candidate on how to approach this question
 
-FORMATO DE RESPOSTA (JSON estrito):
+RESPONSE FORMAT (strict JSON):
 {
   "flashcards": [
     {
-      "question": "Tell me more about the leadership project you mentioned in your essay...",
-      "answer": "In 2024, I led a digital literacy initiative... [STAR structure with Situation, Task, Action, Result]",
-      "category": "validation",
-      "related_essay": 1,
+      "question": "Tell me about a time you had to lead a cross-functional team to deliver a project under tight deadlines...",
+      "answer": "In my role at [Company], I was tasked with... [STAR structure with Situation, Task, Action, Result]",
+      "category": "behavioral",
+      "related_skill": "leadership",
       "tips": "Focus on specific metrics and measurable impact"
     }
   ]
 }
 
-Responda APENAS com o JSON, sem markdown, sem código de bloco, sem texto adicional.`
+Respond ONLY with the JSON, no markdown, no code blocks, no additional text.`
 }

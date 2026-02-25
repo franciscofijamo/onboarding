@@ -52,7 +52,7 @@ export async function GET(
                 question: f.question,
                 answer: f.answer,
                 category: f.category,
-                relatedEssay: f.relatedEssay,
+                relatedSkill: f.relatedSkill,
                 tips: f.tips,
                 order: f.order,
                 studied: f.studied,

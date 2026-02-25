@@ -2,85 +2,68 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Lock, Search, Settings, Sparkles, CreditCard, Bot, Router, MessageCircle, Image, ShieldCheck, Upload, DollarSign } from "lucide-react"
+import { FileText, Mic, BookOpen, Bot, BarChart2, MessageCircle, Upload, Briefcase, Target, Globe, Sparkles, Users } from "lucide-react"
 import { GlowingEffect } from "@/components/ui/glowing-effect"
+import { useLanguage } from "@/contexts/language"
 
 export function BentoGrid() {
+  const { t } = useLanguage();
+  const isPtMZ = t("nav.dashboard") === "Painel";
+
+  const items = isPtMZ ? [
+    { icon: <FileText className="h-4 w-4 text-sky-500" />, title: "Análise de CV", description: "Compare o seu CV com descrições de vagas e receba nota de adequação detalhada." },
+    { icon: <Target className="h-4 w-4 text-emerald-500" />, title: "Correspondência de Competências", description: "Identifique lacunas e receba recomendações para melhorar o seu perfil." },
+    { icon: <BookOpen className="h-4 w-4 text-purple-500" />, title: "Preparação para Entrevista", description: "Flashcards com perguntas geradas por IA adaptadas à sua função." },
+    { icon: <Mic className="h-4 w-4 text-blue-500" />, title: "Cenários de Trabalho", description: "Simulações áudio de reuniões, apresentações e chamadas com clientes." },
+    { icon: <Bot className="h-4 w-4 text-orange-500" />, title: "Coach de Carreira IA", description: "Conselhos personalizados e coaching de Business English." },
+    { icon: <Globe className="h-4 w-4 text-red-500" />, title: "Business English", description: "Vocabulário profissional, escrita de emails e etiqueta de reuniões." },
+    { icon: <Upload className="h-4 w-4 text-green-500" />, title: "Upload de Documentos", description: "Carregue CV e carta de apresentação para análise completa." },
+    { icon: <Briefcase className="h-4 w-4 text-violet-500" />, title: "Perfil Profissional", description: "Construa o seu perfil de carreira com IA para maximizar oportunidades." },
+    { icon: <BarChart2 className="h-4 w-4 text-indigo-500" />, title: "Análise de Progresso", description: "Acompanhe a sua evolução e identifique áreas de melhoria." },
+    { icon: <Sparkles className="h-4 w-4 text-teal-500" />, title: "Recomendações Inteligentes", description: "Sugestões personalizadas com base no seu perfil e objectivos." },
+    { icon: <MessageCircle className="h-4 w-4 text-yellow-500" />, title: "Chat com IA", description: "Converse com o coach de IA para dúvidas de carreira e Business English." },
+    { icon: <Users className="h-4 w-4 text-amber-500" />, title: "Simulação de Entrevistas", description: "Pratique com cenários realistas e receba feedback detalhado." },
+  ] : [
+    { icon: <FileText className="h-4 w-4 text-sky-500" />, title: "CV Analysis", description: "Compare your CV against job descriptions with detailed fit scoring." },
+    { icon: <Target className="h-4 w-4 text-emerald-500" />, title: "Skills Matching", description: "Identify gaps and get recommendations to improve your profile." },
+    { icon: <BookOpen className="h-4 w-4 text-purple-500" />, title: "Interview Preparation", description: "AI-generated flashcards with questions tailored to your role." },
+    { icon: <Mic className="h-4 w-4 text-blue-500" />, title: "Workplace Scenarios", description: "Audio simulations of meetings, presentations, and client calls." },
+    { icon: <Bot className="h-4 w-4 text-orange-500" />, title: "AI Career Coach", description: "Personalized advice and Business English coaching." },
+    { icon: <Globe className="h-4 w-4 text-red-500" />, title: "Business English", description: "Professional vocabulary, email writing, and meeting etiquette." },
+    { icon: <Upload className="h-4 w-4 text-green-500" />, title: "Document Upload", description: "Upload your CV and cover letter for comprehensive analysis." },
+    { icon: <Briefcase className="h-4 w-4 text-violet-500" />, title: "Professional Profile", description: "Build your career profile with AI to maximize opportunities." },
+    { icon: <BarChart2 className="h-4 w-4 text-indigo-500" />, title: "Progress Tracking", description: "Track your improvement and identify areas for growth." },
+    { icon: <Sparkles className="h-4 w-4 text-teal-500" />, title: "Smart Recommendations", description: "Personalized suggestions based on your profile and goals." },
+    { icon: <MessageCircle className="h-4 w-4 text-yellow-500" />, title: "AI Chat", description: "Chat with the AI coach for career and Business English questions." },
+    { icon: <Users className="h-4 w-4 text-amber-500" />, title: "Interview Simulations", description: "Practice with realistic scenarios and get detailed feedback." },
+  ];
+
+  const gridAreas = [
+    "md:[grid-area:1/1/2/2]",
+    "md:[grid-area:1/2/2/3]",
+    "md:[grid-area:1/3/2/4]",
+    "md:[grid-area:2/1/3/2]",
+    "md:[grid-area:2/2/3/3]",
+    "md:[grid-area:2/3/3/4]",
+    "md:[grid-area:3/1/4/2]",
+    "md:[grid-area:3/2/4/3]",
+    "md:[grid-area:3/3/4/4]",
+    "md:[grid-area:4/1/5/2]",
+    "md:[grid-area:4/2/5/3]",
+    "md:[grid-area:4/3/5/4]",
+  ];
+
   return (
     <ul className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-3 md:grid-rows-4 lg:gap-4">
-      <GridItem
-        area="md:[grid-area:1/1/2/2]"
-        icon={<Sparkles className="h-4 w-4 text-sky-500" />}
-        title="Sistema de Créditos"
-        description="Custos por feature tipados, validação e dedução transacional com logs de uso."
-      />
-      <GridItem
-        area="md:[grid-area:1/2/2/3]"
-        icon={<Lock className="h-4 w-4 text-emerald-500" />}
-        title="Autenticação Clerk"
-        description="Login, inscrição e sessões com rotas públicas/protegidas e middleware."
-      />
-      <GridItem
-        area="md:[grid-area:1/3/2/4]"
-        icon={<Settings className="h-4 w-4 text-purple-500" />}
-        title="PostgreSQL + Prisma"
-        description="Esquema, migrações e helpers tipados para operações seguras."
-      />
-      <GridItem
-        area="md:[grid-area:2/1/3/2]"
-        icon={<CreditCard className="h-4 w-4 text-blue-500" />}
-        title="Billing (Clerk)"
-        description="Assinaturas e packs de créditos com webhooks integrados."
-      />
-      <GridItem
-        area="md:[grid-area:2/2/3/3]"
-        icon={<ShieldCheck className="h-4 w-4 text-orange-500" />}
-        title="Painel Admin"
-        description="Gerencie usuários, créditos e visualize análises detalhadas."
-      />
-      <GridItem
-        area="md:[grid-area:2/3/3/4]"
-        icon={<Bot className="h-4 w-4 text-red-500" />}
-        title="Integração Vercel AI"
-        description="Chat com streaming em tempo real usando Vercel AI SDK."
-      />
-      <GridItem
-        area="md:[grid-area:3/1/4/2]"
-        icon={<Router className="h-4 w-4 text-green-500" />}
-        title="Suporte Open Router"
-        description="Conecte-se a qualquer modelo de linguagem grande com Open Router."
-      />
-      <GridItem
-        area="md:[grid-area:3/2/4/3]"
-        icon={<Upload className="h-4 w-4 text-violet-500" />}
-        title="Upload de Arquivos"
-        description="Sistema de upload e gerenciamento de arquivos com armazenamento seguro."
-      />
-      <GridItem
-        area="md:[grid-area:3/3/4/4]"
-        // eslint-disable-next-line jsx-a11y/alt-text
-        icon={<Image className="h-4 w-4 text-indigo-500" />}
-        title="Geração de Imagens"
-        description="Gere imagens com os modelos mais recentes de IA."
-      />
-      <GridItem
-        area="md:[grid-area:4/1/5/2]"
-        icon={<DollarSign className="h-4 w-4 text-teal-500" />}
-        title="Custos Configuráveis"
-        description="Configure custos por feature e créditos por plano via admin."
-      />
-      <GridItem
-        area="md:[grid-area:4/2/5/3]"
-        icon={<MessageCircle className="h-4 w-4 text-yellow-500" />}
-        title="Chat com qualquer LLM"
-        description="Interface de chat completa com histórico e contexto persistente."
-      />
-      <GridItem
-        area="md:[grid-area:4/3/5/4]"
-        icon={<Search className="h-4 w-4 text-amber-500" />}
-        title="UI + App Router"
-        description="Tailwind v4 + Radix UI com componentes prontos para produção."
-      />
+      {items.map((item, index) => (
+        <GridItem
+          key={item.title}
+          area={gridAreas[index]}
+          icon={item.icon}
+          title={item.title}
+          description={item.description}
+        />
+      ))}
     </ul>
   )
 }
@@ -123,5 +106,3 @@ const GridItem = ({ area, icon, title, description }: GridItemProps) => {
     </li>
   )
 }
-
-// export via named function acima
