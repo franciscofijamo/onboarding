@@ -56,7 +56,11 @@ export async function GET() {
       },
     })
 
-    const hasProfile = !!(user.careerPath || user.industry || user.currentRole || user.targetRole)
+    const [resumeCount, jobAppCount] = await Promise.all([
+      db.resume.count({ where: { userId: user.id } }),
+      db.jobApplication.count({ where: { userId: user.id } }),
+    ])
+    const hasProfile = !!(user.careerPath || user.industry || user.currentRole || user.targetRole || resumeCount > 0 || jobAppCount > 0)
 
     const totalSessions = sessions.length
     const totalAnalyzed = sessions.reduce((sum, s) => sum + s.analyzedCount, 0)
@@ -105,7 +109,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const hasProfile = !!(user.careerPath || user.industry || user.currentRole || user.targetRole)
+    const [resumeCount, jobAppCount] = await Promise.all([
+      db.resume.count({ where: { userId: user.id } }),
+      db.jobApplication.count({ where: { userId: user.id } }),
+    ])
+    const hasProfile = !!(user.careerPath || user.industry || user.currentRole || user.targetRole || resumeCount > 0 || jobAppCount > 0)
     if (!hasProfile) {
       return NextResponse.json({
         error: 'Please complete your profile with career information to generate workplace scenarios.',
