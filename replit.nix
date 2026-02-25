@@ -2,6 +2,5 @@
   deps = [
     pkgs.wget
     pkgs.openssh
-    
   ];  
 }
