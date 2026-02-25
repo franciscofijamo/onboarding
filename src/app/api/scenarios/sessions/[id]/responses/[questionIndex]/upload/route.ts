@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { getStorageProvider } from '@/lib/storage'
-import { ScenarioResponseStatus } from '../../../../../../../../../../prisma/generated/client'
+import { ScenarioResponseStatus } from '@/lib/prisma-types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60

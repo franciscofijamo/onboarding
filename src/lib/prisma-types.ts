@@ -1,2 +1,2 @@
-export { OperationType } from '../../prisma/generated/client'
+export { OperationType, ScenarioResponseStatus } from '../../prisma/generated/client'
 
