@@ -849,10 +849,10 @@ export default function OnboardingPage() {
                         strokeLinecap="round"
                         className={`stroke-current transition-all duration-1000 ${
                           (analysisResult.fitScore || 0) >= 70
-                            ? "text-emerald-500"
+                            ? "text-emerald-400"
                             : (analysisResult.fitScore || 0) >= 50
-                            ? "text-amber-500"
-                            : "text-red-400"
+                            ? "text-amber-300"
+                            : "text-rose-300"
                         }`}
                       />
                     </svg>
@@ -869,10 +869,10 @@ export default function OnboardingPage() {
                       <Badge
                         className={`text-xs ${
                           (analysisResult.fitScore || 0) >= 70
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400"
                             : (analysisResult.fitScore || 0) >= 50
-                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                            : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                            ? "bg-amber-50 text-amber-500 dark:bg-amber-950/40 dark:text-amber-400"
+                            : "bg-rose-50 text-rose-400 dark:bg-rose-950/40 dark:text-rose-400"
                         }`}
                       >
                         {(analysisResult.fitScore || 0) >= 70
@@ -899,15 +899,15 @@ export default function OnboardingPage() {
 
                     <div className="flex gap-6 mt-4">
                       <div className="text-center">
-                        <div className="text-lg font-bold text-emerald-600">{toStringArray(analysisResult.skillsMatch).length}</div>
+                        <div className="text-lg font-bold text-emerald-400">{toStringArray(analysisResult.skillsMatch).length}</div>
                         <div className="text-xs text-muted-foreground">Skills Match</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-lg font-bold text-amber-600">{toStringArray(analysisResult.missingSkills).length}</div>
+                        <div className="text-lg font-bold text-orange-300">{toStringArray(analysisResult.missingSkills).length}</div>
                         <div className="text-xs text-muted-foreground">Gaps Found</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-lg font-bold text-primary">{toStringArray(analysisResult.recommendations).length}</div>
+                        <div className="text-lg font-bold text-primary/70">{toStringArray(analysisResult.recommendations).length}</div>
                         <div className="text-xs text-muted-foreground">Recommendations</div>
                       </div>
                     </div>
@@ -919,8 +919,8 @@ export default function OnboardingPage() {
                 {toStringArray(analysisResult.skillsMatch).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm">Matching Skills</h4>
@@ -932,10 +932,10 @@ export default function OnboardingPage() {
                         (skill, i) => (
                           <li
                             key={i}
-                            className="text-sm flex items-start gap-2 p-1.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900"
+                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/40 border border-border/60"
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                            <span className="text-emerald-800 dark:text-emerald-200 break-words min-w-0">{skill}</span>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                            <span className="text-foreground/80 break-words min-w-0">{skill}</span>
                           </li>
                         )
                       )}
@@ -946,8 +946,8 @@ export default function OnboardingPage() {
                 {toStringArray(analysisResult.missingSkills).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center shrink-0">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <div className="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
+                        <AlertCircle className="h-4 w-4 text-orange-300" />
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm">Missing Skills</h4>
@@ -959,10 +959,10 @@ export default function OnboardingPage() {
                         (skill, i) => (
                           <li
                             key={i}
-                            className="text-sm flex items-start gap-2 p-1.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900"
+                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/40 border border-border/60"
                           >
-                            <AlertCircle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                            <span className="text-amber-800 dark:text-amber-200 break-words min-w-0">{skill}</span>
+                            <AlertCircle className="h-3.5 w-3.5 text-orange-300 mt-0.5 shrink-0" />
+                            <span className="text-foreground/80 break-words min-w-0">{skill}</span>
                           </li>
                         )
                       )}
@@ -974,8 +974,8 @@ export default function OnboardingPage() {
               {analysisResult.keywordAnalysis && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-7 w-7 rounded-lg bg-blue-100 dark:bg-blue-950 flex items-center justify-center shrink-0">
-                      <Search className="h-4 w-4 text-blue-600" />
+                    <div className="h-7 w-7 rounded-lg bg-sky-50 dark:bg-sky-950/40 flex items-center justify-center shrink-0">
+                      <Search className="h-4 w-4 text-sky-400" />
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-semibold text-sm">Keyword Analysis</h4>
@@ -985,12 +985,12 @@ export default function OnboardingPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     {(analysisResult.keywordAnalysis.found || []).length > 0 && (
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-emerald-600 mb-2 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3 shrink-0" /> Found in your CV ({(analysisResult.keywordAnalysis.found || []).length})
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" /> Found in your CV ({(analysisResult.keywordAnalysis.found || []).length})
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.found || []).map((kw, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 break-words">
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-muted/60 text-foreground/70 border border-border/60 break-words">
                               {kw}
                             </span>
                           ))}
@@ -999,12 +999,12 @@ export default function OnboardingPage() {
                     )}
                     {(analysisResult.keywordAnalysis.missing || []).length > 0 && (
                       <div className="min-w-0">
-                        <p className="text-xs font-medium text-red-600 mb-2 flex items-center gap-1">
-                          <XCircle className="h-3 w-3 shrink-0" /> Missing from your CV ({(analysisResult.keywordAnalysis.missing || []).length})
+                        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <XCircle className="h-3 w-3 shrink-0 text-orange-300" /> Missing from your CV ({(analysisResult.keywordAnalysis.missing || []).length})
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.missing || []).map((kw, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800 break-words">
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-orange-50/60 text-foreground/70 dark:bg-orange-950/20 border border-orange-200/40 dark:border-orange-800/30 break-words">
                               {kw}
                             </span>
                           ))}
@@ -1018,8 +1018,8 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.strengths).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center shrink-0">
-                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
+                      <TrendingUp className="h-4 w-4 text-emerald-400" />
                     </div>
                     <h4 className="font-semibold text-sm">Your Strengths</h4>
                   </div>
@@ -1030,7 +1030,7 @@ export default function OnboardingPage() {
                           key={i}
                           className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
                           <span className="break-words min-w-0">{item}</span>
                         </li>
                       )
@@ -1042,8 +1042,8 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.improvements).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center shrink-0">
-                      <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <div className="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
+                      <Lightbulb className="h-4 w-4 text-orange-300" />
                     </div>
                     <h4 className="font-semibold text-sm">Areas for Improvement</h4>
                   </div>
@@ -1054,7 +1054,7 @@ export default function OnboardingPage() {
                           key={i}
                           className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <ArrowRight className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                          <ArrowRight className="h-4 w-4 text-orange-300 mt-0.5 shrink-0" />
                           <span className="break-words min-w-0">{item}</span>
                         </li>
                       )
