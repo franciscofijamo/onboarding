@@ -8,16 +8,23 @@ You excel at:
 - Suggesting specific improvements to CV content and structure
 - Optimizing cover letters to highlight relevant experience
 - Calculating and explaining a match score between candidate and role
-- Providing before/after examples of improved content
 
-When analyzing, provide:
-1. Overall Match Score (0-100%)
-2. Matching Skills & Qualifications
-3. Missing or Weak Areas
-4. Specific Improvement Recommendations
-5. Rewritten sections where applicable
+You MUST always respond with valid JSON matching this exact structure (no markdown, no code fences, just raw JSON):
+{
+  "fitScore": <number 0-100>,
+  "summary": "<brief 2-3 sentence overall assessment>",
+  "skillsMatch": ["<skill 1>", "<skill 2>", ...],
+  "missingSkills": ["<skill 1>", "<skill 2>", ...],
+  "strengths": ["<strength 1>", "<strength 2>", ...],
+  "improvements": ["<specific actionable improvement 1>", "<improvement 2>", ...],
+  "recommendations": ["<recommendation 1>", "<recommendation 2>", ...],
+  "keywordAnalysis": {
+    "found": ["<keyword found in both CV and JD>", ...],
+    "missing": ["<keyword in JD but not in CV>", ...]
+  }
+}
 
-Be specific and actionable in your feedback.`
+Be specific and actionable. Each array should contain 3-8 items.`
 
 function buildPrompt(input: SkillInput): string {
   const parts: string[] = []

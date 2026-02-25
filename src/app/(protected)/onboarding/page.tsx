@@ -25,6 +25,9 @@ import {
   TrendingUp,
   Lightbulb,
   Save,
+  Search,
+  XCircle,
+  RefreshCw,
 } from "lucide-react";
 
 type Step = "resume" | "cover-letter" | "job-description" | "analysis";
@@ -52,14 +55,21 @@ interface JobApplicationData {
   analyses?: AnalysisData[];
 }
 
+interface KeywordAnalysis {
+  found?: string[];
+  missing?: string[];
+}
+
 interface AnalysisData {
   id: string;
   fitScore: number | null;
+  summary: string | null;
   skillsMatch: string[] | Record<string, unknown> | null;
   missingSkills: string[] | Record<string, unknown> | null;
   strengths: string[] | Record<string, unknown> | null;
   improvements: string[] | Record<string, unknown> | null;
   recommendations: string[] | Record<string, unknown> | null;
+  keywordAnalysis: KeywordAnalysis | null;
 }
 
 interface JobApplicationResponse {
@@ -759,20 +769,31 @@ export default function OnboardingPage() {
         <div className="space-y-6">
           {jobApplicationMutation.isPending && (
             <div className="bg-card rounded-2xl border border-border p-12 flex flex-col items-center justify-center text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-              <h3 className="text-lg font-semibold">
+              <div className="relative mb-6">
+                <div className="h-20 w-20 rounded-full border-4 border-primary/20 flex items-center justify-center">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold">
                 Analyzing Your Application...
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Our AI is comparing your resume against the job description.
+              <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                Our AI is comparing your resume against the job description. This may take up to 30 seconds.
               </p>
+              <div className="flex gap-4 mt-6 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><Target className="h-3 w-3" /> Matching skills</span>
+                <span className="flex items-center gap-1"><Search className="h-3 w-3" /> Finding gaps</span>
+                <span className="flex items-center gap-1"><Lightbulb className="h-3 w-3" /> Building recommendations</span>
+              </div>
             </div>
           )}
 
           {analysisError && !analysisResult && (
             <div className="bg-card rounded-2xl border border-destructive/30 p-6">
               <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive" />
+                <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                  <XCircle className="h-5 w-5 text-destructive" />
+                </div>
                 <div>
                   <h3 className="font-semibold text-destructive">
                     Analysis Failed
@@ -790,6 +811,7 @@ export default function OnboardingPage() {
                   setAnalysisError(null);
                 }}
               >
+                <RefreshCw className="h-4 w-4" />
                 Try Again
               </Button>
             </div>
@@ -797,73 +819,113 @@ export default function OnboardingPage() {
 
           {analysisResult && (
             <>
-              {analysisResult.fitScore !== null && (
-                <div className="bg-card rounded-2xl border border-border p-6">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <svg
-                        width="80"
-                        height="80"
-                        viewBox="0 0 80 80"
-                        className="-rotate-90"
-                      >
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          fill="none"
-                          strokeWidth="6"
-                          className="stroke-muted"
-                        />
-                        <circle
-                          cx="40"
-                          cy="40"
-                          r="32"
-                          fill="none"
-                          strokeWidth="6"
-                          strokeDasharray={2 * Math.PI * 32}
-                          strokeDashoffset={
-                            2 *
-                            Math.PI *
-                            32 *
-                            (1 - (analysisResult.fitScore || 0) / 100)
-                          }
-                          strokeLinecap="round"
-                          className={`stroke-current transition-all duration-1000 ${
-                            (analysisResult.fitScore || 0) >= 70
-                              ? "text-emerald-500"
-                              : (analysisResult.fitScore || 0) >= 50
-                              ? "text-amber-500"
-                              : "text-red-400"
-                          }`}
-                        />
-                      </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">
-                        {Math.round(analysisResult.fitScore || 0)}%
+              <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl border border-border p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                  <div className="relative shrink-0">
+                    <svg
+                      width="120"
+                      height="120"
+                      viewBox="0 0 120 120"
+                      className="-rotate-90"
+                    >
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        fill="none"
+                        strokeWidth="8"
+                        className="stroke-muted"
+                      />
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        fill="none"
+                        strokeWidth="8"
+                        strokeDasharray={2 * Math.PI * 50}
+                        strokeDashoffset={
+                          2 * Math.PI * 50 * (1 - (analysisResult.fitScore || 0) / 100)
+                        }
+                        strokeLinecap="round"
+                        className={`stroke-current transition-all duration-1000 ${
+                          (analysisResult.fitScore || 0) >= 70
+                            ? "text-emerald-500"
+                            : (analysisResult.fitScore || 0) >= 50
+                            ? "text-amber-500"
+                            : "text-red-400"
+                        }`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-3xl font-bold">
+                        {analysisResult.fitScore !== null ? Math.round(analysisResult.fitScore) : "—"}
                       </span>
+                      <span className="text-xs text-muted-foreground font-medium">/ 100</span>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Match Score</h3>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-semibold">Match Score</h3>
+                      <Badge
+                        className={`text-xs ${
+                          (analysisResult.fitScore || 0) >= 70
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            : (analysisResult.fitScore || 0) >= 50
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                            : "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                        }`}
+                      >
+                        {(analysisResult.fitScore || 0) >= 70
+                          ? "Strong Match"
+                          : (analysisResult.fitScore || 0) >= 50
+                          ? "Moderate Match"
+                          : "Needs Work"}
+                      </Badge>
+                    </div>
+                    {analysisResult.summary && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {analysisResult.summary}
+                      </p>
+                    )}
+                    {!analysisResult.summary && (
                       <p className="text-sm text-muted-foreground">
                         {(analysisResult.fitScore || 0) >= 70
-                          ? "Strong match! You're well-positioned for this role."
+                          ? "Your profile is well-aligned with this role. Focus on highlighting your matching skills."
                           : (analysisResult.fitScore || 0) >= 50
-                          ? "Moderate match. Some areas could be improved."
-                          : "Low match. Consider strengthening your profile for this role."}
+                          ? "You have a solid foundation. Address the gaps below to strengthen your application."
+                          : "There are significant gaps between your profile and this role. Review the recommendations carefully."}
                       </p>
+                    )}
+
+                    <div className="flex gap-6 mt-4">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-emerald-600">{toStringArray(analysisResult.skillsMatch).length}</div>
+                        <div className="text-xs text-muted-foreground">Skills Match</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-amber-600">{toStringArray(analysisResult.missingSkills).length}</div>
+                        <div className="text-xs text-muted-foreground">Gaps Found</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-primary">{toStringArray(analysisResult.recommendations).length}</div>
+                        <div className="text-xs text-muted-foreground">Recommendations</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 {toStringArray(analysisResult.skillsMatch).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <Target className="h-4 w-4 text-emerald-500" />
-                      <h4 className="font-semibold text-sm">
-                        Matching Skills
-                      </h4>
+                      <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm">Matching Skills</h4>
+                        <p className="text-xs text-muted-foreground">{toStringArray(analysisResult.skillsMatch).length} skills aligned</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {toStringArray(analysisResult.skillsMatch).map(
@@ -871,7 +933,7 @@ export default function OnboardingPage() {
                           <Badge
                             key={i}
                             variant="secondary"
-                            className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                            className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                           >
                             {skill}
                           </Badge>
@@ -884,8 +946,13 @@ export default function OnboardingPage() {
                 {toStringArray(analysisResult.missingSkills).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <h4 className="font-semibold text-sm">Missing Skills</h4>
+                      <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm">Missing Skills</h4>
+                        <p className="text-xs text-muted-foreground">{toStringArray(analysisResult.missingSkills).length} gaps to address</p>
+                      </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {toStringArray(analysisResult.missingSkills).map(
@@ -893,7 +960,7 @@ export default function OnboardingPage() {
                           <Badge
                             key={i}
                             variant="secondary"
-                            className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                            className="bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
                           >
                             {skill}
                           </Badge>
@@ -904,21 +971,67 @@ export default function OnboardingPage() {
                 )}
               </div>
 
+              {analysisResult.keywordAnalysis && (
+                <div className="bg-card rounded-2xl border border-border p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-7 w-7 rounded-lg bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
+                      <Search className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Keyword Analysis</h4>
+                      <p className="text-xs text-muted-foreground">Keywords from the job description found in your resume</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {(analysisResult.keywordAnalysis.found || []).length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-emerald-600 mb-2 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> Found in your CV ({(analysisResult.keywordAnalysis.found || []).length})
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {(analysisResult.keywordAnalysis.found || []).map((kw, i) => (
+                            <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {(analysisResult.keywordAnalysis.missing || []).length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-red-600 mb-2 flex items-center gap-1">
+                          <XCircle className="h-3 w-3" /> Missing from your CV ({(analysisResult.keywordAnalysis.missing || []).length})
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {(analysisResult.keywordAnalysis.missing || []).map((kw, i) => (
+                            <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800">
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {toStringArray(analysisResult.strengths).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    <h4 className="font-semibold text-sm">Strengths</h4>
+                    <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center">
+                      <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <h4 className="font-semibold text-sm">Your Strengths</h4>
                   </div>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {toStringArray(analysisResult.strengths).map(
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-2"
+                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                          {item}
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          <span>{item}</span>
                         </li>
                       )
                     )}
@@ -929,20 +1042,20 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.improvements).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Lightbulb className="h-4 w-4 text-amber-500" />
-                    <h4 className="font-semibold text-sm">
-                      Areas for Improvement
-                    </h4>
+                    <div className="h-7 w-7 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+                      <Lightbulb className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <h4 className="font-semibold text-sm">Areas for Improvement</h4>
                   </div>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {toStringArray(analysisResult.improvements).map(
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-2"
+                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
                         >
-                          <ArrowRight className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
-                          {item}
+                          <ArrowRight className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                          <span>{item}</span>
                         </li>
                       )
                     )}
@@ -953,18 +1066,22 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.recommendations).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <BarChart3 className="h-4 w-4 text-primary" />
+                    <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </div>
                     <h4 className="font-semibold text-sm">Recommendations</h4>
                   </div>
-                  <ul className="space-y-1.5">
+                  <ul className="space-y-2">
                     {toStringArray(analysisResult.recommendations).map(
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-2"
+                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-border"
                         >
-                          <Sparkles className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                          {item}
+                          <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-primary">{i + 1}</span>
+                          </div>
+                          <span>{item}</span>
                         </li>
                       )
                     )}
@@ -972,7 +1089,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-2">
                 <Button
                   variant="outline"
                   onClick={() => setCurrentStep("job-description")}
@@ -991,19 +1108,20 @@ export default function OnboardingPage() {
           {!jobApplicationMutation.isPending &&
             !analysisResult &&
             !analysisError && (
-              <div className="bg-card rounded-2xl border border-border p-8 text-center">
-                <Sparkles className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <div className="bg-card rounded-2xl border border-border p-12 text-center">
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                </div>
                 <h3 className="text-lg font-semibold mb-1">
                   No Analysis Yet
                 </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Complete the previous steps and submit your job application for
-                  AI analysis.
+                <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+                  Complete the previous steps and submit your job application to see your AI-powered analysis dashboard.
                 </p>
                 <Button
-                  variant="outline"
                   onClick={() => setCurrentStep("job-description")}
                 >
+                  <ArrowLeft className="h-4 w-4" />
                   Go to Job Description
                 </Button>
               </div>

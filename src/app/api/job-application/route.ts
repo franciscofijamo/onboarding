@@ -99,28 +99,43 @@ export async function POST(request: NextRequest) {
 
         const { text: analysisContent } = await generateText({
           model,
-          system: systemMessage + '\n\nYou MUST respond with valid JSON only. No markdown, no code fences.',
-          prompt: userPrompt,
+          system: systemMessage,
+          prompt: userPrompt + '\n\nRespond ONLY with valid JSON. No markdown, no code fences, no explanations outside the JSON.',
           temperature: 0.7,
         })
 
-        let analysisResult
+        let analysisResult: Record<string, unknown> = {}
         try {
-          const cleaned = analysisContent.replace(/```json\n?|\n?```/g, '').trim()
-          analysisResult = JSON.parse(cleaned)
+          let cleaned = analysisContent.trim()
+          cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```$/i, '').trim()
+          const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+          if (jsonMatch) {
+            analysisResult = JSON.parse(jsonMatch[0])
+          } else {
+            analysisResult = JSON.parse(cleaned)
+          }
         } catch {
-          analysisResult = { rawAnalysis: analysisContent }
+          console.error('Failed to parse AI response as JSON, raw:', analysisContent.slice(0, 500))
+          analysisResult = {}
+        }
+
+        const toJsonArray = (val: unknown): string[] | null => {
+          if (Array.isArray(val) && val.length > 0) return val.map(String)
+          return null
         }
 
         const analysis = await db.applicationAnalysis.create({
           data: {
             jobApplicationId: jobApplication.id,
-            fitScore: typeof analysisResult.fitScore === 'number' ? analysisResult.fitScore : null,
-            skillsMatch: analysisResult.skillsMatch || analysisResult.matchingSkills || null,
-            missingSkills: analysisResult.missingSkills || null,
-            strengths: analysisResult.strengths || null,
-            improvements: analysisResult.improvements || analysisResult.improvementAreas || null,
-            recommendations: analysisResult.recommendations || null,
+            fitScore: typeof analysisResult.fitScore === 'number' ? analysisResult.fitScore : (typeof analysisResult.fitScore === 'string' ? parseFloat(analysisResult.fitScore as string) || null : null),
+            summary: typeof analysisResult.summary === 'string' ? analysisResult.summary : null,
+            skillsMatch: toJsonArray(analysisResult.skillsMatch || analysisResult.matchingSkills),
+            missingSkills: toJsonArray(analysisResult.missingSkills),
+            strengths: toJsonArray(analysisResult.strengths),
+            improvements: toJsonArray(analysisResult.improvements || analysisResult.improvementAreas),
+            recommendations: toJsonArray(analysisResult.recommendations),
+            keywordAnalysis: analysisResult.keywordAnalysis && typeof analysisResult.keywordAnalysis === 'object' ? analysisResult.keywordAnalysis as Record<string, unknown> : null,
+            rawResponse: analysisContent,
             agentSkill: 'APPLICATION_OPTIMIZER',
             creditsUsed: skill.creditCost,
           },

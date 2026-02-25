@@ -291,11 +291,14 @@ model ApplicationAnalysis {
   id                String   @id @default(cuid())
   jobApplicationId  String
   fitScore          Float?
+  summary           String?  @db.Text
   skillsMatch       Json?
   missingSkills     Json?
   strengths         Json?
   improvements      Json?
   recommendations   Json?
+  keywordAnalysis   Json?
+  rawResponse       String?  @db.Text
   agentSkill        AgentSkill?
   creditsUsed       Int      @default(10)
   createdAt         DateTime @default(now())
