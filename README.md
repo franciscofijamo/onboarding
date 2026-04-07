@@ -8,7 +8,7 @@ Um template pronto para produção em Next.js com autenticação (Clerk), banco 
 ```bash
 # 1) Clonar e instalar
 git clone <your-repo-url>
-cd nextjs-saas-template
+cd standout
 npm install
 
 # 2) Variáveis de ambiente
@@ -20,7 +20,7 @@ npm run db:push
 
 # 4) Rodar o app
 npm run dev
-# Acesse http://localhost:3000
+# Acesse http://localhost:5000
 ```
 
 Para visão geral completa, leia: [.context/docs/README.md](.context/docs/README.md)
@@ -47,7 +47,7 @@ Para visão geral completa, leia: [.context/docs/README.md](.context/docs/README
 1. Clonar o repositório:
 ```bash
 git clone <your-repo-url>
-cd nextjs-saas-template
+cd standout
 ```
 2. Instalar dependências:
 ```bash
@@ -73,7 +73,7 @@ npm run db:push
 ```bash
 npm run dev
 ```
-Acesse http://localhost:3000.
+Acesse http://localhost:5000.
 
 ## Documentação
 - Índice central: [.context/docs/README.md](.context/docs/README.md)
@@ -251,15 +251,15 @@ Guia detalhado para Clerk, banco, deploy na Vercel e uso de agentes.
   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard`
   - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard`
 - Banco: `DATABASE_URL=postgresql://user:password@host:5432/saas_template`
-- App: `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+- App: `NEXT_PUBLIC_APP_URL=http://localhost:5000`
 
 ### Configurar Clerk
 1) Crie um app em dashboard.clerk.com e copie as chaves.
 2) Defina `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` e `CLERK_SECRET_KEY` em `.env`.
 3) Redirects/origens autorizadas:
-   - Dev: `http://localhost:3000`
+   - Dev: `http://localhost:5000`
    - Produção: domínio `.vercel.app` e custom domain
-4) Rotas de auth: `src/app/(public)/sign-in` e `src/app/(public)/sign-up`. Rotas protegidas: `src/app/(protected)`.
+4) Rotas de auth: `src/app/(auth)/sign-in` e `src/app/(auth)/sign-up`. Rotas protegidas: `src/app/(protected)`.
 5) Webhooks (opcional): configure um endpoint para sincronização de usuários e defina `CLERK_WEBHOOK_SECRET`.
 
 ### Configurar Asaas
@@ -410,7 +410,7 @@ Observações:
 1) `npm install`
 2) Configure `.env`
 3) Inicie banco (`db:push` ou `db:migrate`)
-4) `npm run dev` → http://localhost:3000
+4) `npm run dev` → http://localhost:5000
 5) Valide sign-in/sign-up e acesso às rotas protegidas
 
 ## Webhooks (Local)
