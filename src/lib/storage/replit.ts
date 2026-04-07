@@ -1,27 +1,43 @@
 import { Storage } from '@google-cloud/storage'
 import type { StorageProvider, UploadResult, UploadOptions } from './types'
 
+const REPLIT_ADC = {
+  audience: 'replit',
+  subject_token_type: 'access_token',
+  token_url: 'http://127.0.0.1:1106/token',
+  type: 'external_account',
+  credential_source: {
+    url: 'http://127.0.0.1:1106/credential',
+    format: { type: 'json', subject_token_field_name: 'access_token' },
+  },
+  universe_domain: 'googleapis.com',
+}
+
 export class ReplitAppStorage implements StorageProvider {
   private readonly bucketId: string
   private readonly storage: Storage
   private readonly bucket: ReturnType<Storage['bucket']>
 
   constructor(bucketId?: string) {
-    const resolvedBucketId = bucketId || process.env.REPLIT_STORAGE_BUCKET_ID || ''
+    const resolvedBucketId =
+      bucketId ||
+      process.env.REPLIT_STORAGE_BUCKET_ID ||
+      process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID ||
+      ''
 
     if (!resolvedBucketId) {
       throw new Error('REPLIT_STORAGE_BUCKET_ID is not configured')
     }
 
     this.bucketId = resolvedBucketId
-    this.storage = new Storage()
+    this.storage = new Storage({ credentials: REPLIT_ADC, projectId: '' })
     this.bucket = this.storage.bucket(this.bucketId)
   }
 
   async upload(
     key: string,
     file: File | Blob,
-    _options?: UploadOptions
+    _options?: UploadOptions,
   ): Promise<UploadResult> {
     const buffer = Buffer.from(await file.arrayBuffer())
     const gcsFile = this.bucket.file(key)
@@ -47,16 +63,6 @@ export class ReplitAppStorage implements StorageProvider {
       if (status === 404) return
       throw error
     }
-  }
-
-  async getSignedUrl(key: string, expiresInMs = 60 * 60 * 1000): Promise<string> {
-    const gcsFile = this.bucket.file(key)
-    const [url] = await gcsFile.getSignedUrl({
-      version: 'v4',
-      action: 'read',
-      expires: Date.now() + expiresInMs,
-    })
-    return url
   }
 
   async downloadAsBuffer(key: string): Promise<Buffer> {

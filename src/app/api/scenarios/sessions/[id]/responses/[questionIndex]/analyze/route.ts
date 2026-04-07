@@ -213,8 +213,19 @@ export async function POST(
       return NextResponse.json({ error: 'Audio file path not found' }, { status: 400 })
     }
 
-    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || ''
-    const gcs = new Storage()
+    const bucketId = process.env.REPLIT_STORAGE_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID || ''
+    const REPLIT_ADC = {
+      audience: 'replit',
+      subject_token_type: 'access_token',
+      token_url: 'http://127.0.0.1:1106/token',
+      type: 'external_account',
+      credential_source: {
+        url: 'http://127.0.0.1:1106/credential',
+        format: { type: 'json', subject_token_field_name: 'access_token' },
+      },
+      universe_domain: 'googleapis.com',
+    }
+    const gcs = new Storage({ credentials: REPLIT_ADC, projectId: '' })
     const bucket = gcs.bucket(bucketId)
     let audioBuffer: Buffer
     try {

@@ -33,7 +33,7 @@ E2E_AUTH_BYPASS = "0"
 NEXT_PUBLIC_E2E_TEST = "0"
 ASAAS_API_URL = "https://sandbox.asaas.com/api/v3"
 STORAGE_PROVIDER = "replit"
-REPLIT_STORAGE_BUCKET_ID = "replit-objstore-8239f291-0ba7-468b-aa8b-362faa75daaa"
+REPLIT_STORAGE_BUCKET_ID = "replit-objstore-55c074d6-5d15-42d9-ae8e-0838fb30cc55"
 FREE_CREDITS_ON_SIGNUP = "20"
 AI_MODEL = "google/gemini-2.5-pro-preview-06-05"
 
@@ -69,3 +69,7 @@ externalPort = 80
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 120000
