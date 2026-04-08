@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { getOutcomeLabel, getStatusLabel, mapStatusToKanbanStage, type JobApplicationStatus } from "@/lib/job-application/kanban";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { useCredits } from "@/hooks/use-credits";
@@ -50,7 +51,7 @@ interface JobApplicationData {
   jobTitle: string | null;
   companyName: string | null;
   jobDescription: string;
-  status: string;
+  status: JobApplicationStatus;
   resume?: { id: string; title: string } | null;
   coverLetter?: { id: string; title: string } | null;
   analyses?: AnalysisData[];
@@ -272,6 +273,14 @@ export default function OnboardingPage() {
       queryFn: () => api.get("/api/job-application"),
     });
 
+  const currentApplication = React.useMemo(
+    () =>
+      (existingJobApplications?.jobApplications || []).find(
+        (application) => application.id === selectedJobApplicationId
+      ) || null,
+    [existingJobApplications, selectedJobApplicationId]
+  );
+
   React.useEffect(() => {
     if (dataLoaded) return;
     if (loadingResumes || loadingCoverLetters || loadingJobApplications) return;
@@ -464,6 +473,38 @@ export default function OnboardingPage() {
     },
     onError: (error) => {
       setAnalysisError(error.message || "Failed to analyze application");
+    },
+  });
+
+  const updateApplicationStatusMutation = useMutation({
+    mutationFn: async (status: JobApplicationStatus) => {
+      if (!selectedJobApplicationId) {
+        throw new Error("Application not found");
+      }
+
+      return api.patch<{ jobApplication: JobApplicationData }>(
+        "/api/job-application/" + selectedJobApplicationId,
+        { status }
+      );
+    },
+    onSuccess: (_data, status) => {
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+      if (status === "APPLIED") {
+        showSaveStatus("Application moved to Applied!");
+        return;
+      }
+
+      if (status === "INTERVIEWING") {
+        showSaveStatus("Application moved to Interview!");
+        return;
+      }
+
+      showSaveStatus("Application updated!");
+    },
+    onError: (error) => {
+      setAnalysisError(
+        error instanceof Error ? error.message : "Failed to update application status"
+      );
     },
   });
 
@@ -665,6 +706,20 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleUpdateApplicationStatus = async (
+    status: JobApplicationStatus,
+    options?: { redirectToApplications?: boolean }
+  ) => {
+    if (!selectedJobApplicationId) return;
+
+    setAnalysisError(null);
+    await updateApplicationStatusMutation.mutateAsync(status);
+
+    if (options?.redirectToApplications) {
+      router.push("/applications");
+    }
+  };
+
   const isLoading =
     loadingResumes || loadingCoverLetters || loadingJobApplications;
 
@@ -695,14 +750,37 @@ export default function OnboardingPage() {
 
       <div className="bg-card rounded-2xl border border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium">Application Context</p>
-            <p className="text-xs text-muted-foreground">
-              {selectedJobApplicationId
-                ? "Editing existing application"
-                : "Creating a new application"}
-            </p>
+          <div className="space-y-2">
+            <div>
+              <p className="text-sm font-medium">Application Context</p>
+              <p className="text-xs text-muted-foreground">
+                {selectedJobApplicationId
+                  ? "Editing existing application"
+                  : "Creating a new application"}
+              </p>
+            </div>
+            {currentApplication && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline">{getStatusLabel(currentApplication.status)}</Badge>
+                {getOutcomeLabel(currentApplication.status) && (
+                  <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
+                    {getOutcomeLabel(currentApplication.status)}
+                  </Badge>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  {mapStatusToKanbanStage(currentApplication.status) === "IN_PROGRESS"
+                    ? "Still in progress"
+                    : mapStatusToKanbanStage(currentApplication.status) === "APPLIED"
+                    ? "Already marked as applied"
+                    : "Already in interview stage"}
+                </span>
+              </div>
+            )}
           </div>
+          <Button variant="outline" onClick={() => router.push("/applications")}>
+            <ArrowRight className="h-4 w-4" />
+            Open Kanban
+          </Button>
         </div>
       </div>
 
@@ -1393,7 +1471,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              <div className="flex justify-between pt-2">
+              <div className="flex flex-col gap-3 pt-2 lg:flex-row lg:items-center lg:justify-between">
                 <Button
                   variant="outline"
                   onClick={() => setCurrentStep("job-description")}
@@ -1401,10 +1479,53 @@ export default function OnboardingPage() {
                   <ArrowLeft className="h-4 w-4" />
                   Modify & Re-analyze
                 </Button>
-                <Button onClick={() => router.push("/interview-prep")}>
-                  <ArrowRight className="h-4 w-4" />
-                  Continue to Interview Prep
-                </Button>
+                <div className="flex flex-wrap gap-2 lg:justify-end">
+                  {selectedJobApplicationId && (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        handleUpdateApplicationStatus("APPLIED", {
+                          redirectToApplications: true,
+                        })
+                      }
+                      disabled={
+                        updateApplicationStatusMutation.isPending ||
+                        (currentApplication ? mapStatusToKanbanStage(currentApplication.status) !== "IN_PROGRESS" : false)
+                      }
+                    >
+                      {updateApplicationStatusMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      Mark as Applied
+                    </Button>
+                  )}
+                  {selectedJobApplicationId && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateApplicationStatus("INTERVIEWING")}
+                      disabled={
+                        updateApplicationStatusMutation.isPending ||
+                        currentApplication?.status === "INTERVIEWING" ||
+                        currentApplication?.status === "OFFERED" ||
+                        currentApplication?.status === "REJECTED" ||
+                        currentApplication?.status === "ACCEPTED"
+                      }
+                    >
+                      {updateApplicationStatusMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Target className="h-4 w-4" />
+                      )}
+                      Move to Interview
+                    </Button>
+                  )}
+                  <Button onClick={() => router.push("/interview-prep")}>
+                    <ArrowRight className="h-4 w-4" />
+                    Continue to Interview Prep
+                  </Button>
+                </div>
               </div>
             </>
           )}
