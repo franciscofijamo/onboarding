@@ -32,9 +32,9 @@ type SidebarProps = {
 export const navigationItems = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
   { nameKey: "nav.applications", hintKey: "nav.applications", href: "/applications", icon: Briefcase },
-  { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare },
-  { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },
-  { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit },
+  { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare, disabled: true },
+  { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic, disabled: true },
+  { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit, disabled: true },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
 ];
 
@@ -75,31 +75,58 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <ScrollArea className="flex-1 min-h-0">
         <nav className="flex flex-col gap-1 p-2" aria-label="Main navigation">
           {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = !item.disabled && pathname === item.href;
             const label = t(item.nameKey);
             const ptHint = hint(item.hintKey);
-            const link = (
+            const showComingSoon = Boolean(item.disabled);
+            const itemContent = (
+              <>
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!collapsed && (
+                  <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+                    <div className="flex min-w-0 flex-col">
+                      <span>{label}</span>
+                      {ptHint && ptHint !== label && (
+                        <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                      )}
+                    </div>
+                    {showComingSoon && (
+                      <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                        Soon
+                      </span>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+
+            const itemClassName = cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              collapsed && "justify-center",
+              item.disabled
+                ? "cursor-not-allowed opacity-60"
+                : isActive
+                ? "bg-accent text-accent-foreground"
+                : "hover:bg-accent hover:text-accent-foreground"
+            );
+
+            const link = item.disabled ? (
+              <div
+                key={item.nameKey}
+                aria-label={collapsed ? label + " (Coming soon)" : undefined}
+                aria-disabled="true"
+                className={itemClassName}
+              >
+                {itemContent}
+              </div>
+            ) : (
               <Link
                 key={item.nameKey}
                 href={item.href}
                 aria-label={collapsed ? label : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  collapsed && "justify-center",
-                  isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                )}
+                className={itemClassName}
               >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && (
-                  <div className="flex flex-col">
-                    <span>{label}</span>
-                    {ptHint && ptHint !== label && (
-                      <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
-                    )}
-                  </div>
-                )}
+                {itemContent}
               </Link>
             );
 
@@ -113,6 +140,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     <span>{label}</span>
                     {ptHint && ptHint !== label && (
                       <span className="text-[10px] text-muted-foreground">{ptHint}</span>
+                    )}
+                    {showComingSoon && (
+                      <span className="mt-1 inline-block w-fit rounded bg-amber-500/10 px-1 py-[1px] text-[8px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20">
+                        Soon
+                      </span>
                     )}
                   </div>
                 </TooltipContent>

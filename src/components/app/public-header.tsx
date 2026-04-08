@@ -38,17 +38,15 @@ const Logo = ({ className }: { className?: string }) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 400 100"
-      width="200"
-      height="75"
-      className={className}
+      viewBox="0 0 220 80"
+      className={cn("h-7 w-auto", className)}
     >
       <text
-        x="10"
-        y="62"
+        x="0"
+        y="60"
         fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
-        fontSize="38"
-        fontWeight="900"
+        fontSize="48"
+        fontWeight="800"
         fill="currentColor"
         letterSpacing="-1"
       >

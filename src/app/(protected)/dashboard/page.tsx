@@ -34,237 +34,142 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 w-full">
-
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.gettingStarted")}
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { step: 1, icon: Upload, titleKey: "step1Title", descKey: "step1Desc", bgColor: "bg-blue-600", iconColor: "text-white" },
-            { step: 2, icon: MessageSquare, titleKey: "step2Title", descKey: "step2Desc", bgColor: "bg-amber-500", iconColor: "text-white" },
-            { step: 3, icon: Sparkles, titleKey: "step3Title", descKey: "step3Desc", bgColor: "bg-emerald-600", iconColor: "text-white" },
-          ].map(({ step, icon: Icon, titleKey, descKey, bgColor, iconColor }) => (
-            <div
-              key={step}
-              className="group relative bg-card rounded-2xl border border-border/60 p-5 transition-all duration-200 hover:shadow-md hover:border-border"
-            >
-              <div className="flex items-start gap-3.5">
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bgColor}`}>
-                  <Icon className={`h-5 w-5 ${iconColor}`} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium text-muted-foreground">{step}</span>
-                    <h3 className="text-sm font-semibold text-foreground">{t(`dashboard.${titleKey}`)}</h3>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{t(`dashboard.${descKey}`)}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_35%)]" />
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Your Career Hub
+            </h1>
+            <p className="text-sm text-muted-foreground sm:text-base">
+              Manage your job pipeline in one place. Add applications, get AI-driven fit scores from your resume, and track your progress to your next role.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
+              <Link href="/onboarding?new=1">
+                <Upload className="h-4 w-4 mr-2" />
+                New Application
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
+              <Link href="/applications">
+                <Briefcase className="h-4 w-4 mr-2" />
+                View Pipeline
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.quickActions")}
+          Unlocked features
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Link href="/onboarding" className="block group">
-            <div className="relative overflow-hidden bg-card rounded-2xl border border-border/60 p-6 transition-all duration-200 hover:shadow-lg hover:border-border h-full">
+          <Link href="/applications" className="block group">
+            <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full" />
               <div className="relative">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
-                      <Upload className="h-5 w-5" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600">
+                      <Briefcase className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-foreground">{t("dashboard.profileTitle")}</h3>
-                      <p className="text-xs text-muted-foreground">{t("dashboard.profileSummary")}</p>
+                      <h3 className="text-lg font-semibold text-foreground">Applications Board</h3>
+                      <p className="text-sm text-muted-foreground">Kanban & AI Analysis</p>
                     </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.profileDesc")}
+                  Track every job application, upload real job descriptions, and let AI analyze your resume's fit quality to improve your chances.
                 </p>
-                <div className="mt-4">
-                  <Button size="sm" variant="outline" className="text-xs">
-                    {t("dashboard.startAnalysis")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
               </div>
             </div>
           </Link>
 
-          <Link href="/interview-prep" className="block group">
-            <div className="relative overflow-hidden bg-card rounded-2xl border border-border/60 p-6 transition-all duration-200 hover:shadow-lg hover:border-border h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500 text-white">
-                      <MessageSquare className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">{t("dashboard.interviewTitle")}</h3>
-                      <p className="text-xs text-muted-foreground">{t("dashboard.interviewSummary")}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
+          <div className="grid grid-rows-2 gap-4">
+            <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                  <Coins className="h-5 w-5 text-amber-600" />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.interviewDesc")}
-                </p>
-                <div className="mt-4">
-                  <Button size="sm" variant="outline" className="text-xs">
-                    {t("dashboard.startPractice")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.creditsAvailable")}</p>
+                  {creditsLoading ? (
+                    <Skeleton className="h-6 w-12 mt-1" />
+                  ) : (
+                    <p className="text-xl font-bold text-foreground">{credits?.creditsRemaining ?? 0}</p>
+                  )}
+                </div>
+              </div>
+              <Button asChild variant="ghost" size="icon" className="rounded-full">
+                <Link href="/billing"><ArrowRight className="h-4 w-4" /></Link>
+              </Button>
+            </div>
+            <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
+                  <BarChart3 className="h-5 w-5 text-violet-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.analysesPerformed")}</p>
+                  <p className="text-xl font-bold text-foreground">—</p>
                 </div>
               </div>
             </div>
-          </Link>
-
-          <Link href="/scenarios" className="block group">
-            <div className="relative overflow-hidden bg-card rounded-2xl border border-border/60 p-6 transition-all duration-200 hover:shadow-lg hover:border-border h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-bl-full" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-600 text-white">
-                      <Mic className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">{t("dashboard.scenariosTitle")}</h3>
-                      <p className="text-xs text-muted-foreground">{t("dashboard.scenariosSummary")}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.scenariosDesc")}
-                </p>
-                <div className="mt-4">
-                  <Button size="sm" variant="outline" className="text-xs">
-                    {t("dashboard.startScenario")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/ai-chat" className="block group">
-            <div className="relative overflow-hidden bg-card rounded-2xl border border-border/60 p-6 transition-all duration-200 hover:shadow-lg hover:border-border h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                      <BrainCircuit className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">{t("dashboard.aiCoachTitle")}</h3>
-                      <p className="text-xs text-muted-foreground">{t("dashboard.aiCoachSummary")}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all" />
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.aiCoachDesc")}
-                </p>
-                <div className="mt-4">
-                  <Button size="sm" variant="outline" className="text-xs">
-                    {t("dashboard.startChat")}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.yourUsage")}
-        </h2>
-        <div className="grid gap-3 grid-cols-2">
-          <div className="bg-card rounded-2xl border border-border/60 p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                <Coins className="h-4 w-4 text-amber-600" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">{t("dashboard.creditsAvailable")}</span>
-            </div>
-            {creditsLoading ? (
-              <Skeleton className="h-8 w-14" />
-            ) : (
-              <p className="text-2xl font-bold text-foreground">{credits?.creditsRemaining ?? 0}</p>
-            )}
-          </div>
-
-          <div className="bg-card rounded-2xl border border-border/60 p-5">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100">
-                <BarChart3 className="h-4 w-4 text-violet-600" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">{t("dashboard.analysesPerformed")}</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">—</p>
           </div>
         </div>
       </section>
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.usefulLinks")}
+          Coming Soon
         </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           {[
             {
-              titleKey: "interviewTipsTitle",
-              descKey: "interviewTipsDesc",
-              icon: BookOpen,
-              bgColor: "bg-blue-100",
-              iconColor: "text-blue-600",
+              title: t("dashboard.interviewTitle"),
+              icon: MessageSquare,
+              color: "amber",
+              desc: t("dashboard.interviewSummary"),
             },
             {
-              titleKey: "businessEnglishTitle",
-              descKey: "businessEnglishDesc",
-              icon: Briefcase,
-              bgColor: "bg-emerald-100",
-              iconColor: "text-emerald-600",
+              title: t("dashboard.scenariosTitle"),
+              icon: Mic,
+              color: "purple",
+              desc: t("dashboard.scenariosSummary"),
             },
             {
-              titleKey: "careerTipsTitle",
-              descKey: "careerTipsDesc",
-              icon: Lightbulb,
-              bgColor: "bg-amber-100",
-              iconColor: "text-amber-600",
+              title: t("dashboard.aiCoachTitle"),
+              icon: BrainCircuit,
+              color: "emerald",
+              desc: t("dashboard.aiCoachSummary"),
             },
-          ].map(({ titleKey, descKey, icon: Icon, bgColor, iconColor }) => (
-            <div
-              key={titleKey}
-              className="bg-card rounded-2xl border border-border/60 p-5 transition-all duration-200 hover:shadow-sm flex flex-col"
-            >
-              <div className="flex items-start gap-3 h-full">
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${bgColor}`}>
-                  <Icon className={`h-4 w-4 ${iconColor}`} />
+          ].map((item, i) => (
+            <div key={i} className="relative overflow-hidden bg-card/60 rounded-3xl border border-border/80 p-5 opacity-80 transition-all hover:opacity-100">
+              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-${item.color}-500/10 to-transparent rounded-bl-full`} />
+              <div className="relative">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-${item.color}-500/10 text-${item.color}-600`}>
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                    Soon
+                  </span>
                 </div>
-                <div className="min-w-0 flex flex-col h-full">
-                  <h3 className="text-sm font-medium text-foreground">{t(`dashboard.${titleKey}`)}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{t(`dashboard.${descKey}`)}</p>
-                </div>
+                <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                  {item.desc}
+                </p>
               </div>
             </div>
           ))}
         </div>
       </section>
+
       <WelcomeCreditsDialog />
     </div>
   );

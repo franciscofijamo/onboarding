@@ -21,7 +21,7 @@ export function FAQ() {
         {faqs.map((f) => (
           <div
             key={f.q}
-            className="group relative overflow-hidden rounded-xl border border-gray-100/80 bg-white p-6 transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(0,0,0,0.03)] dark:border-white/10 dark:bg-black"
+            className="group relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-sm transition-all duration-300 will-change-transform hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[length:4px_4px] dark:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_1px,transparent_1px)]" />
