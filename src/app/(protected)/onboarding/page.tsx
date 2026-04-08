@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
@@ -28,6 +28,7 @@ import {
   Search,
   XCircle,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 
 type Step = "resume" | "cover-letter" | "job-description" | "analysis";
@@ -167,6 +168,9 @@ function toStringArray(
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedApplicationId = searchParams.get("applicationId");
+  const startFresh = searchParams.get("new") === "1";
   const queryClient = useQueryClient();
   const { t } = useLanguage();
   const { credits, refresh: refreshCredits } = useCredits();
@@ -197,6 +201,10 @@ export default function OnboardingPage() {
   const [analysisError, setAnalysisError] = React.useState<string | null>(null);
   const [saveStatus, setSaveStatus] = React.useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = React.useState(false);
+  const [selectedJobApplicationId, setSelectedJobApplicationId] = React.useState<string | null>(null);
+  const [isAnalyzingExisting, setIsAnalyzingExisting] = React.useState(false);
+  const [isSavingDraft, setIsSavingDraft] = React.useState(false);
+  const analysisRequestKeyRef = React.useRef<string | null>(null);
 
   const { data: existingResumes, isLoading: loadingResumes } = useQuery<{
     resumes: ResumeData[];
@@ -225,28 +233,58 @@ export default function OnboardingPage() {
     const coverLetters = existingCoverLetters?.coverLetters || [];
     const jobApps = existingJobApplications?.jobApplications || [];
 
-    if (resumes.length > 0) {
-      const latest = resumes[0];
-      setResumeText(latest.content || "");
-      setResumeTitle(latest.title || "");
-      setSavedResumeId(latest.id);
-    }
+    if (!startFresh && jobApps.length > 0) {
+      const selected =
+        (requestedApplicationId
+          ? jobApps.find((app) => app.id === requestedApplicationId)
+          : null) || jobApps[0];
 
-    if (coverLetters.length > 0) {
-      const latest = coverLetters[0];
-      setCoverLetterText(latest.content || "");
-      setCoverLetterTitle(latest.title || "");
-      setSavedCoverLetterId(latest.id);
-    }
+      setSelectedJobApplicationId(selected.id);
+      setJobTitle(selected.jobTitle || "");
+      setCompanyName(selected.companyName || "");
+      setJobDescription(selected.jobDescription || "");
+      setAnalysisResult(selected.analyses?.[0] || null);
+      setAnalysisError(null);
 
-    if (jobApps.length > 0) {
-      const latest = jobApps[0];
-      setJobTitle(latest.jobTitle || "");
-      setCompanyName(latest.companyName || "");
-      setJobDescription(latest.jobDescription || "");
+      if (selected.resume?.id) {
+        const linkedResume = resumes.find((r) => r.id === selected.resume?.id);
+        if (linkedResume) {
+          setSavedResumeId(linkedResume.id);
+          setResumeTitle(linkedResume.title || "");
+          setResumeText(linkedResume.content || "");
+        }
+      }
 
-      if (latest.analyses && latest.analyses.length > 0) {
-        setAnalysisResult(latest.analyses[0]);
+      if (selected.coverLetter?.id) {
+        const linkedCoverLetter = coverLetters.find(
+          (cl) => cl.id === selected.coverLetter?.id
+        );
+        if (linkedCoverLetter) {
+          setSavedCoverLetterId(linkedCoverLetter.id);
+          setCoverLetterTitle(linkedCoverLetter.title || "");
+          setCoverLetterText(linkedCoverLetter.content || "");
+        }
+      }
+    } else {
+      setSelectedJobApplicationId(null);
+      setJobTitle("");
+      setCompanyName("");
+      setJobDescription("");
+      setAnalysisResult(null);
+      setAnalysisError(null);
+
+      if (resumes.length > 0) {
+        const latest = resumes[0];
+        setResumeText(latest.content || "");
+        setResumeTitle(latest.title || "");
+        setSavedResumeId(latest.id);
+      }
+
+      if (coverLetters.length > 0) {
+        const latest = coverLetters[0];
+        setCoverLetterText(latest.content || "");
+        setCoverLetterTitle(latest.title || "");
+        setSavedCoverLetterId(latest.id);
       }
     }
 
@@ -259,6 +297,8 @@ export default function OnboardingPage() {
     existingResumes,
     existingCoverLetters,
     existingJobApplications,
+    requestedApplicationId,
+    startFresh,
   ]);
 
   const completedSteps = React.useMemo(() => {
@@ -282,6 +322,55 @@ export default function OnboardingPage() {
     setSaveStatus(msg);
     setTimeout(() => setSaveStatus(null), 2000);
   };
+
+  const saveDraftForStep = React.useCallback(
+    async (overrides?: {
+      resumeId?: string | null;
+      coverLetterId?: string | null;
+      jobTitle?: string;
+      companyName?: string;
+      jobDescription?: string;
+    }) => {
+      const payload = {
+        resumeId: overrides?.resumeId !== undefined ? overrides.resumeId : savedResumeId || undefined,
+        coverLetterId:
+          overrides?.coverLetterId !== undefined
+            ? overrides.coverLetterId
+            : savedCoverLetterId || undefined,
+        jobTitle: overrides?.jobTitle !== undefined ? overrides.jobTitle : jobTitle || undefined,
+        companyName:
+          overrides?.companyName !== undefined
+            ? overrides.companyName
+            : companyName || undefined,
+        jobDescription:
+          overrides?.jobDescription !== undefined
+            ? overrides.jobDescription
+            : jobDescription || "",
+      };
+
+      if (selectedJobApplicationId) {
+        await api.patch(`/api/job-application/${selectedJobApplicationId}`, payload);
+        return selectedJobApplicationId;
+      }
+
+      const created = await api.post<{
+        jobApplication: { id: string; status: string };
+      }>("/api/job-application", { ...payload, triggerAnalysis: false });
+
+      setSelectedJobApplicationId(created.jobApplication.id);
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+      return created.jobApplication.id;
+    },
+    [
+      selectedJobApplicationId,
+      savedResumeId,
+      savedCoverLetterId,
+      jobTitle,
+      companyName,
+      jobDescription,
+      queryClient,
+    ]
+  );
 
   const resumeSaveMutation = useMutation({
     mutationFn: async (data: { title: string; content: string }) => {
@@ -320,66 +409,86 @@ export default function OnboardingPage() {
     },
   });
 
-  const jobApplicationMutation = useMutation({
-    mutationFn: (data: {
-      resumeId?: string;
-      coverLetterId?: string;
-      jobTitle?: string;
-      companyName?: string;
-      jobDescription: string;
-      triggerAnalysis: boolean;
-    }) => api.post<JobApplicationResponse>("/api/job-application", data),
+  const analyzeExistingJobApplicationMutation = useMutation({
+    mutationFn: ({ id, idempotencyKey }: { id: string; idempotencyKey: string }) =>
+      api.post<{
+        jobApplication: { id: string; status: string };
+        analysis: AnalysisData;
+      }>("/api/job-application/" + id + "/analyze", { idempotencyKey }),
     onSuccess: (data) => {
-      if (data.analysis) {
-        setAnalysisResult(data.analysis);
-        setAnalysisError(null);
-      } else if (data.analysisError) {
-        setAnalysisError(data.analysisError);
-      }
+      setAnalysisResult(data.analysis);
+      setAnalysisError(null);
       setCurrentStep("analysis");
       refreshCredits();
       queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
     },
     onError: (error) => {
-      setAnalysisError(error.message || "Failed to create job application");
+      setAnalysisError(error.message || "Failed to analyze application");
     },
   });
 
-  const handleSaveResume = () => {
+  const handleSaveResume = async () => {
     if (!resumeText.trim()) return;
-    resumeSaveMutation.mutate({
-      title: resumeTitle || "My Resume",
-      content: resumeText,
-    });
+    setIsSavingDraft(true);
+    try {
+      const saved = await resumeSaveMutation.mutateAsync({
+        title: resumeTitle || "My Resume",
+        content: resumeText,
+      });
+      await saveDraftForStep({ resumeId: saved.resume.id });
+      showSaveStatus("Resume draft saved!");
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
-  const handleSaveResumeAndContinue = () => {
+  const handleSaveResumeAndContinue = async () => {
     if (!resumeText.trim()) return;
-    resumeSaveMutation.mutate(
-      { title: resumeTitle || "My Resume", content: resumeText },
-      { onSuccess: () => setCurrentStep("cover-letter") }
-    );
+    setIsSavingDraft(true);
+    try {
+      const saved = await resumeSaveMutation.mutateAsync({
+        title: resumeTitle || "My Resume",
+        content: resumeText,
+      });
+      await saveDraftForStep({ resumeId: saved.resume.id });
+      showSaveStatus("Resume draft saved!");
+      setCurrentStep("cover-letter");
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
-  const handleSaveCoverLetter = () => {
+  const handleSaveCoverLetter = async () => {
     if (!coverLetterText.trim()) return;
-    coverLetterSaveMutation.mutate({
-      title: coverLetterTitle || "My Cover Letter",
-      content: coverLetterText,
-    });
+    setIsSavingDraft(true);
+    try {
+      const saved = await coverLetterSaveMutation.mutateAsync({
+        title: coverLetterTitle || "My Cover Letter",
+        content: coverLetterText,
+      });
+      await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
+      showSaveStatus("Cover letter draft saved!");
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
-  const handleSaveCoverLetterAndContinue = () => {
-    if (coverLetterText.trim()) {
-      coverLetterSaveMutation.mutate(
-        {
+  const handleSaveCoverLetterAndContinue = async () => {
+    setIsSavingDraft(true);
+    try {
+      if (coverLetterText.trim()) {
+        const saved = await coverLetterSaveMutation.mutateAsync({
           title: coverLetterTitle || "My Cover Letter",
           content: coverLetterText,
-        },
-        { onSuccess: () => setCurrentStep("job-description") }
-      );
-    } else {
+        });
+        await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
+      } else {
+        await saveDraftForStep();
+      }
+      showSaveStatus("Draft saved!");
       setCurrentStep("job-description");
+    } finally {
+      setIsSavingDraft(false);
     }
   };
 
@@ -395,16 +504,57 @@ export default function OnboardingPage() {
     setSavedCoverLetterId(coverLetter.id);
   };
 
-  const handleSubmitJobApplication = () => {
-    if (!jobDescription.trim()) return;
-    jobApplicationMutation.mutate({
-      resumeId: savedResumeId || undefined,
-      coverLetterId: savedCoverLetterId || undefined,
-      jobTitle: jobTitle || undefined,
-      companyName: companyName || undefined,
-      jobDescription,
-      triggerAnalysis: true,
-    });
+  const handleStartNewApplication = () => {
+    setSelectedJobApplicationId(null);
+    setCurrentStep("resume");
+    setJobTitle("");
+    setCompanyName("");
+    setJobDescription("");
+    setAnalysisResult(null);
+    setAnalysisError(null);
+    router.push("/onboarding?new=1");
+  };
+
+  const handleSaveJobDescriptionDraft = async () => {
+    if (!savedResumeId) return;
+    setIsSavingDraft(true);
+    try {
+      await saveDraftForStep();
+      showSaveStatus("Draft saved!");
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleSubmitJobApplication = async () => {
+    if (!jobDescription.trim() || !savedResumeId) return;
+
+    setIsAnalyzingExisting(true);
+    setAnalysisError(null);
+
+    if (!analysisRequestKeyRef.current) {
+      analysisRequestKeyRef.current =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+    }
+
+    try {
+      const jobApplicationId = await saveDraftForStep();
+      await analyzeExistingJobApplicationMutation.mutateAsync({
+        id: jobApplicationId,
+        idempotencyKey: analysisRequestKeyRef.current,
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to analyze existing application";
+      setAnalysisError(message);
+    } finally {
+      setIsAnalyzingExisting(false);
+      analysisRequestKeyRef.current = null;
+    }
   };
 
   const isLoading =
@@ -434,6 +584,28 @@ export default function OnboardingPage() {
         completedSteps={completedSteps}
         onStepClick={setCurrentStep}
       />
+
+      <div className="bg-card rounded-2xl border border-border p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium">Application Context</p>
+            <p className="text-xs text-muted-foreground">
+              {selectedJobApplicationId
+                ? "Editing existing application"
+                : "Creating a new application"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push("/applications")}>
+              View All
+            </Button>
+            <Button size="sm" onClick={handleStartNewApplication}>
+              <Plus className="h-4 w-4" />
+              New Application
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {currentStep === "resume" && (
         <div className="space-y-6">
@@ -517,9 +689,9 @@ export default function OnboardingPage() {
             <Button
               variant="outline"
               onClick={handleSaveResume}
-              disabled={!resumeText.trim() || resumeSaveMutation.isPending}
+              disabled={!resumeText.trim() || resumeSaveMutation.isPending || isSavingDraft}
             >
-              {resumeSaveMutation.isPending ? (
+              {resumeSaveMutation.isPending || isSavingDraft ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
@@ -528,9 +700,9 @@ export default function OnboardingPage() {
             </Button>
             <Button
               onClick={handleSaveResumeAndContinue}
-              disabled={!resumeText.trim() || resumeSaveMutation.isPending}
+              disabled={!resumeText.trim() || resumeSaveMutation.isPending || isSavingDraft}
             >
-              {resumeSaveMutation.isPending ? (
+              {resumeSaveMutation.isPending || isSavingDraft ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <ArrowRight className="h-4 w-4" />
@@ -629,9 +801,9 @@ export default function OnboardingPage() {
                 <Button
                   variant="outline"
                   onClick={handleSaveCoverLetter}
-                  disabled={coverLetterSaveMutation.isPending}
+                  disabled={coverLetterSaveMutation.isPending || isSavingDraft}
                 >
-                  {coverLetterSaveMutation.isPending ? (
+                  {coverLetterSaveMutation.isPending || isSavingDraft ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="h-4 w-4" />
@@ -641,9 +813,9 @@ export default function OnboardingPage() {
               )}
               <Button
                 onClick={handleSaveCoverLetterAndContinue}
-                disabled={coverLetterSaveMutation.isPending}
+                disabled={coverLetterSaveMutation.isPending || isSavingDraft}
               >
-                {coverLetterSaveMutation.isPending ? (
+                {coverLetterSaveMutation.isPending || isSavingDraft ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <ArrowRight className="h-4 w-4" />
@@ -730,6 +902,18 @@ export default function OnboardingPage() {
               Back
             </Button>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={handleSaveJobDescriptionDraft}
+                disabled={!savedResumeId || isSavingDraft || isAnalyzingExisting}
+              >
+                {isSavingDraft ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                Save Draft
+              </Button>
               <span className="text-sm text-muted-foreground">
                 Cost: 10 credits
               </span>
@@ -738,10 +922,10 @@ export default function OnboardingPage() {
                 disabled={
                   !jobDescription.trim() ||
                   !savedResumeId ||
-                  jobApplicationMutation.isPending
+                  analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting || isSavingDraft
                 }
               >
-                {jobApplicationMutation.isPending ? (
+                {analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Analyzing...
@@ -767,7 +951,7 @@ export default function OnboardingPage() {
 
       {currentStep === "analysis" && (
         <div className="space-y-6">
-          {jobApplicationMutation.isPending && (
+          {(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) && (
             <div className="bg-card rounded-2xl border border-border p-12 flex flex-col items-center justify-center text-center">
               <div className="relative mb-6">
                 <div className="h-20 w-20 rounded-full border-4 border-primary/20 flex items-center justify-center">
@@ -1105,7 +1289,7 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {!jobApplicationMutation.isPending &&
+          {!(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) &&
             !analysisResult &&
             !analysisError && (
               <div className="bg-card rounded-2xl border border-border p-12 text-center">

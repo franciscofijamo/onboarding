@@ -15,6 +15,7 @@ This folder is the project context pack for the `standout` app. It is meant to g
 - `ai-chat.md` covers chat/image generation and model configuration.
 - `uploads.md` covers the upload pipeline and storage providers.
 - `admin.md` covers the admin panel and environment requirements.
+- `cv-analysis-sdd-backlog.md` contains the Spec-Driven Development backlog and Jira/Linear import template for CV analysis by application.
 - `brand-config.md` documents the branding source of truth.
 - `asaas-webhooks.md` documents subscription/payment webhook flow.
 

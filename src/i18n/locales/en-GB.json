@@ -40,6 +40,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "myProfile": "My Profile",
+    "applications": "Applications",
     "interviewPrep": "Interview Prep",
     "scenarios": "Scenarios",
     "aiCoach": "AI Coach",
