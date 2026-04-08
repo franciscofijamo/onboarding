@@ -21,6 +21,7 @@ export default function ProtectedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
   // Use TanStack Query for subscription status
   const { data: subscriptionStatus, isLoading: isLoadingSubscription } = useSubscription();
@@ -40,6 +41,10 @@ export default function ProtectedLayout({
     setShowProfileModal(false);
     refetchProfile();
   };
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // hydrate from localStorage
   React.useEffect(() => {
@@ -66,7 +71,7 @@ export default function ProtectedLayout({
   }, [isLoaded, isSignedIn, router]);
 
   // Show loading state while checking authentication
-  if (!isLoaded) {
+  if (!mounted || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

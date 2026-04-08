@@ -25,10 +25,10 @@ import {
   TrendingUp,
   Lightbulb,
   Save,
+  Upload,
   Search,
   XCircle,
   RefreshCw,
-  Plus,
 } from "lucide-react";
 
 type Step = "resume" | "cover-letter" | "job-description" | "analysis";
@@ -166,6 +166,51 @@ function toStringArray(
   return [];
 }
 
+
+function renderHighlightedAnalysisText(
+  text: string,
+  tone: "emerald" | "orange"
+): React.ReactNode {
+  const matches = [...text.matchAll(/'([^']+)'|"([^"]+)"/g)];
+
+  if (matches.length === 0) {
+    return text;
+  }
+
+  const toneTextClass = tone === "emerald" ? "text-emerald-600" : "text-orange-600";
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+
+  matches.forEach((match, index) => {
+    const fullMatch = match[0] ?? "";
+    const start = match.index ?? 0;
+    const end = start + fullMatch.length;
+    const highlightedText = match[1] || match[2] || "";
+
+    if (cursor < start) {
+      parts.push(
+        <span key={`txt-${index}-${cursor}`}>{text.slice(cursor, start)}</span>
+      );
+    }
+
+    parts.push(
+      <span
+        key={`hl-${index}-${start}`}
+        className={`rounded px-1.5 py-0.5 bg-white font-semibold ${toneTextClass}`}
+      >
+        {highlightedText}
+      </span>
+    );
+
+    cursor = end;
+  });
+
+  if (cursor < text.length) {
+    parts.push(<span key={`txt-end-${cursor}`}>{text.slice(cursor)}</span>);
+  }
+
+  return <>{parts}</>;
+}
 export default function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -204,6 +249,8 @@ export default function OnboardingPage() {
   const [selectedJobApplicationId, setSelectedJobApplicationId] = React.useState<string | null>(null);
   const [isAnalyzingExisting, setIsAnalyzingExisting] = React.useState(false);
   const [isSavingDraft, setIsSavingDraft] = React.useState(false);
+  const [isExtractingResume, setIsExtractingResume] = React.useState(false);
+  const [resumeUploadError, setResumeUploadError] = React.useState<string | null>(null);
   const analysisRequestKeyRef = React.useRef<string | null>(null);
 
   const { data: existingResumes, isLoading: loadingResumes } = useQuery<{
@@ -273,19 +320,12 @@ export default function OnboardingPage() {
       setAnalysisResult(null);
       setAnalysisError(null);
 
-      if (resumes.length > 0) {
-        const latest = resumes[0];
-        setResumeText(latest.content || "");
-        setResumeTitle(latest.title || "");
-        setSavedResumeId(latest.id);
-      }
-
-      if (coverLetters.length > 0) {
-        const latest = coverLetters[0];
-        setCoverLetterText(latest.content || "");
-        setCoverLetterTitle(latest.title || "");
-        setSavedCoverLetterId(latest.id);
-      }
+      setResumeText("");
+      setResumeTitle("");
+      setSavedResumeId(null);
+      setCoverLetterText("");
+      setCoverLetterTitle("");
+      setSavedCoverLetterId(null);
     }
 
     setDataLoaded(true);
@@ -496,23 +536,91 @@ export default function OnboardingPage() {
     setResumeText(resume.content);
     setResumeTitle(resume.title);
     setSavedResumeId(resume.id);
+    setResumeUploadError(null);
   };
 
+  const handleExtractResumeFromFile = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0] || null;
+    if (!file) return;
+
+    setResumeUploadError(null);
+    setIsExtractingResume(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/resume/extract", {
+        method: "POST",
+        body: formData,
+      });
+
+      const responseText = await response.text();
+      const isJsonResponse =
+        response.headers.get("content-type")?.includes("application/json") ||
+        false;
+
+      let payload: {
+        error?: string;
+        details?: string;
+        title?: string;
+        content?: string;
+        truncated?: boolean;
+      } = {};
+
+      if (isJsonResponse) {
+        try {
+          payload = JSON.parse(responseText) as typeof payload;
+        } catch {
+          payload = {};
+        }
+      }
+
+      if (!response.ok) {
+        const isHtmlLike =
+          responseText.trim().startsWith("<!DOCTYPE") ||
+          responseText.trim().startsWith("<html");
+
+        const fallbackMessage = isHtmlLike
+          ? "Upload failed (HTTP " + response.status + ")."
+          : responseText.trim().slice(0, 200);
+
+        const detailedMessage = payload.details
+          ? (payload.error || "Failed to extract CV text.") +
+            " (" +
+            payload.details +
+            ")"
+          : payload.error || fallbackMessage || "Failed to extract CV text.";
+
+        throw new Error(detailedMessage);
+      }
+
+      setResumeTitle(payload.title || file.name.replace(/\.[^/.]+$/, ""));
+      setResumeText(payload.content || "");
+      setSavedResumeId(null);
+      showSaveStatus(
+        payload.truncated
+          ? "CV extracted (content was truncated to fit limits)."
+          : "CV extracted successfully!"
+      );
+    } catch (error) {
+      setResumeUploadError(
+        error instanceof Error
+          ? error.message
+          : "Failed to extract CV text from file."
+      );
+    } finally {
+      setIsExtractingResume(false);
+      input.value = "";
+    }
+  };
   const handleLoadExistingCoverLetter = (coverLetter: CoverLetterData) => {
     setCoverLetterText(coverLetter.content);
     setCoverLetterTitle(coverLetter.title);
     setSavedCoverLetterId(coverLetter.id);
-  };
-
-  const handleStartNewApplication = () => {
-    setSelectedJobApplicationId(null);
-    setCurrentStep("resume");
-    setJobTitle("");
-    setCompanyName("");
-    setJobDescription("");
-    setAnalysisResult(null);
-    setAnalysisError(null);
-    router.push("/onboarding?new=1");
   };
 
   const handleSaveJobDescriptionDraft = async () => {
@@ -595,15 +703,6 @@ export default function OnboardingPage() {
                 : "Creating a new application"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => router.push("/applications")}>
-              View All
-            </Button>
-            <Button size="sm" onClick={handleStartNewApplication}>
-              <Plus className="h-4 w-4" />
-              New Application
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -617,8 +716,7 @@ export default function OnboardingPage() {
               <div>
                 <h2 className="text-lg font-semibold">Upload Your CV / Resume</h2>
                 <p className="text-sm text-muted-foreground">
-                  Paste your resume content below. This will be used for AI
-                  analysis.
+                  Upload a PDF/DOCX or paste your resume content below. This will be used for AI analysis.
                 </p>
               </div>
               <Badge variant="secondary" className="ml-auto">
@@ -626,8 +724,30 @@ export default function OnboardingPage() {
               </Badge>
             </div>
 
+            <div className="mb-4 p-3 bg-muted/50 rounded-xl">
+              <p className="text-sm font-medium mb-2">Upload CV file (PDF or DOCX):</p>
+              <label className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:bg-muted/60 transition-colors">
+                {isExtractingResume ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                <span>{isExtractingResume ? "Extracting..." : "Choose file"}</span>
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={handleExtractResumeFromFile}
+                  disabled={isExtractingResume}
+                />
+              </label>
+              {resumeUploadError && (
+                <p className="text-xs text-destructive mt-2">{resumeUploadError}</p>
+              )}
+            </div>
+
             {existingResumes?.resumes &&
-              existingResumes.resumes.length > 1 && (
+              existingResumes.resumes.length > 0 && (
                 <div className="mb-4 p-3 bg-muted/50 rounded-xl">
                   <p className="text-sm font-medium mb-2">
                     Load existing resume:
@@ -1051,12 +1171,12 @@ export default function OnboardingPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-xl font-semibold">Match Score</h3>
                       <Badge
-                        className={`text-xs ${
+                        className={`text-xs text-white border-transparent ${
                           (analysisResult.fitScore || 0) >= 70
-                            ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400"
+                            ? "bg-emerald-500 hover:bg-emerald-600"
                             : (analysisResult.fitScore || 0) >= 50
-                            ? "bg-amber-50 text-amber-500 dark:bg-amber-950/40 dark:text-amber-400"
-                            : "bg-rose-50 text-rose-400 dark:bg-rose-950/40 dark:text-rose-400"
+                            ? "bg-orange-500 hover:bg-orange-600"
+                            : "bg-rose-500 hover:bg-rose-600"
                         }`}
                       >
                         {(analysisResult.fitScore || 0) >= 70
@@ -1103,8 +1223,8 @@ export default function OnboardingPage() {
                 {toStringArray(analysisResult.skillsMatch).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="h-4 w-4 text-white" />
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm">Matching Skills</h4>
@@ -1116,10 +1236,10 @@ export default function OnboardingPage() {
                         (skill, i) => (
                           <li
                             key={i}
-                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/40 border border-border/60"
+                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-emerald-500 text-white"
                           >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                            <span className="text-foreground/80 break-words min-w-0">{skill}</span>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-white mt-0.5 shrink-0" />
+                            <span className="break-words min-w-0 font-medium">{skill}</span>
                           </li>
                         )
                       )}
@@ -1130,8 +1250,8 @@ export default function OnboardingPage() {
                 {toStringArray(analysisResult.missingSkills).length > 0 && (
                   <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
-                        <AlertCircle className="h-4 w-4 text-orange-300" />
+                      <div className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
+                        <AlertCircle className="h-4 w-4 text-white" />
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold text-sm">Missing Skills</h4>
@@ -1143,10 +1263,10 @@ export default function OnboardingPage() {
                         (skill, i) => (
                           <li
                             key={i}
-                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/40 border border-border/60"
+                            className="text-sm flex items-start gap-2 p-2 rounded-lg bg-orange-500 text-white"
                           >
-                            <AlertCircle className="h-3.5 w-3.5 text-orange-300 mt-0.5 shrink-0" />
-                            <span className="text-foreground/80 break-words min-w-0">{skill}</span>
+                            <AlertCircle className="h-3.5 w-3.5 text-white mt-0.5 shrink-0" />
+                            <span className="break-words min-w-0 font-medium">{skill}</span>
                           </li>
                         )
                       )}
@@ -1158,8 +1278,8 @@ export default function OnboardingPage() {
               {analysisResult.keywordAnalysis && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-7 w-7 rounded-lg bg-sky-50 dark:bg-sky-950/40 flex items-center justify-center shrink-0">
-                      <Search className="h-4 w-4 text-sky-400" />
+                    <div className="h-7 w-7 rounded-lg bg-sky-500 flex items-center justify-center shrink-0">
+                      <Search className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-semibold text-sm">Keyword Analysis</h4>
@@ -1174,7 +1294,7 @@ export default function OnboardingPage() {
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.found || []).map((kw, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-muted/60 text-foreground/70 border border-border/60 break-words">
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-emerald-500 text-white font-medium break-words">
                               {kw}
                             </span>
                           ))}
@@ -1188,7 +1308,7 @@ export default function OnboardingPage() {
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.missing || []).map((kw, i) => (
-                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-orange-50/60 text-foreground/70 dark:bg-orange-950/20 border border-orange-200/40 dark:border-orange-800/30 break-words">
+                            <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-orange-500 text-white font-medium break-words">
                               {kw}
                             </span>
                           ))}
@@ -1202,8 +1322,8 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.strengths).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center shrink-0">
-                      <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
+                      <TrendingUp className="h-4 w-4 text-white" />
                     </div>
                     <h4 className="font-semibold text-sm">Your Strengths</h4>
                   </div>
@@ -1212,10 +1332,10 @@ export default function OnboardingPage() {
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                          className="text-sm text-white bg-emerald-500 flex items-start gap-3 p-2 rounded-lg transition-colors font-medium border border-transparent"
                         >
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-                          <span className="break-words min-w-0">{item}</span>
+                          <CheckCircle2 className="h-4 w-4 text-white mt-0.5 shrink-0" />
+                          <span className="break-words min-w-0">{renderHighlightedAnalysisText(item, "emerald")}</span>
                         </li>
                       )
                     )}
@@ -1226,8 +1346,8 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.improvements).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-lg bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
-                      <Lightbulb className="h-4 w-4 text-orange-300" />
+                    <div className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
+                      <Lightbulb className="h-4 w-4 text-white" />
                     </div>
                     <h4 className="font-semibold text-sm">Areas for Improvement</h4>
                   </div>
@@ -1236,10 +1356,10 @@ export default function OnboardingPage() {
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                          className="text-sm text-white bg-orange-500 flex items-start gap-3 p-2 rounded-lg transition-colors font-medium border border-transparent"
                         >
-                          <ArrowRight className="h-4 w-4 text-orange-300 mt-0.5 shrink-0" />
-                          <span className="break-words min-w-0">{item}</span>
+                          <ArrowRight className="h-4 w-4 text-white mt-0.5 shrink-0" />
+                          <span className="break-words min-w-0">{renderHighlightedAnalysisText(item, "orange")}</span>
                         </li>
                       )
                     )}
@@ -1250,8 +1370,8 @@ export default function OnboardingPage() {
               {toStringArray(analysisResult.recommendations).length > 0 && (
                 <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Sparkles className="h-4 w-4 text-primary" />
+                    <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 text-primary-foreground" />
                     </div>
                     <h4 className="font-semibold text-sm">Recommendations</h4>
                   </div>
@@ -1260,10 +1380,10 @@ export default function OnboardingPage() {
                       (item, i) => (
                         <li
                           key={i}
-                          className="text-sm text-muted-foreground flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors border border-border"
+                          className="text-sm text-primary-foreground bg-primary flex items-start gap-3 p-2 rounded-lg transition-colors font-medium border border-transparent"
                         >
-                          <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-xs font-bold text-primary">{i + 1}</span>
+                          <div className="h-5 w-5 rounded-full bg-primary-foreground/20 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-primary-foreground">{i + 1}</span>
                           </div>
                           <span className="break-words min-w-0">{item}</span>
                         </li>
