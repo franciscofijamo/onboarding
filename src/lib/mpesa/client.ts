@@ -47,12 +47,12 @@ export function generateMpesaBearer(apiKey: string, publicKey: string): string {
 }
 
 /**
- * Extract host from base URL for Host header
+ * Extract hostname from base URL for Host header (no port, matching working PHP snippet)
  */
 function getHostFromUrl(baseUrl: string): string {
   try {
     const url = new URL(baseUrl);
-    return url.host; // includes port if present
+    return url.hostname; // hostname only, no port — matches working production code
   } catch {
     return 'api.vm.co.mz';
   }

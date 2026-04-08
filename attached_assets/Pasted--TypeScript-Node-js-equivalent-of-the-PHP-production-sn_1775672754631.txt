@@ -1,0 +1,107 @@
+/**
+ * TypeScript (Node.js) equivalent of the PHP production snippet.
+ * Requires Node 18+ (for fetch). If using older Node, install node-fetch.
+ */
+
+import { createPublicKey, publicEncrypt, constants } from "crypto";
+import { appendFile } from "fs/promises";
+
+type MpesaC2BRequest = {
+  input_TransactionReference: string;
+  input_CustomerMSISDN: string;
+  input_Amount: string;
+  input_ThirdPartyReference: string;
+  input_ServiceProviderCode: string;
+};
+
+function toPemFromRawDerBase64(rawDerBase64: string): string {
+  // Your PHP does: base64_decode(raw_public_key_base64) then base64_encode again -> same payload.
+  // We'll decode then re-encode to ensure consistent formatting.
+  const der = Buffer.from(rawDerBase64, "base64");
+  const b64 = der.toString("base64");
+  const lines = b64.match(/.{1,64}/g) ?? [];
+  return `-----BEGIN PUBLIC KEY-----\n${lines.join("\n")}\n-----END PUBLIC KEY-----`;
+}
+
+function encryptApiKeyToBearer(apiKey: string, publicKeyPem: string): string {
+  const keyObj = createPublicKey(publicKeyPem);
+  const encrypted = publicEncrypt(
+    {
+      key: keyObj,
+      padding: constants.RSA_PKCS1_PADDING, // matches PHP openssl_public_encrypt default
+    },
+    Buffer.from(apiKey, "utf8")
+  );
+  return encrypted.toString("base64");
+}
+
+function thirdPartyReference(onId: string, dateObj = new Date()): string {
+  // PHP: 'ON' .$on_id.'Time'. date('H\hi')  -> e.g. ON1Time14h05
+  const hh = String(dateObj.getHours()).padStart(2, "0");
+  const mm = String(dateObj.getMinutes()).padStart(2, "0");
+  return `ON${onId}Time${hh}h${mm}`;
+}
+
+async function logToFile(sender: string, message: string): Promise<void> {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const MM = String(now.getMonth() + 1).padStart(2, "0");
+  const yy = String(now.getFullYear()).slice(-2);
+  const HH = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+
+  const fileName = `mobile_wallet_${dd}-${MM}-${yy}.txt`;
+  const line = `${sender} ${message} ${dd}/${MM}/${yy} ${HH}:${mm}:${ss}\n`;
+  await appendFile(fileName, line, { encoding: "utf8" });
+}
+
+async function callMpesaC2BProduction() {
+  // === inputs (same as your PHP sample) ===
+  const input_CustomerMSISDN = "258847711810";
+  const on_id = "1";
+
+  const api_key = "66bcaqeruzhqovqshaawuujrebfdpsdl";
+
+  const raw_public_key_base64 =
+    "MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAyrOP7fgXIJgJyp6nP/Vtlu8kW94Qu+gJjfMaTNOSd/mQJChqXiMWsZPH8uOoZGeR/9m7Y8vAU83D96usXUaKoDYiVmxoMBkfmw8DJAtHHt/8LWDdoAS/kpXyZJ5dt19Pv+rTApcjg7AoGczT+yIU7xp4Ku23EqQz70V5Rud+Qgerf6So28Pt3qZ9hxgUA6lgF7OjoYOIAKPqg07pHp2eOp4P6oQW8oXsS+cQkaPVo3nM1f+fctFGQtgLJ0y5VG61ZiWWWFMOjYFkBSbNOyJpQVcMKPcfdDRKq+9r5DFLtFGztPYIAovBm3a1Q6XYDkGYZWtnD8mDJxgEiHWCzog0wZqJtfNREnLf1g2ZOanTDcrEFzsnP2MQwIatV8M6q/fYrh5WejlNm4ujnKUVbnPMYH0wcbXQifSDhg2jcnRLHh9CF9iabkxAzjbYkaG1qa4zG+bCidLCRe0cEQvt0+/lQ40yESvpWF60omTy1dLSd10gl2//0v4IMjLMn9tgxhPp9c+C2Aw7x2Yjx3GquSYhU6IL41lrURwDuCQpg3F30QwIHgy1D8xIfQzno3XywiiUvoq4YfCkN9WiyKz0btD6ZX02RRK6DrXTFefeKjWf0RHREHlfwkhesZ4X168Lxe9iCWjP2d0xUB+lr10835ZUpYYIr4Gon9NTjkoOGwFyS5ECAwEAAQ==";
+
+  const publicKeyPem = toPemFromRawDerBase64(raw_public_key_base64);
+  const bearer = encryptApiKeyToBearer(api_key, publicKeyPem);
+
+  const payload: MpesaC2BRequest = {
+    input_TransactionReference: "Subscricao on2 nJOBS",
+    input_CustomerMSISDN,
+    input_Amount: "2",
+    input_ThirdPartyReference: thirdPartyReference(on_id),
+    input_ServiceProviderCode: "901819",
+  };
+
+  const url = "https://api.vm.co.mz:18352/ipg/v1x/c2bPayment/singleStage/";
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Host: "api.vm.co.mz",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${bearer}`,
+      Origin: "developer.mpesa.vm.co.mz",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+
+  // Output similar to PHP echo
+  console.log(text);
+
+  // optional logging (similar to log_incoming_sms)
+  await logToFile("SYSTEM", `HTTP ${res.status} - ${text}`);
+
+  return { status: res.status, body: text };
+}
+
+// Run
+callMpesaC2BProduction().catch((err) => {
+  console.error("Error:", err);
+});
