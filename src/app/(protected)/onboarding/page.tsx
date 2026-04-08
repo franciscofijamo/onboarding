@@ -30,6 +30,7 @@ import {
   Search,
   XCircle,
   RefreshCw,
+  Link,
 } from "lucide-react";
 
 type Step = "resume" | "cover-letter" | "job-description" | "analysis";
@@ -252,6 +253,10 @@ export default function OnboardingPage() {
   const [isSavingDraft, setIsSavingDraft] = React.useState(false);
   const [isExtractingResume, setIsExtractingResume] = React.useState(false);
   const [resumeUploadError, setResumeUploadError] = React.useState<string | null>(null);
+  const [jobInputMode, setJobInputMode] = React.useState<"paste" | "url">("paste");
+  const [jobUrl, setJobUrl] = React.useState("");
+  const [isCrawling, setIsCrawling] = React.useState(false);
+  const [crawlError, setCrawlError] = React.useState<string | null>(null);
   const analysisRequestKeyRef = React.useRef<string | null>(null);
 
   const { data: existingResumes, isLoading: loadingResumes } = useQuery<{
@@ -664,6 +669,27 @@ export default function OnboardingPage() {
     setSavedCoverLetterId(coverLetter.id);
   };
 
+  const handleCrawlUrl = async () => {
+    const trimmedUrl = jobUrl.trim();
+    if (!trimmedUrl) return;
+    setCrawlError(null);
+    setIsCrawling(true);
+    try {
+      const result = await api.post<{
+        extracted: { jobTitle: string; companyName: string; jobDescription: string };
+      }>("/api/job-application/crawl", { url: trimmedUrl });
+      const { jobTitle: extractedTitle, companyName: extractedCompany, jobDescription: extractedDescription } = result.extracted;
+      if (extractedTitle) setJobTitle(extractedTitle);
+      if (extractedCompany) setCompanyName(extractedCompany);
+      if (extractedDescription) setJobDescription(extractedDescription);
+      setJobInputMode("paste");
+    } catch (err) {
+      setCrawlError(err instanceof Error ? err.message : "Failed to fetch job posting from this URL.");
+    } finally {
+      setIsCrawling(false);
+    }
+  };
+
   const handleSaveJobDescriptionDraft = async () => {
     if (!savedResumeId) return;
     setIsSavingDraft(true);
@@ -1073,20 +1099,97 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Job Description
-                </label>
-                <textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste the full job description here..."
-                  rows={12}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {jobDescription.trim().split(/\s+/).filter(Boolean).length}{" "}
-                  words
-                </p>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    Job Description
+                  </label>
+                  <div className="flex items-center gap-1 rounded-lg border border-input bg-muted/40 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => { setJobInputMode("paste"); setCrawlError(null); }}
+                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                        jobInputMode === "paste"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Paste text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setJobInputMode("url"); setCrawlError(null); }}
+                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                        jobInputMode === "url"
+                          ? "bg-background shadow-sm text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Link className="h-3.5 w-3.5" />
+                      Import from URL
+                    </button>
+                  </div>
+                </div>
+
+                {jobInputMode === "url" ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={jobUrl}
+                        onChange={(e) => { setJobUrl(e.target.value); setCrawlError(null); }}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCrawlUrl(); } }}
+                        placeholder="https://company.com/careers/job-posting"
+                        disabled={isCrawling}
+                        className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleCrawlUrl}
+                        disabled={!jobUrl.trim() || isCrawling}
+                        className="shrink-0"
+                      >
+                        {isCrawling ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Fetching...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-4 w-4" />
+                            Fetch
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {crawlError && (
+                      <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                        <span>{crawlError}</span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-muted-foreground">
+                      Paste the public URL of the job posting. The app will extract the description automatically.
+                      Only public pages are supported — login-protected postings must be pasted manually.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder="Paste the full job description here..."
+                      rows={12}
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {jobDescription.trim().split(/\s+/).filter(Boolean).length}{" "}
+                      words
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

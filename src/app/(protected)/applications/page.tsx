@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
@@ -115,28 +116,7 @@ function getAverageFitScore(apps: JobApplication[]) {
   return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
 }
 
-function getNextAction(app: JobApplication) {
-  switch (app.status) {
-    case "DRAFT":
-      return "Complete the application details and run AI analysis.";
-    case "ANALYZING":
-      return "Wait for the analysis to finish, then review the recommendations.";
-    case "ANALYZED":
-      return "Your application is ready. Send it, then mark it as Applied.";
-    case "APPLIED":
-      return "Track recruiter feedback and prepare for the next conversation.";
-    case "INTERVIEWING":
-      return "Use Interview Prep to practice before your next interview.";
-    case "OFFERED":
-      return "You received an offer. Review details and decide your next move.";
-    case "REJECTED":
-      return "Review the analysis and improve your next applications.";
-    case "ACCEPTED":
-      return "This opportunity is complete. Use the learnings for future roles.";
-    default:
-      return "Keep this application up to date from one place.";
-  }
-}
+
 
 export default function ApplicationsPage() {
   useSetPageMetadata({
@@ -148,7 +128,7 @@ export default function ApplicationsPage() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = React.useState<JobApplication | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
-  const [selectedApplicationId, setSelectedApplicationId] = React.useState<string | null>(null);
+  const router = useRouter();
 
   const { data, isLoading } = useQuery<JobApplicationsResponse>({
     queryKey: ["jobApplications"],
@@ -160,19 +140,7 @@ export default function ApplicationsPage() {
     [data?.jobApplications]
   );
 
-  React.useEffect(() => {
-    if (applications.length === 0) {
-      setSelectedApplicationId(null);
-      return;
-    }
 
-    if (
-      !selectedApplicationId ||
-      !applications.some((application) => application.id === selectedApplicationId)
-    ) {
-      setSelectedApplicationId(applications[0].id);
-    }
-  }, [applications, selectedApplicationId]);
 
   const groupedApplications = React.useMemo(() => {
     const groups: Record<KanbanStage, JobApplication[]> = {
@@ -188,8 +156,7 @@ export default function ApplicationsPage() {
     return groups;
   }, [applications]);
 
-  const selectedApplication =
-    applications.find((application) => application.id === selectedApplicationId) ?? null;
+
 
   const averageFitScore = React.useMemo(
     () => getAverageFitScore(applications),
@@ -260,11 +227,6 @@ export default function ApplicationsPage() {
       setDeleteTarget(null);
       setDeleteError(null);
       queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
-
-      if (deletedId && selectedApplicationId === deletedId) {
-        const next = applications.find((application) => application.id !== deletedId);
-        setSelectedApplicationId(next?.id ?? null);
-      }
     },
     onError: (error) => {
       setDeleteError(
@@ -431,7 +393,6 @@ export default function ApplicationsPage() {
                       ) : (
                         stageApplications.map((application) => {
                           const latestAnalysis = application.analyses?.[0];
-                          const isSelected = selectedApplicationId === application.id;
                           const currentStage = mapStatusToKanbanStage(application.status);
                           const outcomeLabel = getOutcomeLabel(application.status);
                           const isUpdating = updateStatusMutation.isPending &&
@@ -444,19 +405,14 @@ export default function ApplicationsPage() {
                               key={application.id}
                               role="button"
                               tabIndex={0}
-                              onClick={() => setSelectedApplicationId(application.id)}
+                              onClick={() => router.push(`/onboarding?applicationId=${application.id}`)}
                               onKeyDown={(event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                   event.preventDefault();
-                                  setSelectedApplicationId(application.id);
+                                  router.push(`/onboarding?applicationId=${application.id}`);
                                 }
                               }}
-                              className={cn(
-                                "rounded-2xl border p-4 transition-all",
-                                isSelected
-                                  ? "border-primary bg-primary/5 shadow-sm"
-                                  : "border-border bg-background hover:border-primary/40 hover:bg-muted/30"
-                              )}
+                              className="cursor-pointer rounded-2xl border border-border bg-background p-4 transition-all hover:border-primary/40 hover:bg-muted/30"
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0 space-y-3">
@@ -557,121 +513,7 @@ export default function ApplicationsPage() {
               })}
             </section>
 
-            {selectedApplication && (
-              <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-                <div className="rounded-3xl border border-border bg-card p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-xl font-semibold">
-                          {selectedApplication.jobTitle || "Untitled Role"}
-                        </h2>
-                        <Badge variant="outline">{getStatusLabel(selectedApplication.status)}</Badge>
-                        {getOutcomeLabel(selectedApplication.status) && (
-                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
-                            {getOutcomeLabel(selectedApplication.status)}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <Building2 className="h-4 w-4" />
-                          {selectedApplication.companyName || "Company not defined"}
-                        </span>
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-4 w-4" />
-                          Updated {formatDate(selectedApplication.updatedAt)}
-                        </span>
-                      </div>
-                    </div>
 
-                    <Button asChild className="rounded-2xl">
-                      <Link href={`/onboarding?applicationId=${selectedApplication.id}`}>
-                        Open Application
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="mt-6 grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                      <p className="text-sm text-muted-foreground">Kanban stage</p>
-                      <p className="mt-2 text-lg font-semibold">
-                        {COLUMN_META[mapStatusToKanbanStage(selectedApplication.status)].title}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                      <p className="text-sm text-muted-foreground">Current status</p>
-                      <p className="mt-2 text-lg font-semibold">
-                        {getStatusLabel(selectedApplication.status)}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-border bg-muted/20 p-4">
-                      <p className="text-sm text-muted-foreground">Latest fit score</p>
-                      <p className="mt-2 text-lg font-semibold">
-                        {selectedApplication.analyses?.[0]?.fitScore !== null &&
-                        selectedApplication.analyses?.[0]?.fitScore !== undefined
-                          ? `${Math.round(selectedApplication.analyses[0].fitScore)} / 100`
-                          : "No score yet"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-border bg-background p-5">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-primary" />
-                      <h3 className="font-semibold">Recommended next action</h3>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {getNextAction(selectedApplication)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-border bg-card p-6">
-                  <h3 className="text-lg font-semibold">Performance snapshot</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Keep the latest AI feedback visible while you move the application forward.
-                  </p>
-
-                  <div className="mt-5 space-y-4">
-                    {selectedApplication.analyses?.[0]?.summary ? (
-                      <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
-                        {selectedApplication.analyses[0].summary}
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-dashed border-border bg-muted/10 p-4 text-sm text-muted-foreground">
-                        Run the AI analysis from onboarding to see match quality, strengths, and recommendations here.
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Quick move</p>
-                      <Select
-                        value={mapStatusToKanbanStage(selectedApplication.status)}
-                        onValueChange={(value) => {
-                          updateStatusMutation.mutate({
-                            id: selectedApplication.id,
-                            nextStage: value as KanbanStage,
-                            currentStatus: selectedApplication.status,
-                            hasAnalysis: Boolean(selectedApplication.analyses?.[0]),
-                          });
-                        }}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-                          <SelectItem value="APPLIED">Applied</SelectItem>
-                          <SelectItem value="INTERVIEW">Interview</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
           </>
         )}
       </div>
