@@ -248,7 +248,17 @@
     "careerTipsTitle": "Career Tips",
     "careerTipsDesc": "Tailor your CV for each role, highlight achievements, and quantify results.",
     "emptyState": "No data yet",
-    "emptyStateDesc": "Upload your CV to get started with personalized career preparation."
+    "emptyStateDesc": "Upload your CV to get started with personalized career preparation.",
+    "heroTitle": "Your Career Hub",
+    "heroDescription": "Manage your job pipeline in one place. Add applications, get AI-driven fit scores from your resume, and track your progress to your next role.",
+    "newApplication": "New Application",
+    "viewPipeline": "View Pipeline",
+    "unlockedFeatures": "Unlocked features",
+    "boardTitle": "Applications Board",
+    "boardSummary": "Kanban & AI Analysis",
+    "boardDescription": "Track every job application, upload real job descriptions, and let AI analyze your resume's fit quality to improve your chances.",
+    "comingSoon": "Coming Soon",
+    "soonBadge": "Soon"
   },
   "mockInterview": {
     "title": "Interview Prep",
@@ -486,5 +496,80 @@
     "topPriorities": "Top 3 Priorities",
     "readiness": "Readiness Level",
     "score": "Score"
+  },
+  "applicationsPage": {
+    "meta": {
+      "title": "Applications",
+      "description": "Track every job application and move it through your pipeline"
+    },
+    "hero": {
+      "badge": "Candidate pipeline hub",
+      "title": "See every application and keep the next step obvious",
+      "description": "Track progress, move applications through the pipeline, and keep performance context in one place."
+    },
+    "empty": {
+      "title": "No applications yet",
+      "description": "Create your first application to start CV analysis, track your pipeline, and see how each opportunity is performing.",
+      "cta": "Create First Application"
+    },
+    "stats": {
+      "total": "Total applications",
+      "inProgress": "In progress",
+      "applied": "Applied",
+      "interview": "Interview",
+      "averageFitScore": "Average fit score"
+    },
+    "columns": {
+      "inProgress": {
+        "title": "In progress",
+        "description": "Applications still being prepared, refined, or analyzed."
+      },
+      "applied": {
+        "title": "Applied",
+        "description": "Applications already submitted and waiting for a response."
+      },
+      "interview": {
+        "title": "Interview",
+        "description": "Applications already in interview or with a final outcome."
+      },
+      "empty": "No applications in this stage yet."
+    },
+    "delete": {
+      "title": "Delete application?",
+      "description": "This action cannot be undone. The selected application and its analysis history will be permanently removed."
+    },
+    "defaults": {
+      "untitledRole": "Untitled Role",
+      "companyNotDefined": "Company not defined"
+    },
+    "status": {
+      "draft": "Draft",
+      "analyzing": "Analyzing",
+      "readyToApply": "Ready to apply",
+      "applied": "Applied",
+      "interview": "Interview",
+      "offerReceived": "Offer received",
+      "rejected": "Rejected",
+      "accepted": "Accepted"
+    },
+    "outcome": {
+      "offer": "Offer",
+      "rejected": "Rejected",
+      "accepted": "Accepted"
+    },
+    "actions": {
+      "newApplication": "New Application",
+      "moveToStage": "Move to stage",
+      "continue": "Continue",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "updatingStage": "Updating stage..."
+    },
+    "errors": {
+      "deleteFailed": "Failed to delete application"
+    },
+    "updatedAt": "Updated {date}",
+    "recentlyUpdated": "Recently updated",
+    "fitChip": "{score}/100 fit"
   }
 }

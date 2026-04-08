@@ -11,11 +11,11 @@ import {
   Clock3,
   Plus,
   Sparkles,
-  Target,
   Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,9 +37,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
-  getOutcomeLabel,
   getStatusFromKanbanStage,
-  getStatusLabel,
   KANBAN_STAGES,
   mapStatusToKanbanStage,
   type KanbanStage,
@@ -68,7 +66,9 @@ type JobApplicationsResponse = {
   jobApplications: JobApplication[];
 };
 
-const COLUMN_META: Record<
+type TranslateFn = (key: string, vars?: Record<string, string | number>) => string;
+
+function getColumnMeta(t: TranslateFn): Record<
   KanbanStage,
   {
     title: string;
@@ -76,31 +76,31 @@ const COLUMN_META: Record<
     accent: string;
     badgeClassName: string;
   }
-> = {
-  IN_PROGRESS: {
-    title: "In progress",
-    description: "Applications still being prepared, refined, or analyzed.",
-    accent: "from-sky-500/20 via-sky-500/5 to-transparent",
-    badgeClassName: "bg-sky-500/10 text-sky-700 border-sky-200",
-  },
-  APPLIED: {
-    title: "Applied",
-    description: "Applications already submitted and waiting for a response.",
-    accent: "from-amber-500/20 via-amber-500/5 to-transparent",
-    badgeClassName: "bg-amber-500/10 text-amber-700 border-amber-200",
-  },
-  INTERVIEW: {
-    title: "Interview",
-    description: "Applications already in interview or with a final outcome.",
-    accent: "from-emerald-500/20 via-emerald-500/5 to-transparent",
-    badgeClassName: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
-  },
-};
+> {
+  return {
+    IN_PROGRESS: {
+      title: t("applicationsPage.columns.inProgress.title"),
+      description: t("applicationsPage.columns.inProgress.description"),
+      accent: "from-sky-500/20 via-sky-500/5 to-transparent",
+      badgeClassName: "bg-sky-500/10 text-sky-700 border-sky-200",
+    },
+    APPLIED: {
+      title: t("applicationsPage.columns.applied.title"),
+      description: t("applicationsPage.columns.applied.description"),
+      accent: "from-amber-500/20 via-amber-500/5 to-transparent",
+      badgeClassName: "bg-amber-500/10 text-amber-700 border-amber-200",
+    },
+    INTERVIEW: {
+      title: t("applicationsPage.columns.interview.title"),
+      description: t("applicationsPage.columns.interview.description"),
+      accent: "from-emerald-500/20 via-emerald-500/5 to-transparent",
+      badgeClassName: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    },
+  };
+}
 
-function formatDate(value?: string) {
-  if (!value) return "Recently updated";
-
-  return new Intl.DateTimeFormat("en-US", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -116,12 +116,48 @@ function getAverageFitScore(apps: JobApplication[]) {
   return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
 }
 
+function getLocalizedStatusLabel(status: JobApplicationStatus | string, t: TranslateFn): string {
+  switch (status) {
+    case "DRAFT":
+      return t("applicationsPage.status.draft");
+    case "ANALYZING":
+      return t("applicationsPage.status.analyzing");
+    case "ANALYZED":
+      return t("applicationsPage.status.readyToApply");
+    case "APPLIED":
+      return t("applicationsPage.status.applied");
+    case "INTERVIEWING":
+      return t("applicationsPage.status.interview");
+    case "OFFERED":
+      return t("applicationsPage.status.offerReceived");
+    case "REJECTED":
+      return t("applicationsPage.status.rejected");
+    case "ACCEPTED":
+      return t("applicationsPage.status.accepted");
+    default:
+      return status;
+  }
+}
 
+function getLocalizedOutcomeLabel(status: JobApplicationStatus | string, t: TranslateFn): string | null {
+  switch (status) {
+    case "OFFERED":
+      return t("applicationsPage.outcome.offer");
+    case "REJECTED":
+      return t("applicationsPage.outcome.rejected");
+    case "ACCEPTED":
+      return t("applicationsPage.outcome.accepted");
+    default:
+      return null;
+  }
+}
 
 export default function ApplicationsPage() {
+  const { t, locale } = useLanguage();
+
   useSetPageMetadata({
-    title: "Applications",
-    description: "Track every job application and move it through your pipeline",
+    title: t("applicationsPage.meta.title"),
+    description: t("applicationsPage.meta.description"),
     showBreadcrumbs: true,
   });
 
@@ -140,7 +176,7 @@ export default function ApplicationsPage() {
     [data?.jobApplications]
   );
 
-
+  const columnMeta = React.useMemo(() => getColumnMeta(t), [t]);
 
   const groupedApplications = React.useMemo(() => {
     const groups: Record<KanbanStage, JobApplication[]> = {
@@ -155,8 +191,6 @@ export default function ApplicationsPage() {
 
     return groups;
   }, [applications]);
-
-
 
   const averageFitScore = React.useMemo(
     () => getAverageFitScore(applications),
@@ -223,14 +257,13 @@ export default function ApplicationsPage() {
       return api.delete<{ success: boolean }>(`/api/job-application/${id}`);
     },
     onSuccess: () => {
-      const deletedId = deleteTarget?.id ?? null;
       setDeleteTarget(null);
       setDeleteError(null);
       queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
     },
     onError: (error) => {
       setDeleteError(
-        error instanceof Error ? error.message : "Failed to delete application"
+        error instanceof Error ? error.message : t("applicationsPage.errors.deleteFailed")
       );
     },
   });
@@ -263,28 +296,34 @@ export default function ApplicationsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete application?</AlertDialogTitle>
+            <AlertDialogTitle>{t("applicationsPage.delete.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The selected application and its analysis history will be permanently removed.
+              {t("applicationsPage.delete.description")}
             </AlertDialogDescription>
             {deleteTarget && (
               <div className="text-sm text-foreground">
-                <span className="font-medium">{deleteTarget.jobTitle || "Untitled Role"}</span>
-                <span className="text-muted-foreground"> · {deleteTarget.companyName || "Company not defined"}</span>
+                <span className="font-medium">
+                  {deleteTarget.jobTitle || t("applicationsPage.defaults.untitledRole")}
+                </span>
+                <span className="text-muted-foreground">
+                  {" "}· {deleteTarget.companyName || t("applicationsPage.defaults.companyNotDefined")}
+                </span>
               </div>
             )}
             {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteApplicationMutation.isPending}>
-              Cancel
+              {t("common.cancel")}
             </AlertDialogCancel>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteApplicationMutation.isPending}
             >
-              {deleteApplicationMutation.isPending ? "Deleting..." : "Delete"}
+              {deleteApplicationMutation.isPending
+                ? t("applicationsPage.actions.deleting")
+                : t("applicationsPage.actions.delete")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -296,21 +335,21 @@ export default function ApplicationsPage() {
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl space-y-2">
               <Badge variant="outline" className="w-fit rounded-full px-3 py-1">
-                Candidate pipeline hub
+                {t("applicationsPage.hero.badge")}
               </Badge>
               <div className="space-y-1">
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  See every application and keep the next step obvious
+                  {t("applicationsPage.hero.title")}
                 </h1>
                 <p className="text-sm text-muted-foreground sm:text-base">
-                  Track progress, move applications through the pipeline, and keep performance context in one place.
+                  {t("applicationsPage.hero.description")}
                 </p>
               </div>
             </div>
             <Button asChild size="lg" className="rounded-2xl">
               <Link href="/onboarding?new=1">
                 <Plus className="h-4 w-4" />
-                New Application
+                {t("applicationsPage.actions.newApplication")}
               </Link>
             </Button>
           </div>
@@ -321,14 +360,14 @@ export default function ApplicationsPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Briefcase className="h-8 w-8" />
             </div>
-            <h2 className="text-xl font-semibold">No applications yet</h2>
+            <h2 className="text-xl font-semibold">{t("applicationsPage.empty.title")}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Create your first application to start CV analysis, track your pipeline, and see how each opportunity is performing.
+              {t("applicationsPage.empty.description")}
             </p>
             <Button asChild className="mt-6 rounded-2xl">
               <Link href="/onboarding?new=1">
                 <Plus className="h-4 w-4" />
-                Create First Application
+                {t("applicationsPage.empty.cta")}
               </Link>
             </Button>
           </section>
@@ -336,23 +375,23 @@ export default function ApplicationsPage() {
           <>
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <div className="rounded-3xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">Total applications</p>
+                <p className="text-sm text-muted-foreground">{t("applicationsPage.stats.total")}</p>
                 <p className="mt-3 text-3xl font-semibold">{applications.length}</p>
               </div>
               <div className="rounded-3xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">In progress</p>
+                <p className="text-sm text-muted-foreground">{t("applicationsPage.stats.inProgress")}</p>
                 <p className="mt-3 text-3xl font-semibold">{groupedApplications.IN_PROGRESS.length}</p>
               </div>
               <div className="rounded-3xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">Applied</p>
+                <p className="text-sm text-muted-foreground">{t("applicationsPage.stats.applied")}</p>
                 <p className="mt-3 text-3xl font-semibold">{groupedApplications.APPLIED.length}</p>
               </div>
               <div className="rounded-3xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">Interview</p>
+                <p className="text-sm text-muted-foreground">{t("applicationsPage.stats.interview")}</p>
                 <p className="mt-3 text-3xl font-semibold">{groupedApplications.INTERVIEW.length}</p>
               </div>
               <div className="rounded-3xl border border-border bg-card p-5">
-                <p className="text-sm text-muted-foreground">Average fit score</p>
+                <p className="text-sm text-muted-foreground">{t("applicationsPage.stats.averageFitScore")}</p>
                 <p className="mt-3 text-3xl font-semibold">
                   {averageFitScore !== null ? `${averageFitScore}/100` : "—"}
                 </p>
@@ -361,7 +400,7 @@ export default function ApplicationsPage() {
 
             <section className="grid gap-4 xl:grid-cols-3">
               {KANBAN_STAGES.map((stage) => {
-                const meta = COLUMN_META[stage];
+                const meta = columnMeta[stage];
                 const stageApplications = groupedApplications[stage];
 
                 return (
@@ -388,17 +427,21 @@ export default function ApplicationsPage() {
                     <div className="space-y-3">
                       {stageApplications.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
-                          No applications in this stage yet.
+                          {t("applicationsPage.columns.empty")}
                         </div>
                       ) : (
                         stageApplications.map((application) => {
                           const latestAnalysis = application.analyses?.[0];
                           const currentStage = mapStatusToKanbanStage(application.status);
-                          const outcomeLabel = getOutcomeLabel(application.status);
+                          const outcomeLabel = getLocalizedOutcomeLabel(application.status, t);
                           const isUpdating = updateStatusMutation.isPending &&
                             updateStatusMutation.variables?.id === application.id;
                           const isDeleting = deleteApplicationMutation.isPending &&
                             deleteTarget?.id === application.id;
+
+                          const updatedAtText = application.updatedAt
+                            ? t("applicationsPage.updatedAt", { date: formatDate(application.updatedAt, locale) })
+                            : t("applicationsPage.recentlyUpdated");
 
                           return (
                             <article
@@ -419,9 +462,11 @@ export default function ApplicationsPage() {
                                   <div className="space-y-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                       <p className="font-semibold leading-tight">
-                                        {application.jobTitle || "Untitled Role"}
+                                        {application.jobTitle || t("applicationsPage.defaults.untitledRole")}
                                       </p>
-                                      <Badge variant="outline">{getStatusLabel(application.status)}</Badge>
+                                      <Badge variant="outline">
+                                        {getLocalizedStatusLabel(application.status, t)}
+                                      </Badge>
                                       {outcomeLabel && (
                                         <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
                                           {outcomeLabel}
@@ -431,7 +476,7 @@ export default function ApplicationsPage() {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Building2 className="h-4 w-4" />
                                       <span className="truncate">
-                                        {application.companyName || "Company not defined"}
+                                        {application.companyName || t("applicationsPage.defaults.companyNotDefined")}
                                       </span>
                                     </div>
                                   </div>
@@ -439,12 +484,12 @@ export default function ApplicationsPage() {
                                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
                                       <Clock3 className="h-3 w-3" />
-                                      Updated {formatDate(application.updatedAt)}
+                                      {updatedAtText}
                                     </span>
                                     {latestAnalysis?.fitScore !== null && latestAnalysis?.fitScore !== undefined && (
                                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
                                         <Sparkles className="h-3 w-3" />
-                                        {Math.round(latestAnalysis.fitScore)}/100 fit
+                                        {t("applicationsPage.fitChip", { score: Math.round(latestAnalysis.fitScore) })}
                                       </span>
                                     )}
                                   </div>
@@ -467,19 +512,19 @@ export default function ApplicationsPage() {
                                   }}
                                 >
                                   <SelectTrigger className="rounded-xl">
-                                    <SelectValue placeholder="Move to stage" />
+                                    <SelectValue placeholder={t("applicationsPage.actions.moveToStage")} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-                                    <SelectItem value="APPLIED">Applied</SelectItem>
-                                    <SelectItem value="INTERVIEW">Interview</SelectItem>
+                                    <SelectItem value="IN_PROGRESS">{t("applicationsPage.columns.inProgress.title")}</SelectItem>
+                                    <SelectItem value="APPLIED">{t("applicationsPage.columns.applied.title")}</SelectItem>
+                                    <SelectItem value="INTERVIEW">{t("applicationsPage.columns.interview.title")}</SelectItem>
                                   </SelectContent>
                                 </Select>
 
                                 <div className="flex flex-wrap items-center gap-2">
                                   <Button asChild variant="outline" size="sm" className="rounded-xl">
                                     <Link href={`/onboarding?applicationId=${application.id}`}>
-                                      Continue
+                                      {t("applicationsPage.actions.continue")}
                                       <ArrowRight className="h-4 w-4" />
                                     </Link>
                                   </Button>
@@ -494,11 +539,13 @@ export default function ApplicationsPage() {
                                     disabled={isDeleting}
                                   >
                                     <Trash2 className="h-4 w-4" />
-                                    {isDeleting ? "Deleting..." : "Delete"}
+                                    {isDeleting
+                                      ? t("applicationsPage.actions.deleting")
+                                      : t("applicationsPage.actions.delete")}
                                   </Button>
                                   {isUpdating && (
                                     <span className="text-xs text-muted-foreground">
-                                      Updating stage...
+                                      {t("applicationsPage.actions.updatingStage")}
                                     </span>
                                   )}
                                 </div>
@@ -512,8 +559,6 @@ export default function ApplicationsPage() {
                 );
               })}
             </section>
-
-
           </>
         )}
       </div>

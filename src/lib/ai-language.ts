@@ -1,12 +1,15 @@
-const SUPPORTED_LANGUAGES = ['en-US', 'en-GB'] as const
+const SUPPORTED_LANGUAGES = ['pt-MZ', 'en-US', 'en-GB'] as const
+
 type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number]
 
 const LANGUAGE_INSTRUCTIONS: Record<SupportedLanguage, string> = {
+  'pt-MZ': `RESPONSE LANGUAGE: Responda inteiramente em português (Moçambique). Use linguagem natural em português e mantenha todas as justificações, recomendações, sugestões de reescrita e comentários em português.`,
   'en-US': `RESPONSE LANGUAGE: Respond entirely in American English (US). Use American spelling conventions (e.g., "analyze", "organize", "color"). All text content including justifications, recommendations, rewrite suggestions, and comments must be in English.`,
   'en-GB': `RESPONSE LANGUAGE: Respond entirely in British English (UK). Use British spelling conventions (e.g., "analyse", "organise", "colour"). All text content including justifications, recommendations, rewrite suggestions, and comments must be in English.`,
 }
 
 const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
+  'pt-MZ': 'Português (MZ)',
   'en-US': 'English (US)',
   'en-GB': 'English (UK)',
 }

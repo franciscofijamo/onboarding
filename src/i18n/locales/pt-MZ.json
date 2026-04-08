@@ -40,7 +40,7 @@
   "nav": {
     "dashboard": "Painel",
     "myProfile": "Meu Perfil",
-    "applications": "Applications",
+    "applications": "Candidaturas",
     "interviewPrep": "Preparação para Entrevista",
     "scenarios": "Cenários",
     "aiCoach": "Coach IA",
@@ -248,7 +248,17 @@
     "careerTipsTitle": "Dicas de Carreira",
     "careerTipsDesc": "Adapte o seu CV para cada vaga, destaque conquistas e quantifique resultados.",
     "emptyState": "Nenhum dado ainda",
-    "emptyStateDesc": "Carregue o seu CV para começar a preparação personalizada de carreira."
+    "emptyStateDesc": "Carregue o seu CV para começar a preparação personalizada de carreira.",
+    "heroTitle": "O teu centro de carreira",
+    "heroDescription": "Gere a tua pipeline de candidaturas num só lugar. Adiciona candidaturas, recebe pontuações de adequação com IA e acompanha o teu progresso até à próxima oportunidade.",
+    "newApplication": "Nova Candidatura",
+    "viewPipeline": "Ver Pipeline",
+    "unlockedFeatures": "Funcionalidades desbloqueadas",
+    "boardTitle": "Quadro de Candidaturas",
+    "boardSummary": "Kanban e Análise com IA",
+    "boardDescription": "Acompanha cada candidatura, adiciona descrições reais de vagas e deixa a IA analisar a adequação do teu CV para aumentar as tuas hipóteses.",
+    "comingSoon": "Em breve",
+    "soonBadge": "Breve"
   },
   "mockInterview": {
     "title": "Preparação para Entrevista",
@@ -486,5 +496,80 @@
     "topPriorities": "Top 3 Prioridades",
     "readiness": "Nível de Prontidão",
     "score": "Nota"
+  },
+  "applicationsPage": {
+    "meta": {
+      "title": "Candidaturas",
+      "description": "Acompanha cada candidatura e move-a ao longo da tua pipeline"
+    },
+    "hero": {
+      "badge": "Centro da pipeline de candidaturas",
+      "title": "Vê todas as candidaturas e mantém claro o próximo passo",
+      "description": "Acompanha o progresso, move candidaturas na pipeline e mantém o contexto de desempenho num só lugar."
+    },
+    "empty": {
+      "title": "Ainda não tens candidaturas",
+      "description": "Cria a tua primeira candidatura para iniciar a análise do CV, acompanhar a pipeline e ver o desempenho de cada oportunidade.",
+      "cta": "Criar Primeira Candidatura"
+    },
+    "stats": {
+      "total": "Total de candidaturas",
+      "inProgress": "Em progresso",
+      "applied": "Submetidas",
+      "interview": "Entrevista",
+      "averageFitScore": "Nota média de adequação"
+    },
+    "columns": {
+      "inProgress": {
+        "title": "Em progresso",
+        "description": "Candidaturas ainda em preparação, melhoria ou análise."
+      },
+      "applied": {
+        "title": "Submetidas",
+        "description": "Candidaturas já submetidas e a aguardar resposta."
+      },
+      "interview": {
+        "title": "Entrevista",
+        "description": "Candidaturas já em entrevista ou com resultado final."
+      },
+      "empty": "Ainda não há candidaturas nesta fase."
+    },
+    "delete": {
+      "title": "Apagar candidatura?",
+      "description": "Esta ação não pode ser desfeita. A candidatura selecionada e o respetivo histórico de análises serão removidos permanentemente."
+    },
+    "defaults": {
+      "untitledRole": "Função sem título",
+      "companyNotDefined": "Empresa não definida"
+    },
+    "status": {
+      "draft": "Rascunho",
+      "analyzing": "A analisar",
+      "readyToApply": "Pronta para candidatura",
+      "applied": "Submetida",
+      "interview": "Entrevista",
+      "offerReceived": "Oferta recebida",
+      "rejected": "Rejeitada",
+      "accepted": "Aceite"
+    },
+    "outcome": {
+      "offer": "Oferta",
+      "rejected": "Rejeitada",
+      "accepted": "Aceite"
+    },
+    "actions": {
+      "newApplication": "Nova Candidatura",
+      "moveToStage": "Mover para fase",
+      "continue": "Continuar",
+      "delete": "Apagar",
+      "deleting": "A apagar...",
+      "updatingStage": "A atualizar fase..."
+    },
+    "errors": {
+      "deleteFailed": "Falha ao apagar candidatura"
+    },
+    "updatedAt": "Atualizado em {date}",
+    "recentlyUpdated": "Atualizada recentemente",
+    "fitChip": "{score}/100 de adequação"
   }
 }

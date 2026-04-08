@@ -5,6 +5,7 @@ import enGB from './locales/en-GB.json'
 export type Locale = 'en-US' | 'en-GB' | 'pt-MZ'
 
 export const LOCALES: { code: Locale; label: string; flag: string }[] = [
+  { code: 'pt-MZ', label: 'Português (MZ)', flag: '🇲🇿' },
   { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
 ]

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { WelcomeCreditsDialog } from "@/components/app/welcome-credits-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Sparkles,
   ArrowRight,
   Upload,
   MessageSquare,
@@ -17,8 +16,6 @@ import {
   Coins,
   BarChart3,
   BrainCircuit,
-  Lightbulb,
-  BookOpen,
   Briefcase,
 } from "lucide-react";
 
@@ -39,23 +36,23 @@ export default function DashboardPage() {
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="max-w-2xl space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Your Career Hub
+              {t("dashboard.heroTitle")}
             </h1>
             <p className="text-sm text-muted-foreground sm:text-base">
-              Manage your job pipeline in one place. Add applications, get AI-driven fit scores from your resume, and track your progress to your next role.
+              {t("dashboard.heroDescription")}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
               <Link href="/onboarding?new=1">
                 <Upload className="h-4 w-4 mr-2" />
-                New Application
+                {t("dashboard.newApplication")}
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
               <Link href="/applications">
                 <Briefcase className="h-4 w-4 mr-2" />
-                View Pipeline
+                {t("dashboard.viewPipeline")}
               </Link>
             </Button>
           </div>
@@ -64,7 +61,7 @@ export default function DashboardPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          Unlocked features
+          {t("dashboard.unlockedFeatures")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <Link href="/applications" className="block group">
@@ -77,14 +74,14 @@ export default function DashboardPage() {
                       <Briefcase className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">Applications Board</h3>
-                      <p className="text-sm text-muted-foreground">Kanban & AI Analysis</p>
+                      <h3 className="text-lg font-semibold text-foreground">{t("dashboard.boardTitle")}</h3>
+                      <p className="text-sm text-muted-foreground">{t("dashboard.boardSummary")}</p>
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Track every job application, upload real job descriptions, and let AI analyze your resume's fit quality to improve your chances.
+                  {t("dashboard.boardDescription")}
                 </p>
               </div>
             </div>
@@ -126,7 +123,7 @@ export default function DashboardPage() {
 
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          Coming Soon
+          {t("dashboard.comingSoon")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
@@ -157,7 +154,7 @@ export default function DashboardPage() {
                     <item.icon className="h-5 w-5" />
                   </div>
                   <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
-                    Soon
+                    {t("dashboard.soonBadge")}
                   </span>
                 </div>
                 <h3 className="text-base font-semibold text-foreground">{item.title}</h3>

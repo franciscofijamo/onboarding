@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/contexts/language";
+import { type Locale } from "@/i18n";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -161,7 +162,7 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
 
                         <RadioGroup
                             value={locale}
-                            onValueChange={(value) => setLocale(value as "pt-MZ" | "en-US" | "en-GB")}
+                            onValueChange={(value) => setLocale(value as Locale)}
                             className="grid gap-3"
                         >
                             {[
