@@ -51,21 +51,25 @@ export async function GET(
       return NextResponse.json({ error: 'Job application not found' }, { status: 404 })
     }
 
+    // Analysis results for platform/public applications are recruiter-only
+    const analysisPayload = jobApplication.isPublicApplication
+      ? { analysis: null, allAnalyses: [] }
+      : { analysis: jobApplication.analyses[0] ?? null, allAnalyses: jobApplication.analyses }
+
     return NextResponse.json({
       jobApplication: {
         id: jobApplication.id,
         jobTitle: jobApplication.jobTitle,
         companyName: jobApplication.companyName,
-        jobDescription: jobApplication.jobDescription,
-        companyInfo: jobApplication.companyInfo,
+        jobDescription: jobApplication.isPublicApplication ? null : jobApplication.jobDescription,
+        companyInfo: jobApplication.isPublicApplication ? null : jobApplication.companyInfo,
         status: jobApplication.status,
         createdAt: jobApplication.createdAt,
         updatedAt: jobApplication.updatedAt,
         resume: jobApplication.resume,
         coverLetter: jobApplication.coverLetter,
       },
-      analysis: jobApplication.analyses[0] ?? null,
-      allAnalyses: jobApplication.analyses,
+      ...analysisPayload,
     })
   } catch (error) {
     console.error('Error fetching job application:', error)

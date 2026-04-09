@@ -400,10 +400,13 @@ async function runAnalysisCore(params: {
       },
     })
 
-    await db.jobApplication.updateMany({
-      where: { id: jobApplicationId, userId },
-      data: { status: "DRAFT" },
-    })
+    // Do not downgrade public/platform applications — their submission state (APPLIED) must remain intact
+    if (!jobApplication?.isPublicApplication) {
+      await db.jobApplication.updateMany({
+        where: { id: jobApplicationId, userId },
+        data: { status: "DRAFT" },
+      })
+    }
 
     throw error
   }
