@@ -39,6 +39,7 @@ model User {
   workplaceScenarioSessions WorkplaceScenarioSession[]
   company            Company?
   pipelineEntries    CandidatePipelineEntry[]
+  stageHistoryMoves  CandidateStageHistory[]
   asaasCustomerId    String?   @unique
   asaasCustomerIdSandbox    String?   @unique
   asaasCustomerIdProduction String?   @unique
@@ -184,11 +185,29 @@ model CandidatePipelineEntry {
   jobPosting       JobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
   jobApplication   JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
   user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stageHistory     CandidateStageHistory[]
 
   @@index([jobPostingId])
   @@index([userId])
   @@index([jobPostingId, currentStage])
   @@index([createdAt])
+}
+
+// CandidateStageHistory - audit trail of pipeline stage transitions
+model CandidateStageHistory {
+  id          String        @id @default(cuid())
+  entryId     String
+  movedBy     String
+  fromStage   PipelineStage
+  toStage     PipelineStage
+  movedAt     DateTime      @default(now())
+
+  entry       CandidatePipelineEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  mover       User                   @relation(fields: [movedBy], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@index([movedBy])
+  @@index([movedAt])
 }
 
 enum ExperienceLevel {

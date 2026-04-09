@@ -263,6 +263,12 @@ function PostingCard({
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
           <>
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-primary hover:bg-primary/10" title="Candidatos">
+              <Link href={`/recruiter/postings/${posting.id}/candidates`}>
+                <Users className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+
             <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg" title="Editar">
               <Link href={`/recruiter/postings/${posting.id}/edit`}>
                 <Edit2 className="h-3.5 w-3.5" />

@@ -15,7 +15,7 @@ async function getRecruiterPostingOrFail(clerkId: string, postingId: string) {
   const posting = await db.jobPosting.findFirst({
     where: { id: postingId, companyId: company.id },
   });
-  return posting;
+  return { posting, user };
 }
 
 export async function GET(
@@ -28,8 +28,8 @@ export async function GET(
 
     const { id: postingId } = await params;
 
-    const posting = await getRecruiterPostingOrFail(clerkId, postingId);
-    if (!posting) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
+    const result = await getRecruiterPostingOrFail(clerkId, postingId);
+    if (!result?.posting) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
 
     const entries = await db.candidatePipelineEntry.findMany({
       where: { jobPostingId: postingId },
@@ -39,12 +39,23 @@ export async function GET(
             id: true,
             status: true,
             createdAt: true,
-            resume: { select: { id: true, title: true } },
+            resume: { select: { id: true, title: true, fileUrl: true } },
             coverLetter: { select: { id: true, title: true } },
             analyses: {
               orderBy: { createdAt: 'desc' },
               take: 1,
-              select: { fitScore: true, summary: true, skillsMatch: true, missingSkills: true },
+              select: {
+                id: true,
+                fitScore: true,
+                summary: true,
+                skillsMatch: true,
+                missingSkills: true,
+                strengths: true,
+                improvements: true,
+                recommendations: true,
+                keywordAnalysis: true,
+                createdAt: true,
+              },
             },
           },
         },
@@ -53,13 +64,35 @@ export async function GET(
             id: true,
             name: true,
             email: true,
+            province: true,
+            experienceLevel: true,
+            targetRole: true,
+            currentRole: true,
+          },
+        },
+        stageHistory: {
+          orderBy: { movedAt: 'desc' },
+          take: 10,
+          select: {
+            id: true,
+            fromStage: true,
+            toStage: true,
+            movedAt: true,
+            mover: { select: { id: true, name: true } },
           },
         },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    return NextResponse.json({ pipeline: entries });
+    // Sort each stage group by fitScore descending (highest first)
+    const sorted = [...entries].sort((a, b) => {
+      const scoreA = a.fitScore ?? -1;
+      const scoreB = b.fitScore ?? -1;
+      return scoreB - scoreA;
+    });
+
+    return NextResponse.json({ pipeline: sorted });
   } catch (error) {
     console.error('[Recruiter Pipeline API] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -82,8 +115,10 @@ export async function PATCH(
 
     const { id: postingId } = await params;
 
-    const posting = await getRecruiterPostingOrFail(clerkId, postingId);
-    if (!posting) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
+    const result = await getRecruiterPostingOrFail(clerkId, postingId);
+    if (!result?.posting) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
+
+    const recruiterUser = result.user;
 
     const body = await request.json();
     const validation = UpdateStageSchema.safeParse(body);
@@ -98,13 +133,23 @@ export async function PATCH(
     });
     if (!entry) return NextResponse.json({ error: 'Pipeline entry not found' }, { status: 404 });
 
-    const updated = await db.candidatePipelineEntry.update({
-      where: { id: entryId },
-      data: {
-        currentStage: stage as PipelineStage,
-        ...(notes !== undefined ? { notes } : {}),
-      },
-    });
+    const [updated] = await db.$transaction([
+      db.candidatePipelineEntry.update({
+        where: { id: entryId },
+        data: {
+          currentStage: stage as PipelineStage,
+          ...(notes !== undefined ? { notes } : {}),
+        },
+      }),
+      db.candidateStageHistory.create({
+        data: {
+          entryId,
+          movedBy: recruiterUser.id,
+          fromStage: entry.currentStage,
+          toStage: stage as PipelineStage,
+        },
+      }),
+    ]);
 
     return NextResponse.json({ entry: updated });
   } catch (error) {
