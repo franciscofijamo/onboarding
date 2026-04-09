@@ -120,6 +120,24 @@ scripts/           - Dev/helper scripts
 - **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, scenarios.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
+- 2026-04-09: B2B pivot — F6: AI Interview Sessions (Recruiter)
+  - New Prisma models: `RecruitmentInterviewStage`, `RecruitmentInterviewQuestion`, `InAppNotification`
+  - Added `recruitmentStageId` FK to `WorkplaceScenarioSession`
+  - New API routes:
+    - `GET/POST /api/recruiter/postings/[id]/stages` — list/create interview stages
+    - `POST /api/recruiter/postings/[id]/stages/[stageId]/generate` — AI question generation (OpenRouter)
+    - `PUT /api/recruiter/stages/[stageId]/questions/[questionId]` — edit individual question
+    - `DELETE /api/recruiter/stages/[stageId]/questions/[questionId]` — delete question
+    - `POST /api/recruiter/stages/[stageId]/publish` — publish stage (DRAFT → PUBLISHED)
+    - `GET /api/recruiter/postings/[id]/candidates/[userId]/sessions` — view candidate's interview sessions
+    - `GET /api/notifications` — in-app notifications list with unread count
+    - `POST /api/notifications/[id]/read` — mark notification as read
+  - Pipeline GET extended: returns `interviewStages` + published stages as virtual columns in `stages` array
+  - Pipeline move (PATCH /pipeline/[entryId]/move): accepts `recruitmentStageId`; auto-creates `WorkplaceScenarioSession` + `InAppNotification` when candidate moved to a published interview stage
+  - Recruiter kanban UI fully rewritten: "Fase de entrevista" modal (configure → AI generate → edit questions → publish), interview stage columns with purple theme, "Respostas" button to view candidate session scores/transcripts
+  - `NotificationBell` component added to topbar — polls every 30s, unread count badge, popover list, click-to-navigate
+  - Candidate `/scenarios` page: recruiter-assigned sessions shown with purple "Entrevista da empresa" badge + company/job info
+  - Migration file: `prisma/migrations/20260409200000_add_interview_stages_and_notifications/`
 - 2026-04-09: B2B pivot — F3: Public job board (Bolsa de Vagas)
   - `/jobs` and `/jobs/[id]` moved to `(public)` route group — accessible without authentication
   - Middleware updated to mark `/jobs(.*)` and `/api/jobs(.*)` as public routes

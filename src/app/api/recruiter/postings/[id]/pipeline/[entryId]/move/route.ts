@@ -10,6 +10,7 @@ type PipelineStage = (typeof PIPELINE_STAGES)[number];
 const MoveStageSchema = z.object({
   stage: z.enum(PIPELINE_STAGES),
   notes: z.string().optional(),
+  recruitmentStageId: z.string().optional(),
 });
 
 export async function PATCH(
@@ -32,6 +33,7 @@ export async function PATCH(
 
     const posting = await db.jobPosting.findFirst({
       where: { id: postingId, companyId: company.id },
+      select: { id: true, title: true },
     });
     if (!posting) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
 
@@ -41,14 +43,15 @@ export async function PATCH(
       return NextResponse.json({ error: 'Validation failed', details: validation.error.flatten() }, { status: 400 });
     }
 
-    const { stage, notes } = validation.data;
+    const { stage, notes, recruitmentStageId } = validation.data;
 
     const entry = await db.candidatePipelineEntry.findFirst({
       where: { id: entryId, jobPostingId: postingId },
+      include: { jobApplication: { select: { id: true } } },
     });
     if (!entry) return NextResponse.json({ error: 'Pipeline entry not found' }, { status: 404 });
 
-    if (entry.currentStage === stage) {
+    if (entry.currentStage === stage && !recruitmentStageId) {
       return NextResponse.json({ entry });
     }
 
@@ -69,6 +72,66 @@ export async function PATCH(
         },
       }),
     ]);
+
+    // If moving to INTERVIEW stage with a recruitmentStageId, create a session for the candidate
+    if (stage === 'INTERVIEW' && recruitmentStageId) {
+      const interviewStage = await db.recruitmentInterviewStage.findFirst({
+        where: { id: recruitmentStageId, jobPostingId: postingId, status: 'PUBLISHED' },
+        include: {
+          questions: { orderBy: { order: 'asc' } },
+          jobPosting: { select: { title: true, company: { select: { name: true } } } },
+        },
+      });
+
+      if (interviewStage && interviewStage.questions.length > 0) {
+        // Check if a session already exists for this candidate + stage
+        const existingSession = await db.workplaceScenarioSession.findFirst({
+          where: {
+            userId: entry.userId,
+            recruitmentStageId: interviewStage.id,
+          },
+        });
+
+        if (!existingSession) {
+          const companyName = interviewStage.jobPosting.company.name;
+          const jobTitle = interviewStage.jobPosting.title;
+
+          await db.workplaceScenarioSession.create({
+            data: {
+              userId: entry.userId,
+              jobApplicationId: entry.jobApplicationId,
+              recruitmentStageId: interviewStage.id,
+              name: `${interviewStage.name} — ${jobTitle} @ ${companyName}`,
+              totalQuestions: interviewStage.questions.length,
+              creditsUsed: 0,
+              responses: {
+                create: interviewStage.questions.map((q, idx) => ({
+                  questionIndex: idx,
+                  prompt: q.prompt,
+                })),
+              },
+            },
+          });
+
+          // Create in-app notification for the candidate
+          await db.inAppNotification.create({
+            data: {
+              userId: entry.userId,
+              type: 'INTERVIEW_STAGE_ASSIGNED',
+              title: `Nova sessão de entrevista: ${interviewStage.name}`,
+              body: `A empresa ${companyName} convidou-te para a fase de entrevista "${interviewStage.name}" para a vaga de ${jobTitle}. Acede a "Prática de Entrevista" para responder.`,
+              data: {
+                recruitmentStageId: interviewStage.id,
+                jobPostingId: postingId,
+                companyName,
+                jobTitle,
+                stageName: interviewStage.name,
+              },
+            },
+          });
+        }
+      }
+    }
 
     return NextResponse.json({ entry: updated });
   } catch (error) {

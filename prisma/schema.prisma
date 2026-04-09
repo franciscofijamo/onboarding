@@ -40,6 +40,7 @@ model User {
   company            Company?
   pipelineEntries    CandidatePipelineEntry[]
   stageHistoryMoves  CandidateStageHistory[]
+  notifications      InAppNotification[]
   asaasCustomerId    String?   @unique
   asaasCustomerIdSandbox    String?   @unique
   asaasCustomerIdProduction String?   @unique
@@ -150,9 +151,10 @@ model JobPosting {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  applications JobApplication[]
-  pipelineEntries CandidatePipelineEntry[]
+  company          Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications     JobApplication[]
+  pipelineEntries  CandidatePipelineEntry[]
+  interviewStages  RecruitmentInterviewStage[]
 
   @@index([companyId])
   @@index([status])
@@ -208,6 +210,72 @@ model CandidateStageHistory {
   @@index([entryId])
   @@index([movedBy])
   @@index([movedAt])
+}
+
+enum InterviewStageFocus {
+  TECHNICAL
+  BEHAVIORAL
+  MIXED
+}
+
+enum InterviewStageStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// RecruitmentInterviewStage - a named interview stage created by recruiter for a job posting
+model RecruitmentInterviewStage {
+  id            String               @id @default(cuid())
+  jobPostingId  String
+  name          String
+  questionCount Int                  @default(5)
+  focusType     InterviewStageFocus  @default(MIXED)
+  status        InterviewStageStatus @default(DRAFT)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  jobPosting  JobPosting                    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  questions   RecruitmentInterviewQuestion[]
+  sessions    WorkplaceScenarioSession[]
+
+  @@index([jobPostingId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// RecruitmentInterviewQuestion - individual question within a recruitment stage
+model RecruitmentInterviewQuestion {
+  id          String   @id @default(cuid())
+  stageId     String
+  prompt      String   @db.Text
+  questionType String
+  order       Int      @default(0)
+  isEdited    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stage RecruitmentInterviewStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@index([stageId])
+  @@index([stageId, order])
+}
+
+// InAppNotification - in-app notifications for candidates
+model InAppNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String   @db.Text
+  data      Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
 }
 
 enum ExperienceLevel {
@@ -581,25 +649,28 @@ enum ScenarioResponseStatus {
 
 // WorkplaceScenarioSession - simulates real interview scenarios for a specific job application
 model WorkplaceScenarioSession {
-  id               String   @id @default(cuid())
-  userId           String
-  jobApplicationId String?
-  name             String   @default("Interview Practice")
-  scenarioType     ScenarioType?
-  totalQuestions   Int      @default(5)
-  answeredCount    Int      @default(0)
-  analyzedCount    Int      @default(0)
-  averageScore     Float?
-  creditsUsed      Int      @default(15)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  userId               String
+  jobApplicationId     String?
+  recruitmentStageId   String?
+  name                 String   @default("Interview Practice")
+  scenarioType         ScenarioType?
+  totalQuestions       Int      @default(5)
+  answeredCount        Int      @default(0)
+  analyzedCount        Int      @default(0)
+  averageScore         Float?
+  creditsUsed          Int      @default(15)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobApplication JobApplication?            @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
-  responses      WorkplaceScenarioResponse[]
+  user              User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobApplication    JobApplication?             @relation(fields: [jobApplicationId], references: [id], onDelete: SetNull)
+  recruitmentStage  RecruitmentInterviewStage?  @relation(fields: [recruitmentStageId], references: [id], onDelete: SetNull)
+  responses         WorkplaceScenarioResponse[]
 
   @@index([userId])
   @@index([jobApplicationId])
+  @@index([recruitmentStageId])
   @@index([createdAt])
 }
 

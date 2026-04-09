@@ -37,6 +37,7 @@ import {
   Loader2,
   Search,
   X,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -57,11 +58,21 @@ interface JobApplicationInfo {
   status: string;
 }
 
+interface RecruitmentStageInfo {
+  id: string;
+  name: string;
+  focusType: string;
+  jobTitle: string;
+  companyName: string;
+}
+
 interface SessionData {
   id: string;
   name: string;
   jobApplicationId: string | null;
   jobApplication: JobApplicationInfo | null;
+  recruitmentStageId: string | null;
+  recruitmentStage: RecruitmentStageInfo | null;
   totalQuestions: number;
   answeredCount: number;
   analyzedCount: number;
@@ -436,16 +447,32 @@ function ScenariosContent() {
                     {group.sessions.map((session) => (
                       <div
                         key={session.id}
-                        className="bg-card rounded-2xl border border-border p-4 flex items-center gap-4"
+                        className={cn(
+                          "bg-card rounded-2xl border p-4 flex items-center gap-4",
+                          session.recruitmentStageId
+                            ? "border-purple-200 bg-purple-50/30"
+                            : "border-border"
+                        )}
                       >
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                          <Mic className="h-4 w-4 text-primary" />
+                        <div className={cn(
+                          "h-10 w-10 rounded-xl flex items-center justify-center shrink-0",
+                          session.recruitmentStageId ? "bg-purple-100" : "bg-primary/10"
+                        )}>
+                          {session.recruitmentStageId
+                            ? <BookOpen className="h-4 w-4 text-purple-700" />
+                            : <Mic className="h-4 w-4 text-primary" />
+                          }
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 min-w-0">
                             <h4 className="font-medium text-sm truncate min-w-0">{session.name}</h4>
                             <div className="flex items-center gap-2 shrink-0">
+                              {session.recruitmentStageId && (
+                                <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                                  Entrevista da empresa
+                                </Badge>
+                              )}
                               {getStatusBadge(session)}
                               {session.averageScore != null && (
                                 <Badge variant="outline" className="text-xs">
@@ -454,6 +481,11 @@ function ScenariosContent() {
                               )}
                             </div>
                           </div>
+                          {session.recruitmentStage && (
+                            <p className="text-xs text-purple-600 mt-0.5">
+                              {session.recruitmentStage.jobTitle} @ {session.recruitmentStage.companyName}
+                            </p>
+                          )}
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <CircleDot className="h-3 w-3" />

@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Languages } from "lucide-react";
+import { NotificationBell } from "@/components/app/notification-bell";
 
 type TopbarProps = {
   onToggleSidebar: () => void;
@@ -128,6 +129,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
 
         <div className="flex items-center gap-2">
           <SignedIn>
+            <NotificationBell />
             <CreditStatus />
             <Separator orientation="vertical" className="h-6" />
           </SignedIn>

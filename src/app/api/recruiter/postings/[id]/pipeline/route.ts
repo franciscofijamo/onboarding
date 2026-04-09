@@ -7,7 +7,7 @@ import { z } from 'zod';
 const PIPELINE_STAGES = ['RECEIVED', 'REVIEWING', 'INTERVIEW', 'OFFER', 'REJECTED', 'ACCEPTED'] as const;
 type PipelineStage = (typeof PIPELINE_STAGES)[number];
 
-// Default ordered stage configuration — can be extended by Module 6 without API changes
+// Default ordered stage configuration
 const DEFAULT_STAGE_CONFIG: { stage: PipelineStage; label: string }[] = [
   { stage: 'RECEIVED', label: 'Candidaturas Recebidas' },
   { stage: 'REVIEWING', label: 'Em Avaliação' },
@@ -42,58 +42,77 @@ export async function GET(
     const result = await getRecruiterAndPosting(clerkId, postingId);
     if (!result) return NextResponse.json({ error: 'Forbidden or not found' }, { status: 403 });
 
-    const entries = await db.candidatePipelineEntry.findMany({
-      where: { jobPostingId: postingId },
-      include: {
-        jobApplication: {
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-            resume: { select: { id: true, title: true, fileUrl: true } },
-            coverLetter: { select: { id: true, title: true } },
-            analyses: {
-              orderBy: { createdAt: 'desc' },
-              take: 1,
-              select: {
-                id: true,
-                fitScore: true,
-                summary: true,
-                skillsMatch: true,
-                missingSkills: true,
-                strengths: true,
-                improvements: true,
-                recommendations: true,
-                keywordAnalysis: true,
-                createdAt: true,
+    const [entries, recruitmentStages] = await Promise.all([
+      db.candidatePipelineEntry.findMany({
+        where: { jobPostingId: postingId },
+        include: {
+          jobApplication: {
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+              resume: { select: { id: true, title: true, fileUrl: true } },
+              coverLetter: { select: { id: true, title: true } },
+              analyses: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: {
+                  id: true,
+                  fitScore: true,
+                  summary: true,
+                  skillsMatch: true,
+                  missingSkills: true,
+                  strengths: true,
+                  improvements: true,
+                  recommendations: true,
+                  keywordAnalysis: true,
+                  createdAt: true,
+                },
               },
             },
           },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            province: true,
-            experienceLevel: true,
-            targetRole: true,
-            currentRole: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              province: true,
+              experienceLevel: true,
+              targetRole: true,
+              currentRole: true,
+            },
+          },
+          stageHistory: {
+            orderBy: { movedAt: 'desc' },
+            take: 10,
+            select: {
+              id: true,
+              fromStage: true,
+              toStage: true,
+              movedAt: true,
+              mover: { select: { id: true, name: true } },
+            },
           },
         },
-        stageHistory: {
-          orderBy: { movedAt: 'desc' },
-          take: 10,
-          select: {
-            id: true,
-            fromStage: true,
-            toStage: true,
-            movedAt: true,
-            mover: { select: { id: true, name: true } },
+      }),
+      db.recruitmentInterviewStage.findMany({
+        where: { jobPostingId: postingId, status: 'PUBLISHED' },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          sessions: {
+            select: {
+              id: true,
+              userId: true,
+              averageScore: true,
+              analyzedCount: true,
+              answeredCount: true,
+              totalQuestions: true,
+              recruitmentStageId: true,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     // Sort entries within each stage by fitScore descending
     const sortByFitScore = (a: typeof entries[0], b: typeof entries[0]) => {
@@ -102,24 +121,52 @@ export async function GET(
       return scoreB - scoreA;
     };
 
-    // Get stage configuration — Module 6 can extend DEFAULT_STAGE_CONFIG
-    // (future: read from db.recruitingStageConfig.findMany({ where: { postingId } }))
-    const stageConfig = DEFAULT_STAGE_CONFIG;
+    // Build stage config: default stages + published interview stages inserted after INTERVIEW
+    const stageConfig: { stage: string; label: string; isInterviewStage?: boolean; stageId?: string }[] = [
+      ...DEFAULT_STAGE_CONFIG,
+    ];
 
-    // Group entries by stage (server-side) — all configured stages always returned
-    const grouped = stageConfig.map(({ stage, label }) => ({
+    // Insert published recruitment stages after INTERVIEW
+    const interviewIdx = stageConfig.findIndex(s => s.stage === 'INTERVIEW');
+    const interviewStageConfigs = recruitmentStages.map(rs => ({
+      stage: `INTERVIEW_STAGE_${rs.id}`,
+      label: rs.name,
+      isInterviewStage: true,
+      stageId: rs.id,
+    }));
+    stageConfig.splice(interviewIdx + 1, 0, ...interviewStageConfigs);
+
+    // Group entries by currentStage
+    const grouped = stageConfig.map(({ stage, label, isInterviewStage, stageId }) => ({
       stage,
       label,
-      candidates: entries.filter((e) => e.currentStage === stage).sort(sortByFitScore),
+      isInterviewStage: isInterviewStage ?? false,
+      stageId: stageId ?? null,
+      candidates: isInterviewStage && stageId
+        ? entries
+            .filter(e => {
+              if (e.currentStage !== 'INTERVIEW') return false;
+              // Check if candidate has a session for this recruitment stage
+              const rs = recruitmentStages.find(r => r.id === stageId);
+              if (!rs) return false;
+              return rs.sessions.some(s => s.userId === e.userId);
+            })
+            .sort(sortByFitScore)
+            .map(entry => {
+              const rs = recruitmentStages.find(r => r.id === stageId)!;
+              const session = rs.sessions.find(s => s.userId === entry.userId) ?? null;
+              return { ...entry, interviewSession: session }
+            })
+        : entries.filter(e => e.currentStage === (stage as PipelineStage)).sort(sortByFitScore),
     }));
 
-    // Also return flat sorted array for convenience
     const sortedFlat = [...entries].sort(sortByFitScore);
 
     return NextResponse.json({
       stages: grouped,
-      pipeline: sortedFlat, // flat array for backward compat
+      pipeline: sortedFlat,
       stageConfig,
+      interviewStages: recruitmentStages,
     });
   } catch (error) {
     console.error('[Recruiter Pipeline API] GET error:', error);

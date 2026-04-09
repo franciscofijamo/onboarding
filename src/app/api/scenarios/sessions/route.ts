@@ -47,6 +47,19 @@ export async function GET(request: NextRequest) {
             status: true,
           },
         },
+        recruitmentStage: {
+          select: {
+            id: true,
+            name: true,
+            focusType: true,
+            jobPosting: {
+              select: {
+                title: true,
+                company: { select: { name: true } },
+              },
+            },
+          },
+        },
         responses: {
           orderBy: { questionIndex: 'asc' },
           select: {
@@ -74,6 +87,14 @@ export async function GET(request: NextRequest) {
         name: s.name,
         jobApplicationId: s.jobApplicationId,
         jobApplication: s.jobApplication,
+        recruitmentStageId: s.recruitmentStageId,
+        recruitmentStage: s.recruitmentStage ? {
+          id: s.recruitmentStage.id,
+          name: s.recruitmentStage.name,
+          focusType: s.recruitmentStage.focusType,
+          jobTitle: s.recruitmentStage.jobPosting.title,
+          companyName: s.recruitmentStage.jobPosting.company.name,
+        } : null,
         totalQuestions: s.totalQuestions,
         answeredCount: s.answeredCount,
         analyzedCount: s.analyzedCount,
