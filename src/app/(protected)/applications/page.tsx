@@ -11,14 +11,17 @@ import {
   Clock3,
   Mic,
   Plus,
+  Search,
   Sparkles,
   Trash2,
+  X,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -165,6 +168,7 @@ export default function ApplicationsPage() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = React.useState<JobApplication | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
   const router = useRouter();
 
   const { data, isLoading } = useQuery<JobApplicationsResponse>({
@@ -177,6 +181,16 @@ export default function ApplicationsPage() {
     [data?.jobApplications]
   );
 
+  const filteredApplications = React.useMemo(() => {
+    if (!search.trim()) return applications;
+    const q = search.toLowerCase();
+    return applications.filter(
+      (a) =>
+        (a.jobTitle ?? "").toLowerCase().includes(q) ||
+        (a.companyName ?? "").toLowerCase().includes(q)
+    );
+  }, [applications, search]);
+
   const columnMeta = React.useMemo(() => getColumnMeta(t), [t]);
 
   const groupedApplications = React.useMemo(() => {
@@ -186,12 +200,12 @@ export default function ApplicationsPage() {
       INTERVIEW: [],
     };
 
-    applications.forEach((application) => {
+    filteredApplications.forEach((application) => {
       groups[mapStatusToKanbanStage(application.status)].push(application);
     });
 
     return groups;
-  }, [applications]);
+  }, [filteredApplications]);
 
   const averageFitScore = React.useMemo(
     () => getAverageFitScore(applications),
@@ -398,6 +412,34 @@ export default function ApplicationsPage() {
                 </p>
               </div>
             </section>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by job title or company..."
+                className="pl-9 pr-9 rounded-2xl"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {filteredApplications.length === 0 && search && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No results for &ldquo;{search}&rdquo;</p>
+                <button onClick={() => setSearch("")} className="text-sm text-primary mt-2 hover:underline">
+                  Clear search
+                </button>
+              </div>
+            )}
 
             <section className="grid gap-4 xl:grid-cols-3">
               {KANBAN_STAGES.map((stage) => {

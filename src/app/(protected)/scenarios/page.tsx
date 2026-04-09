@@ -10,6 +10,7 @@ import { useCredits } from "@/hooks/use-credits";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -34,6 +35,8 @@ import {
   Building2,
   Plus,
   Loader2,
+  Search,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -108,6 +111,7 @@ function ScenariosContent() {
   );
   const [generating, setGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
+  const [search, setSearch] = useState("");
 
   useSetPageMetadata({
     title: "Interview Practice",
@@ -191,11 +195,20 @@ function ScenariosContent() {
     return acc;
   }, {});
 
-  const groupEntries = Object.entries(grouped).sort(([, a], [, b]) => {
-    const aLatest = new Date(a.sessions[0]?.createdAt ?? 0).getTime();
-    const bLatest = new Date(b.sessions[0]?.createdAt ?? 0).getTime();
-    return bLatest - aLatest;
-  });
+  const groupEntries = Object.entries(grouped)
+    .sort(([, a], [, b]) => {
+      const aLatest = new Date(a.sessions[0]?.createdAt ?? 0).getTime();
+      const bLatest = new Date(b.sessions[0]?.createdAt ?? 0).getTime();
+      return bLatest - aLatest;
+    })
+    .filter(([, group]) => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        (group.jobApplication?.jobTitle ?? "").toLowerCase().includes(q) ||
+        (group.jobApplication?.companyName ?? "").toLowerCase().includes(q)
+      );
+    });
 
   if (generating) {
     return (
@@ -325,6 +338,27 @@ function ScenariosContent() {
           </div>
         </div>
 
+        {/* Search bar — only when there are sessions */}
+        {!isLoading && sessions.length > 0 && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by job title or company..."
+              className="pl-9 pr-9 rounded-2xl"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Empty state */}
         {isLoading ? (
           <div className="space-y-6">
@@ -336,7 +370,7 @@ function ScenariosContent() {
               </div>
             ))}
           </div>
-        ) : groupEntries.length === 0 ? (
+        ) : sessions.length === 0 ? (
           <div className="text-center py-20">
             <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
               <Mic className="h-10 w-10 text-primary/60" />
@@ -351,6 +385,14 @@ function ScenariosContent() {
                 Go to Applications
               </Link>
             </Button>
+          </div>
+        ) : groupEntries.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="font-medium">No results for &ldquo;{search}&rdquo;</p>
+            <button onClick={() => setSearch("")} className="text-sm text-primary mt-2 hover:underline">
+              Clear search
+            </button>
           </div>
         ) : (
           <div className="space-y-8">
