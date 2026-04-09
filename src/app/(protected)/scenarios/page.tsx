@@ -401,14 +401,16 @@ function ScenariosContent() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-medium text-sm truncate">{session.name}</h4>
-                            {getStatusBadge(session)}
-                            {session.averageScore != null && (
-                              <Badge variant="outline" className="text-xs">
-                                {session.averageScore}/10
-                              </Badge>
-                            )}
+                          <div className="flex items-center gap-2 min-w-0">
+                            <h4 className="font-medium text-sm truncate min-w-0">{session.name}</h4>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {getStatusBadge(session)}
+                              {session.averageScore != null && (
+                                <Badge variant="outline" className="text-xs">
+                                  {session.averageScore}/10
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
