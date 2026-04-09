@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       where: { id: jobApplicationId, userId: user.id },
       include: {
         resume: {
-          select: { extractedText: true, skills: true },
+          select: { content: true, parsedData: true },
         },
       },
     })
@@ -263,7 +263,7 @@ function buildInterviewPrompt(
     companyName?: string | null
     jobDescription: string
     companyInfo?: string | null
-    resume?: { extractedText?: string | null; skills?: string[] | null } | null
+    resume?: { content?: string | null; parsedData?: unknown } | null
   },
   user: {
     currentRole?: string | null
@@ -277,10 +277,13 @@ function buildInterviewPrompt(
   const jobTitle = jobApplication.jobTitle || 'the position'
   const company = jobApplication.companyName || 'the company'
 
-  const jdExcerpt = jobApplication.jobDescription.slice(0, 2000)
+  const jdExcerpt = (jobApplication.jobDescription || '').slice(0, 2000)
 
-  const cvSkills = jobApplication.resume?.skills?.join(', ') || ''
-  const cvText = jobApplication.resume?.extractedText?.slice(0, 1500) || ''
+  const parsedData = jobApplication.resume?.parsedData as Record<string, unknown> | null | undefined
+  const cvSkills = Array.isArray(parsedData?.skills)
+    ? (parsedData!.skills as string[]).join(', ')
+    : ''
+  const cvText = jobApplication.resume?.content?.slice(0, 1500) || ''
   const userSkills = user.skills?.join(', ') || ''
 
   const candidateContext = [

@@ -365,11 +365,11 @@ function ScenariosContent() {
               </DialogHeader>
               <div className="space-y-3 py-4">
                 {jobApp && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Job:</span>
-                    <span className="text-sm font-medium">
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job</span>
+                    <p className="text-sm font-medium leading-tight line-clamp-2">
                       {jobApp.jobTitle || "Untitled"} @ {jobApp.companyName || "Company"}
-                    </span>
+                    </p>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
