@@ -83,28 +83,17 @@ export async function PATCH(
         ? { currentRecruitmentStageId: recruitmentStageId }
         : { currentRecruitmentStageId: null };
 
-    const [updated] = await db.$transaction([
-      db.candidatePipelineEntry.update({
-        where: { id: entryId },
-        data: {
-          currentStage: stage as PipelineStage,
-          ...recruitmentStageUpdate,
-          ...(notes !== undefined ? { notes } : {}),
-        },
-      }),
-      db.candidateStageHistory.create({
-        data: {
-          entryId,
-          movedBy: recruiter.id,
-          fromStage: entry.currentStage,
-          toStage: stage as PipelineStage,
-        },
-      }),
-    ]);
+    // Pre-fetch interview stage data (read-only) before the atomic transaction
+    let interviewStageData: {
+      id: string;
+      name: string;
+      questions: { id: string; prompt: string; order: number }[];
+      jobPosting: { title: string; company: { name: string } };
+    } | null = null;
+    let shouldCreateSession = false;
 
-    // If moving to INTERVIEW stage with a recruitmentStageId, create a session for the candidate
     if (stage === 'INTERVIEW' && recruitmentStageId) {
-      const interviewStage = await db.recruitmentInterviewStage.findFirst({
+      interviewStageData = await db.recruitmentInterviewStage.findFirst({
         where: { id: recruitmentStageId, jobPostingId: postingId, status: 'PUBLISHED' },
         include: {
           questions: { orderBy: { order: 'asc' } },
@@ -112,55 +101,75 @@ export async function PATCH(
         },
       });
 
-      if (interviewStage && interviewStage.questions.length > 0) {
-        // Check if a session already exists for this candidate + stage
+      if (interviewStageData && interviewStageData.questions.length > 0) {
         const existingSession = await db.workplaceScenarioSession.findFirst({
-          where: {
+          where: { userId: entry.userId, recruitmentStageId: interviewStageData.id },
+          select: { id: true },
+        });
+        shouldCreateSession = !existingSession;
+      }
+    }
+
+    // Single atomic transaction: pipeline update + history + session + notification
+    const updated = await db.$transaction(async (tx) => {
+      const updatedEntry = await tx.candidatePipelineEntry.update({
+        where: { id: entryId },
+        data: {
+          currentStage: stage as PipelineStage,
+          ...recruitmentStageUpdate,
+          ...(notes !== undefined ? { notes } : {}),
+        },
+      });
+
+      await tx.candidateStageHistory.create({
+        data: {
+          entryId,
+          movedBy: recruiter.id,
+          fromStage: entry.currentStage,
+          toStage: stage as PipelineStage,
+        },
+      });
+
+      if (shouldCreateSession && interviewStageData) {
+        const companyName = interviewStageData.jobPosting.company.name;
+        const jobTitle = interviewStageData.jobPosting.title;
+
+        await tx.workplaceScenarioSession.create({
+          data: {
             userId: entry.userId,
-            recruitmentStageId: interviewStage.id,
+            jobApplicationId: entry.jobApplicationId,
+            recruitmentStageId: interviewStageData.id,
+            name: `${interviewStageData.name} — ${jobTitle} @ ${companyName}`,
+            totalQuestions: interviewStageData.questions.length,
+            creditsUsed: 0,
+            responses: {
+              create: interviewStageData.questions.map((q, idx) => ({
+                questionIndex: idx,
+                prompt: q.prompt,
+              })),
+            },
           },
         });
 
-        if (!existingSession) {
-          const companyName = interviewStage.jobPosting.company.name;
-          const jobTitle = interviewStage.jobPosting.title;
-
-          await db.workplaceScenarioSession.create({
+        await tx.inAppNotification.create({
+          data: {
+            userId: entry.userId,
+            type: 'INTERVIEW_STAGE_ASSIGNED',
+            title: `Nova sessão de entrevista: ${interviewStageData.name}`,
+            body: `A empresa ${companyName} convidou-te para a fase de entrevista "${interviewStageData.name}" para a vaga de ${jobTitle}. Acede a "Prática de Entrevista" para responder.`,
             data: {
-              userId: entry.userId,
-              jobApplicationId: entry.jobApplicationId,
-              recruitmentStageId: interviewStage.id,
-              name: `${interviewStage.name} — ${jobTitle} @ ${companyName}`,
-              totalQuestions: interviewStage.questions.length,
-              creditsUsed: 0,
-              responses: {
-                create: interviewStage.questions.map((q, idx) => ({
-                  questionIndex: idx,
-                  prompt: q.prompt,
-                })),
-              },
+              recruitmentStageId: interviewStageData.id,
+              jobPostingId: postingId,
+              companyName,
+              jobTitle,
+              stageName: interviewStageData.name,
             },
-          });
-
-          // Create in-app notification for the candidate
-          await db.inAppNotification.create({
-            data: {
-              userId: entry.userId,
-              type: 'INTERVIEW_STAGE_ASSIGNED',
-              title: `Nova sessão de entrevista: ${interviewStage.name}`,
-              body: `A empresa ${companyName} convidou-te para a fase de entrevista "${interviewStage.name}" para a vaga de ${jobTitle}. Acede a "Prática de Entrevista" para responder.`,
-              data: {
-                recruitmentStageId: interviewStage.id,
-                jobPostingId: postingId,
-                companyName,
-                jobTitle,
-                stageName: interviewStage.name,
-              },
-            },
-          });
-        }
+          },
+        });
       }
-    }
+
+      return updatedEntry;
+    });
 
     return NextResponse.json({ entry: updated });
   } catch (error) {

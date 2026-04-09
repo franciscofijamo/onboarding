@@ -839,20 +839,35 @@ function InterviewStageModal({
 
   async function handleMoveQuestion(questionId: string, direction: "up" | "down") {
     if (!stageId) return;
-    setQuestions(prev => {
-      const idx = prev.findIndex(q => q.id === questionId);
-      if (idx === -1) return prev;
-      const newIdx = direction === "up" ? idx - 1 : idx + 1;
-      if (newIdx < 0 || newIdx >= prev.length) return prev;
-      const reordered = [...prev];
-      [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
-      // Persist new order for swapped questions
-      const a = reordered[idx];
-      const b = reordered[newIdx];
-      api.put(`/api/recruiter/stages/${stageId}/questions/${a.id}`, { order: idx }).catch(() => {});
-      api.put(`/api/recruiter/stages/${stageId}/questions/${b.id}`, { order: newIdx }).catch(() => {});
-      return reordered.map((q, i) => ({ ...q, order: i }));
-    });
+
+    // Compute new order outside the state updater so we can await API calls
+    const idx = questions.findIndex(q => q.id === questionId);
+    if (idx === -1) return;
+    const newIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= questions.length) return;
+
+    const reordered = [...questions];
+    [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
+    const normalized = reordered.map((q, i) => ({ ...q, order: i }));
+
+    // Optimistic UI update
+    setQuestions(normalized);
+
+    // Persist new order for the two swapped questions
+    try {
+      await Promise.all([
+        api.put(`/api/recruiter/stages/${stageId}/questions/${normalized[idx].id}`, { order: idx }),
+        api.put(`/api/recruiter/stages/${stageId}/questions/${normalized[newIdx].id}`, { order: newIdx }),
+      ]);
+    } catch {
+      toast({
+        title: "Erro ao reordenar",
+        description: "A ordem pode não ter sido guardada. Tente novamente.",
+        variant: "destructive",
+      });
+      // Revert optimistic update on failure
+      setQuestions(questions);
+    }
   }
 
   async function handlePublish() {

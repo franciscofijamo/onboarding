@@ -92,6 +92,14 @@ export async function POST(
       return !otherStagePrompts.some(existing => promptsAreDuplicate(norm, existing))
     })
 
+    // Enforce minimum count after deduplication
+    if (deduplicated.length === 0) {
+      return NextResponse.json(
+        { error: 'All generated questions were duplicates of existing stages. Please regenerate.' },
+        { status: 422 }
+      )
+    }
+
     // Delete existing questions for this stage and replace
     await db.recruitmentInterviewQuestion.deleteMany({ where: { stageId } })
     await db.recruitmentInterviewQuestion.createMany({
