@@ -472,7 +472,6 @@ export default function OnboardingPage() {
     onSuccess: (data) => {
       setAnalysisResult(data.analysis);
       setAnalysisError(null);
-      setCurrentStep("analysis");
       refreshCredits();
       queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
     },
@@ -704,6 +703,7 @@ export default function OnboardingPage() {
   const handleSubmitJobApplication = async () => {
     if (!jobDescription.trim() || !savedResumeId) return;
 
+    setCurrentStep("analysis");
     setIsAnalyzingExisting(true);
     setAnalysisError(null);
 
