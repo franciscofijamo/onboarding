@@ -1,7 +1,9 @@
 # StandOut
 
 ## Overview
-StandOut — Business English Job Onboarding Platform. AI-powered career preparation for English-speaking job environments. Features include CV/resume analysis, job application optimization, interview preparation flashcards, workplace scenario simulations, and an AI career coach with specialized skills. Built with Next.js 16, Clerk auth, Prisma/PostgreSQL, Tailwind CSS v4, Radix UI, and React Query.
+StandOut — B2B Recruitment Platform (pivoted from B2C career preparation). Connects companies (recruiters) with candidates using AI-powered scoring, interview scenario generation, and pipeline management. Built with Next.js 16, Clerk auth, Prisma/PostgreSQL, Tailwind CSS v4, Radix UI, and React Query.
+
+**Dual Role System**: Users are either CANDIDATE (job seekers, existing tools preserved) or RECRUITER (companies, new B2B features).
 
 ## Project Architecture
 - **Framework**: Next.js 16 (App Router) with TypeScript
@@ -18,10 +20,13 @@ StandOut — Business English Job Onboarding Platform. AI-powered career prepara
 ```
 src/
   app/
-    (protected)/   - Auth-required pages (dashboard, onboarding, interview-prep, scenarios, ai-chat, billing)
+    (protected)/   - Auth-required pages (dashboard, onboarding, interview-prep, scenarios, ai-chat, billing, role-select, company/*)
+    (protected)/recruiter/ - Recruiter-only pages (postings)
+    (protected)/company/   - Company profile management (onboarding, profile)
+    (protected)/role-select/ - New user role selection page
     (public)/      - Public pages (landing, sign-in, sign-up)
     admin/         - Admin dashboard pages
-    api/           - API routes (resume, job-application, mock-interview, scenarios, ai, admin, webhooks)
+    api/           - API routes (resume, job-application, mock-interview, scenarios, ai, admin, webhooks, role, company)
   components/      - UI and feature components
   contexts/        - React contexts
   hooks/           - Custom hooks
@@ -115,6 +120,17 @@ scripts/           - Dev/helper scripts
 - **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, scenarios.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
+- 2026-04-09: B2B pivot — F1: Dual role system + Company profile
+  - Added `UserRole` enum (CANDIDATE | RECRUITER) and `role` field to `User` model
+  - Added `Company` model (1:1 with User) for recruiter company profiles
+  - New pages: `/role-select` (first-visit role selector), `/company/onboarding`, `/company/profile`
+  - New API routes: `GET/PUT /api/role`, `GET/PUT /api/company/profile`
+  - Profile API (`/api/profile`) now returns `role` field
+  - `useProfile` hook extended with `role` and `hasRole`
+  - Sidebar and Topbar now show role-based navigation (candidate vs recruiter items)
+  - Protected layout redirects to `/role-select` if role is not set
+  - Dashboard shows recruiter-specific content for RECRUITER role
+  - Placeholder page at `/recruiter/postings` (F2 task)
 - 2026-02-25: Major platform refactoring — pivoted from scholarship essay preparation (Chevening/Fulbright) to Business English Job Onboarding Platform
   - New AI Agent & Skills system (orchestrator + 5 specialized skills)
   - New onboarding flow (CV upload, cover letter, job description, AI analysis)

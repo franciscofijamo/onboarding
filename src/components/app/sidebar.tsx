@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Mic,
   BrainCircuit,
+  Building2,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,13 +25,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/language";
+import { useProfile } from "@/hooks/use-profile";
 
-type SidebarProps = {
-  collapsed: boolean;
-  onToggle: () => void;
+type NavItem = {
+  nameKey: string;
+  hintKey: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
 };
 
-export const navigationItems = [
+export const candidateNavigationItems: NavItem[] = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
   { nameKey: "nav.applications", hintKey: "nav.applications", href: "/applications", icon: Briefcase },
   { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare, disabled: true },
@@ -38,9 +44,26 @@ export const navigationItems = [
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
 ];
 
+export const recruiterNavigationItems: NavItem[] = [
+  { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
+  { nameKey: "nav.recruiterPostings", hintKey: "nav.recruiterPostings", href: "/recruiter/postings", icon: LayoutGrid },
+  { nameKey: "nav.companyProfile", hintKey: "nav.companyProfile", href: "/company/profile", icon: Building2 },
+  { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
+];
+
+export const navigationItems = candidateNavigationItems;
+
+type SidebarProps = {
+  collapsed: boolean;
+  onToggle: () => void;
+};
+
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { t, hint } = useLanguage();
+  const { role } = useProfile();
+
+  const items = role === "RECRUITER" ? recruiterNavigationItems : candidateNavigationItems;
 
   return (
     <aside
@@ -74,7 +97,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       
       <ScrollArea className="flex-1 min-h-0">
         <nav className="flex flex-col gap-1 p-2" aria-label="Main navigation">
-          {navigationItems.map((item) => {
+          {items.map((item) => {
             const isActive = !item.disabled && pathname === item.href;
             const label = t(item.nameKey);
             const ptHint = hint(item.hintKey);

@@ -3,8 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 
+export type UserRole = 'CANDIDATE' | 'RECRUITER';
+
 interface ProfileData {
     profileComplete: boolean;
+    role: UserRole | null;
     province: string | null;
     birthYear: number | null;
     gender: string | null;
@@ -24,6 +27,8 @@ export function useProfile() {
         profile: query.data,
         isLoading: query.isLoading,
         isProfileComplete: query.data?.profileComplete ?? false,
+        role: query.data?.role ?? null,
+        hasRole: query.data?.role != null,
         refetch: query.refetch,
     };
 }

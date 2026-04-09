@@ -50,7 +50,9 @@
     "expandSidebar": "Expandir barra lateral",
     "collapseSidebar": "Recolher barra lateral",
     "mainNav": "Navegação principal",
-    "mainSidebar": "Barra lateral principal"
+    "mainSidebar": "Barra lateral principal",
+    "recruiterPostings": "Publicações",
+    "companyProfile": "Perfil da Empresa"
   },
   "billing": {
     "title": "Créditos",

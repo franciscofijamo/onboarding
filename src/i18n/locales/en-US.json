@@ -50,7 +50,9 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "mainNav": "Main navigation",
-    "mainSidebar": "Main sidebar"
+    "mainSidebar": "Main sidebar",
+    "recruiterPostings": "Postings",
+    "companyProfile": "Company Profile"
   },
   "billing": {
     "title": "Credits",

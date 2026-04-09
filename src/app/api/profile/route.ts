@@ -24,6 +24,7 @@ async function handleGetProfile() {
 
         return NextResponse.json({
             profileComplete: user.profileComplete ?? false,
+            role: user.role ?? null,
             province: user.province,
             birthYear: user.birthYear,
             gender: user.gender,

@@ -10,8 +10,9 @@ import { Menu } from "lucide-react";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { CreditStatus } from "@/components/credits/credit-status";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose, SheetFooter } from "@/components/ui/sheet";
-import { navigationItems } from "@/components/app/sidebar";
+import { candidateNavigationItems, recruiterNavigationItems } from "@/components/app/sidebar";
 import { useLanguage } from "@/contexts/language";
+import { useProfile } from "@/hooks/use-profile";
 import { LOCALES, type Locale } from "@/i18n";
 import {
   DropdownMenu,
@@ -28,7 +29,9 @@ type TopbarProps = {
 
 export function Topbar({ onToggleSidebar }: TopbarProps) {
   const { t, hint, locale, setLocale } = useLanguage();
+  const { role } = useProfile();
   const current = LOCALES.find((l) => l.code === locale) || LOCALES[0];
+  const navigationItems = role === "RECRUITER" ? recruiterNavigationItems : candidateNavigationItems;
 
   return (
     <header

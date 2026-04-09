@@ -5,6 +5,7 @@ import { useUser } from "@clerk/nextjs";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { useCredits } from "@/hooks/use-credits";
+import { useProfile } from "@/hooks/use-profile";
 import { Button } from "@/components/ui/button";
 import { WelcomeCreditsDialog } from "@/components/app/welcome-credits-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,17 +18,108 @@ import {
   BarChart3,
   BrainCircuit,
   Briefcase,
+  LayoutGrid,
+  PlusCircle,
+  Building2,
 } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useUser();
   const { t } = useLanguage();
   const { credits, isLoading: creditsLoading } = useCredits();
+  const { role } = useProfile();
 
   useSetPageMetadata({
     title: t("dashboard.hello", { name: user?.firstName || t("dashboard.defaultUser") }),
     description: t("dashboard.welcomeSubtitle"),
   });
+
+  if (role === "RECRUITER") {
+    return (
+      <div className="space-y-8 w-full">
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_35%)]" />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl space-y-2">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Bem-vindo, {user?.firstName || "Recrutador"}!
+              </h1>
+              <p className="text-sm text-muted-foreground sm:text-base">
+                Publique vagas, receba candidaturas com pontuação IA e gira o seu pipeline de recrutamento.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
+                <Link href="/recruiter/postings">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Nova vaga
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
+                <Link href="/company/profile">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Perfil da empresa
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Funcionalidades
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Link href="/recruiter/postings" className="block group">
+              <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-600">
+                        <LayoutGrid className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Publicações</h3>
+                        <p className="text-sm text-muted-foreground">Gerencie as suas vagas</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Crie e publique vagas com descrição detalhada. Receba candidaturas com pontuação IA automática.
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/company/profile" className="block group">
+              <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600">
+                        <Building2 className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground">Perfil da Empresa</h3>
+                        <p className="text-sm text-muted-foreground">Actualizar informações</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Mantenha o perfil da sua empresa actualizado para atrair os melhores candidatos.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 w-full">

@@ -12,6 +12,8 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useProfile } from "@/hooks/use-profile";
 import { ProfileCompletionModal } from "@/components/onboarding/profile-completion-modal";
 
+const ROLE_EXEMPT_PATHS = ['/role-select', '/company/onboarding'];
+
 export default function ProtectedLayout({
   children,
 }: {
@@ -23,19 +25,26 @@ export default function ProtectedLayout({
   const [collapsed, setCollapsed] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
-  // Use TanStack Query for subscription status
   const { data: subscriptionStatus, isLoading: isLoadingSubscription } = useSubscription();
 
-  // Profile completion check
-  const { isProfileComplete, isLoading: isLoadingProfile, refetch: refetchProfile } = useProfile();
+  const { isProfileComplete, isLoading: isLoadingProfile, role, hasRole, refetch: refetchProfile } = useProfile();
   const [showProfileModal, setShowProfileModal] = React.useState(false);
 
-  // Show profile modal if not complete
+  const isRoleExempt = ROLE_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
+
+  // Redirect to role selection if signed in but role not yet chosen
   React.useEffect(() => {
-    if (!isLoadingProfile && !isProfileComplete && isSignedIn) {
+    if (!isLoadingProfile && isSignedIn && !hasRole && !isRoleExempt) {
+      router.replace('/role-select');
+    }
+  }, [isLoadingProfile, isSignedIn, hasRole, isRoleExempt, router]);
+
+  // Show profile modal only for CANDIDATEs who haven't completed their profile
+  React.useEffect(() => {
+    if (!isLoadingProfile && !isProfileComplete && isSignedIn && role === 'CANDIDATE' && !isRoleExempt) {
       setShowProfileModal(true);
     }
-  }, [isLoadingProfile, isProfileComplete, isSignedIn]);
+  }, [isLoadingProfile, isProfileComplete, isSignedIn, role, isRoleExempt]);
 
   const handleProfileComplete = () => {
     setShowProfileModal(false);
@@ -46,7 +55,6 @@ export default function ProtectedLayout({
     setMounted(true);
   }, []);
 
-  // hydrate from localStorage
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("app.sidebarCollapsed");
@@ -63,14 +71,12 @@ export default function ProtectedLayout({
     });
   }, []);
 
-  // Redirect to sign-in if not authenticated
   React.useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.replace("/sign-in");
     }
   }, [isLoaded, isSignedIn, router]);
 
-  // Show loading state while checking authentication
   if (!mounted || !isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -79,7 +85,6 @@ export default function ProtectedLayout({
     );
   }
 
-  // Authenticated layout with sidebar
   return (
     <PageMetadataProvider>
       <div className="min-h-dvh w-full text-foreground">
@@ -99,11 +104,12 @@ export default function ProtectedLayout({
         </div>
       </div>
 
-      {/* Profile Completion Modal */}
-      <ProfileCompletionModal
-        open={showProfileModal}
-        onComplete={handleProfileComplete}
-      />
+      {role === 'CANDIDATE' && (
+        <ProfileCompletionModal
+          open={showProfileModal}
+          onComplete={handleProfileComplete}
+        />
+      )}
     </PageMetadataProvider>
   );
 }
