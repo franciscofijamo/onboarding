@@ -110,7 +110,7 @@ export async function PATCH(
       }
     }
 
-    // Single atomic transaction: pipeline update + history + session + notification
+    // Phase 1 (atomic): pipeline move + history always persisted together
     const updated = await db.$transaction(async (tx) => {
       const updatedEntry = await tx.candidatePipelineEntry.update({
         where: { id: entryId },
@@ -130,11 +130,19 @@ export async function PATCH(
         },
       });
 
-      if (shouldCreateSession && interviewStageData) {
-        const companyName = interviewStageData.jobPosting.company.name;
-        const jobTitle = interviewStageData.jobPosting.title;
+      return updatedEntry;
+    });
 
-        await tx.workplaceScenarioSession.create({
+    // Phase 2 (best-effort, idempotent): session + notification creation
+    // Run outside Phase 1 so a uniqueness race never rolls back the pipeline move.
+    // Catch P2002 (unique constraint) and treat as idempotent success — session
+    // was already created by a concurrent move, which is the desired state.
+    if (shouldCreateSession && interviewStageData) {
+      const companyName = interviewStageData.jobPosting.company.name;
+      const jobTitle = interviewStageData.jobPosting.title;
+
+      try {
+        await db.workplaceScenarioSession.create({
           data: {
             userId: entry.userId,
             jobApplicationId: entry.jobApplicationId,
@@ -151,7 +159,8 @@ export async function PATCH(
           },
         });
 
-        await tx.inAppNotification.create({
+        // Only send notification if session was newly created (not a duplicate)
+        await db.inAppNotification.create({
           data: {
             userId: entry.userId,
             type: 'INTERVIEW_STAGE_ASSIGNED',
@@ -166,10 +175,16 @@ export async function PATCH(
             },
           },
         });
+      } catch (err) {
+        // P2002: unique constraint violation — session already exists (concurrent move).
+        // Pipeline move already succeeded; treat as idempotent, don't return 500.
+        const prismaCode = (err as { code?: string })?.code;
+        if (prismaCode !== 'P2002') {
+          throw err; // Re-throw unexpected errors
+        }
+        console.warn('[Recruiter Pipeline Move] Duplicate session detected (P2002) — treating as idempotent success');
       }
-
-      return updatedEntry;
-    });
+    }
 
     return NextResponse.json({ entry: updated });
   } catch (error) {
