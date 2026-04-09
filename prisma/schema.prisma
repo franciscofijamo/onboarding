@@ -672,6 +672,7 @@ model WorkplaceScenarioSession {
   recruitmentStage  RecruitmentInterviewStage?  @relation(fields: [recruitmentStageId], references: [id], onDelete: SetNull)
   responses         WorkplaceScenarioResponse[]
 
+  @@unique([userId, recruitmentStageId])
   @@index([userId])
   @@index([jobApplicationId])
   @@index([recruitmentStageId])

@@ -70,3 +70,7 @@ ALTER TABLE "WorkplaceScenarioSession" ADD CONSTRAINT "WorkplaceScenarioSession_
 ALTER TABLE "CandidatePipelineEntry" ADD COLUMN "currentRecruitmentStageId" TEXT;
 CREATE INDEX "CandidatePipelineEntry_currentRecruitmentStageId_idx" ON "CandidatePipelineEntry"("currentRecruitmentStageId");
 ALTER TABLE "CandidatePipelineEntry" ADD CONSTRAINT "CandidatePipelineEntry_currentRecruitmentStageId_fkey" FOREIGN KEY ("currentRecruitmentStageId") REFERENCES "RecruitmentInterviewStage"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- UniqueConstraint: Prevent duplicate sessions per candidate+stage (race-condition guard)
+-- NULL values in recruitmentStageId are excluded from uniqueness enforcement (SQL standard)
+CREATE UNIQUE INDEX "WorkplaceScenarioSession_userId_recruitmentStageId_key" ON "WorkplaceScenarioSession"("userId", "recruitmentStageId") WHERE "recruitmentStageId" IS NOT NULL;

@@ -3,6 +3,18 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
+import { z } from 'zod'
+
+const VALID_QUESTION_TYPES = ['TECHNICAL', 'BEHAVIORAL', 'SITUATIONAL', 'COMPETENCY', 'MIXED'] as const
+
+const AIQuestionSchema = z.object({
+  prompt: z.string().min(10, 'Question prompt must be at least 10 characters'),
+  question_type: z.enum(VALID_QUESTION_TYPES).default('MIXED'),
+})
+
+const AIResponseSchema = z.object({
+  questions: z.array(AIQuestionSchema).min(1, 'At least one question must be returned'),
+})
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -67,14 +79,18 @@ export async function POST(
       })
 
       const text = result.text.trim()
+      // Extract JSON object — tolerates surrounding markdown/text
       const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error('AI response is not valid JSON')
-      const parsed = JSON.parse(jsonMatch[0])
+      if (!jsonMatch) throw new Error('AI response contains no JSON object')
+      const rawParsed = JSON.parse(jsonMatch[0])
 
-      if (!parsed.questions || !Array.isArray(parsed.questions)) {
-        throw new Error('AI response missing questions array')
+      // Strict schema validation — rejects malformed payloads before any DB write
+      const validation = AIResponseSchema.safeParse(rawParsed)
+      if (!validation.success) {
+        const issues = validation.error.flatten().fieldErrors
+        throw new Error(`AI payload failed validation: ${JSON.stringify(issues)}`)
       }
-      generatedQuestions = parsed.questions.slice(0, stage.questionCount)
+      generatedQuestions = validation.data.questions.slice(0, stage.questionCount)
     } catch (aiErr) {
       console.error('AI question generation error:', aiErr)
       return NextResponse.json({ error: 'Failed to generate questions. Please try again.' }, { status: 502 })
