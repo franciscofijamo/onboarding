@@ -82,6 +82,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete questions of a published stage' }, { status: 400 })
     }
 
+    // Bind stageId to prevent cross-stage deletion (authorization guard)
+    const toDelete = await db.recruitmentInterviewQuestion.findFirst({
+      where: { id: questionId, stageId },
+    })
+    if (!toDelete) return NextResponse.json({ error: 'Question not found in this stage' }, { status: 404 })
+
     await db.recruitmentInterviewQuestion.delete({ where: { id: questionId } })
 
     return NextResponse.json({ success: true })

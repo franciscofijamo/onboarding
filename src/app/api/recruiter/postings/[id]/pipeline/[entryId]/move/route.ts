@@ -55,6 +55,27 @@ export async function PATCH(
       return NextResponse.json({ entry });
     }
 
+    // Validate recruitmentStageId ownership and status BEFORE mutating anything
+    if (recruitmentStageId) {
+      if (stage !== 'INTERVIEW') {
+        return NextResponse.json({ error: 'recruitmentStageId is only valid when moving to INTERVIEW' }, { status: 400 });
+      }
+      const validStage = await db.recruitmentInterviewStage.findFirst({
+        where: {
+          id: recruitmentStageId,
+          jobPostingId: postingId,  // must belong to this posting (implicitly same company)
+          status: 'PUBLISHED',      // must be published
+        },
+        select: { id: true },
+      });
+      if (!validStage) {
+        return NextResponse.json(
+          { error: 'recruitmentStageId is invalid, not published, or does not belong to this posting' },
+          { status: 400 }
+        );
+      }
+    }
+
     // When moving to INTERVIEW with a sub-stage, set currentRecruitmentStageId.
     // When moving away from INTERVIEW (or to base INTERVIEW), clear it.
     const recruitmentStageUpdate =

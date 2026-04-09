@@ -548,8 +548,68 @@ function InterviewSessionsModal({
 
   function getResponseStatusIcon(status: string) {
     if (status === "ANALYZED") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
-    if (status === "ANALYZED" || status === "RECORDED") return <Mic className="h-3.5 w-3.5 text-amber-500" />;
+    if (status === "RECORDED") return <Mic className="h-3.5 w-3.5 text-amber-500" />;
     return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
+  }
+
+  function renderFeedback(feedback: unknown) {
+    if (!feedback || typeof feedback !== "object") return null;
+    const fb = feedback as Record<string, unknown>;
+
+    const summary = typeof fb.summary === "string" ? fb.summary : null;
+    const improvements: string[] = Array.isArray(fb.improvements)
+      ? (fb.improvements as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+    const strengths: string[] = Array.isArray(fb.strengths)
+      ? (fb.strengths as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+
+    // Extract per-criteria scores if present
+    const criteria = fb.criteria && typeof fb.criteria === "object"
+      ? Object.entries(fb.criteria as Record<string, unknown>).map(([key, val]) => {
+          if (val && typeof val === "object") {
+            const v = val as Record<string, unknown>;
+            return { key, score: typeof v.score === "number" ? v.score : null, feedback: typeof v.feedback === "string" ? v.feedback : null };
+          }
+          return null;
+        }).filter(Boolean) as { key: string; score: number | null; feedback: string | null }[]
+      : [];
+
+    if (!summary && improvements.length === 0 && strengths.length === 0 && criteria.length === 0) return null;
+
+    return (
+      <div className="mt-2 rounded-xl bg-purple-50 border border-purple-100 p-3 space-y-2">
+        <p className="text-xs font-semibold text-purple-700">Avaliação IA</p>
+        {summary && <p className="text-xs text-foreground leading-snug">{summary}</p>}
+        {criteria.length > 0 && (
+          <div className="grid grid-cols-2 gap-1">
+            {criteria.map(c => c && (
+              <div key={c.key} className="text-xs text-muted-foreground">
+                <span className="capitalize">{c.key.replace(/([A-Z])/g, " $1").trim()}</span>
+                {c.score !== null && <span className="ml-1 font-semibold text-foreground">{c.score}/10</span>}
+                {c.feedback && <p className="text-[10px] mt-0.5 leading-tight">{c.feedback}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+        {strengths.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-emerald-700 mb-0.5">Pontos fortes</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {strengths.map((s, i) => <li key={i} className="text-xs text-foreground">{s}</li>)}
+            </ul>
+          </div>
+        )}
+        {improvements.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-amber-700 mb-0.5">Melhorias sugeridas</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              {improvements.map((imp, i) => <li key={i} className="text-xs text-foreground">{imp}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -637,6 +697,7 @@ function InterviewSessionsModal({
                                 <p className="line-clamp-4">{resp.transcript}</p>
                               </div>
                             )}
+                            {resp.feedback && renderFeedback(resp.feedback)}
                           </div>
                         </div>
                       </div>
