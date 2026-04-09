@@ -176,13 +176,15 @@ export async function PATCH(
           },
         });
       } catch (err) {
-        // P2002: unique constraint violation — session already exists (concurrent move).
-        // Pipeline move already succeeded; treat as idempotent, don't return 500.
+        // Phase 2 is strictly best-effort: the pipeline move already committed in Phase 1.
+        // Any error here (P2002 duplicate, transient DB error, etc.) must NOT return 500 —
+        // that would mislead the caller into thinking the move failed when it succeeded.
         const prismaCode = (err as { code?: string })?.code;
-        if (prismaCode !== 'P2002') {
-          throw err; // Re-throw unexpected errors
+        if (prismaCode === 'P2002') {
+          console.warn('[Recruiter Pipeline Move] Duplicate session (P2002) — idempotent, session already exists');
+        } else {
+          console.error('[Recruiter Pipeline Move] Non-critical phase-2 error (session/notification); pipeline move committed:', err);
         }
-        console.warn('[Recruiter Pipeline Move] Duplicate session detected (P2002) — treating as idempotent success');
       }
     }
 
