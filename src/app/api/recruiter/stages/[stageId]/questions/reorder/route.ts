@@ -49,8 +49,26 @@ export async function PUT(
 
     const { orders } = validation.data
 
-    // Verify all question IDs belong to this stage before updating
+    // Validate that the submitted orders form a contiguous 0-based sequence (0..n-1)
+    // with no duplicates — prevents clients from persisting gapped or repeated indices.
+    const submittedOrders = orders.map(o => o.order).sort((a, b) => a - b)
+    const hasDuplicateOrders = submittedOrders.some((v, i, arr) => i > 0 && v === arr[i - 1])
+    const isContiguous = submittedOrders.every((v, i) => v === i)
+    if (hasDuplicateOrders || !isContiguous) {
+      return NextResponse.json(
+        { error: `orders must be a unique contiguous sequence from 0 to ${orders.length - 1}` },
+        { status: 400 }
+      )
+    }
+
+    // Verify all question IDs are unique in the request
     const questionIds = orders.map(o => o.id)
+    const uniqueRequestIds = new Set(questionIds)
+    if (uniqueRequestIds.size !== questionIds.length) {
+      return NextResponse.json({ error: 'Duplicate question IDs in request' }, { status: 400 })
+    }
+
+    // Verify all question IDs belong to this stage before updating
     const questions = await db.recruitmentInterviewQuestion.findMany({
       where: { id: { in: questionIds }, stageId },
       select: { id: true },
@@ -60,6 +78,14 @@ export async function PUT(
     if (invalidIds.length > 0) {
       return NextResponse.json(
         { error: 'Some question IDs do not belong to this stage', invalidIds },
+        { status: 400 }
+      )
+    }
+
+    // Require the reorder request to cover ALL questions in this stage
+    if (questions.length !== orders.length) {
+      return NextResponse.json(
+        { error: `Request must include all ${questions.length} question(s) in the stage` },
         { status: 400 }
       )
     }

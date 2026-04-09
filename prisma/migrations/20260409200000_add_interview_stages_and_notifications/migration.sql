@@ -72,5 +72,19 @@ CREATE INDEX "CandidatePipelineEntry_currentRecruitmentStageId_idx" ON "Candidat
 ALTER TABLE "CandidatePipelineEntry" ADD CONSTRAINT "CandidatePipelineEntry_currentRecruitmentStageId_fkey" FOREIGN KEY ("currentRecruitmentStageId") REFERENCES "RecruitmentInterviewStage"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- UniqueConstraint: Prevent duplicate sessions per candidate+stage (race-condition guard)
--- NULL values in recruitmentStageId are excluded from uniqueness enforcement (SQL standard)
+--
+-- Strategy note: Prisma schema declares @@unique([userId, recruitmentStageId]), but
+-- Prisma handles NULLs in unique constraints differently across databases.
+-- PostgreSQL treats each NULL as distinct so a plain @@unique would allow multiple
+-- self-practice sessions (recruitmentStageId = NULL) per user, which is desired.
+-- However, Prisma generates a standard unique index that would block that.
+--
+-- Solution: use a partial unique index (WHERE recruitmentStageId IS NOT NULL) so:
+--   1. Exactly one session per user+recruitmentStage combination is enforced at DB level.
+--   2. Sessions with recruitmentStageId = NULL (self-practice) remain unrestricted.
+--   3. The P2002 error from concurrent recruiter moves is caught gracefully in the
+--      pipeline move API and treated as idempotent success.
+--
+-- Future migration note: If Prisma regenerates this constraint, prefer the partial
+-- index form below over the auto-generated @@unique index to preserve NULL behavior.
 CREATE UNIQUE INDEX "WorkplaceScenarioSession_userId_recruitmentStageId_key" ON "WorkplaceScenarioSession"("userId", "recruitmentStageId") WHERE "recruitmentStageId" IS NOT NULL;
