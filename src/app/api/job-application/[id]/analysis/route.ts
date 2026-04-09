@@ -34,6 +34,23 @@ export async function GET(
       return NextResponse.json({ error: 'Job application not found' }, { status: 404 })
     }
 
+    // Analysis results for platform/public applications are recruiter-only
+    if (jobApplication.isPublicApplication) {
+      return NextResponse.json({
+        jobApplication: {
+          id: jobApplication.id,
+          jobTitle: jobApplication.jobTitle,
+          companyName: jobApplication.companyName,
+          status: jobApplication.status,
+          createdAt: jobApplication.createdAt,
+          resume: jobApplication.resume,
+          coverLetter: jobApplication.coverLetter,
+        },
+        analysis: null,
+        allAnalyses: [],
+      })
+    }
+
     const latestAnalysis = jobApplication.analyses[0] || null
 
     return NextResponse.json({

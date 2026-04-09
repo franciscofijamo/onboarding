@@ -223,7 +223,15 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json({ jobApplications })
+    // Strip AI analysis data from public/platform applications — visible to recruiters only
+    const sanitized = jobApplications.map((app) => {
+      if (app.isPublicApplication) {
+        return { ...app, analyses: [] }
+      }
+      return app
+    })
+
+    return NextResponse.json({ jobApplications: sanitized })
   } catch (error) {
     console.error('Error fetching job applications:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

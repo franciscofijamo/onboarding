@@ -38,6 +38,7 @@ model User {
   flashcardDecks     FlashcardDeck[]
   workplaceScenarioSessions WorkplaceScenarioSession[]
   company            Company?
+  pipelineEntries    CandidatePipelineEntry[]
   asaasCustomerId    String?   @unique
   asaasCustomerIdSandbox    String?   @unique
   asaasCustomerIdProduction String?   @unique
@@ -182,6 +183,7 @@ model CandidatePipelineEntry {
 
   jobPosting       JobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
   jobApplication   JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([jobPostingId])
   @@index([userId])

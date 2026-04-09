@@ -53,11 +53,17 @@ export async function GET(request: NextRequest) {
         companyId: company.id,
         ...(statusFilter ? { status: statusFilter } : {}),
       },
+      include: {
+        _count: { select: { pipelineEntries: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
     return NextResponse.json({
-      postings: postings.map((p) => ({ ...p, applicationCount: 0 })),
+      postings: postings.map(({ _count, ...p }) => ({
+        ...p,
+        applicationCount: _count.pipelineEntries,
+      })),
     });
   } catch (error) {
     console.error('[Recruiter Postings API] GET error:', error);
