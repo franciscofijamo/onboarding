@@ -105,31 +105,55 @@ export async function POST(request: NextRequest) {
 
     const isPublicApplication = Boolean(jobPostingId)
 
-    const jobApplication = await db.jobApplication.create({
-      data: {
-        userId: user.id,
-        resumeId: resume?.id,
-        coverLetterId: coverLetter?.id,
-        jobTitle: jobPosting?.title ?? jobTitle,
-        companyName: jobPosting?.company.name ?? companyName,
-        jobDescription: jobPosting?.description ?? jobDescription,
-        companyInfo: jobPosting?.company.description ?? companyInfo,
-        status: isPublicApplication ? 'APPLIED' : 'DRAFT',
-        jobPostingId: jobPosting?.id,
-        isPublicApplication,
-      },
-    })
+    let jobApplication: Awaited<ReturnType<typeof db.jobApplication.create>>
 
-    // For platform applications: create pipeline entry + trigger background AI analysis
     if (jobPosting && isPublicApplication) {
-      await db.candidatePipelineEntry.create({
+      // Transactional: create application + pipeline entry atomically
+      const result = await db.$transaction(async (tx) => {
+        const app = await tx.jobApplication.create({
+          data: {
+            userId: user.id,
+            resumeId: resume?.id,
+            coverLetterId: coverLetter?.id,
+            jobTitle: jobPosting.title,
+            companyName: jobPosting.company.name,
+            jobDescription: jobPosting.description,
+            companyInfo: jobPosting.company.description ?? null,
+            status: 'APPLIED',
+            jobPostingId: jobPosting.id,
+            isPublicApplication: true,
+          },
+        })
+        const entry = await tx.candidatePipelineEntry.create({
+          data: {
+            jobPostingId: jobPosting.id,
+            userId: user.id,
+            jobApplicationId: app.id,
+            currentStage: 'RECEIVED',
+          },
+        })
+        return { app, entry }
+      })
+      jobApplication = result.app
+    } else {
+      jobApplication = await db.jobApplication.create({
         data: {
-          jobPostingId: jobPosting.id,
           userId: user.id,
-          jobApplicationId: jobApplication.id,
-          currentStage: 'RECEIVED',
+          resumeId: resume?.id,
+          coverLetterId: coverLetter?.id,
+          jobTitle,
+          companyName,
+          jobDescription,
+          companyInfo,
+          status: 'DRAFT',
+          jobPostingId: null,
+          isPublicApplication: false,
         },
       })
+    }
+
+    // For platform applications: trigger background AI analysis
+    if (jobPosting && isPublicApplication) {
 
       // Fire-and-forget background analysis (does NOT block response)
       if (resume?.content?.trim()) {

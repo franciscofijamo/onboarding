@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 export default function NewApplicationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const postingId = searchParams.get("postingId");
+  const postingId = searchParams.get("postingId") ?? searchParams.get("jobPostingId");
 
   React.useEffect(() => {
     if (postingId) {
