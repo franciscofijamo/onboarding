@@ -526,11 +526,11 @@ export default function ApplicationsPage() {
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <Button asChild variant="outline" size="sm" className="rounded-xl">
                                       <Link href={`/onboarding?applicationId=${application.id}`}>
-                                        {t("applicationsPage.actions.continue")}
+                                        Editar
                                         <ArrowRight className="h-4 w-4" />
                                       </Link>
                                     </Button>
-                                    <Button asChild variant="outline" size="sm" className="rounded-xl">
+                                    <Button asChild variant="outline" size="sm" className="rounded-xl border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 hover:border-green-300">
                                       <Link href={`/scenarios?jobApplicationId=${application.id}`}>
                                         <Mic className="h-4 w-4" />
                                         Practice Interview
