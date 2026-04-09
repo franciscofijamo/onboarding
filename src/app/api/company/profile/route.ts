@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { getUserFromClerkId } from '@/lib/auth-utils';
 import { z } from 'zod';
@@ -44,6 +44,10 @@ export async function PUT(request: Request) {
 
     const user = await getUserFromClerkId(userId);
 
+    if (user.role !== null && user.role !== 'RECRUITER') {
+      return NextResponse.json({ error: 'Forbidden: only recruiters can manage company profiles' }, { status: 403 });
+    }
+
     const body = await request.json();
     const validation = companySchema.safeParse(body);
     if (!validation.success) {
@@ -64,6 +68,11 @@ export async function PUT(request: Request) {
     await db.user.update({
       where: { id: user.id },
       data: { role: 'RECRUITER' },
+    });
+
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { role: 'RECRUITER' },
     });
 
     return NextResponse.json({ success: true, company });

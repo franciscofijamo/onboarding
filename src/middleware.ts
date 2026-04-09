@@ -11,6 +11,24 @@ const isPublicRoute = createRouteMatcher([
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
+const isRecruiterRoute = createRouteMatcher([
+  '/recruiter(.*)',
+  '/company(.*)',
+  '/api/recruiter(.*)',
+  '/api/company(.*)',
+])
+
+const isCandidateOnlyRoute = createRouteMatcher([
+  '/applications(.*)',
+  '/scenarios(.*)',
+  '/interview-prep(.*)',
+  '/onboarding(.*)',
+  '/api/job-application(.*)',
+  '/api/scenarios(.*)',
+  '/api/resume(.*)',
+  '/api/cover-letter(.*)',
+])
+
 const E2E_BYPASS = process.env.E2E_AUTH_BYPASS === '1'
 
 export default E2E_BYPASS
@@ -18,25 +36,23 @@ export default E2E_BYPASS
       return NextResponse.next()
     }
   : clerkMiddleware(async (auth, request) => {
-  // Allow public routes
   if (isPublicRoute(request)) {
-    // Server-side redirect for authenticated users from "/" to "/dashboard"
     const authResult = await auth()
-    if (authResult.userId && request.nextUrl.pathname === "/") {
-      const url = new URL("/dashboard", request.url)
+    if (authResult.userId && request.nextUrl.pathname === '/') {
+      const url = new URL('/dashboard', request.url)
       return NextResponse.redirect(url)
     }
     return NextResponse.next()
   }
-  
-  // Quick guard for admin routes to reduce UI flash
+
+  const authResult = await auth()
+  const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null
+
   if (isAdminRoute(request)) {
-    const authResult = await auth()
     if (!authResult.userId) {
       const url = new URL('/sign-in', request.url)
       return NextResponse.redirect(url)
     }
-    // Optional: only enforce ADMIN_USER_IDS here to avoid extra lookups
     const adminUserIds = process.env.ADMIN_USER_IDS?.split(',').filter(Boolean) || []
     if (adminUserIds.length > 0 && !adminUserIds.includes(authResult.userId)) {
       const url = new URL('/dashboard', request.url)
@@ -44,7 +60,23 @@ export default E2E_BYPASS
     }
   }
 
-  // For all other routes, the auth() call in the route handler will handle protection
+  if (!authResult.userId) {
+    return NextResponse.next()
+  }
+
+  if (isRecruiterRoute(request)) {
+    const isOnboarding = request.nextUrl.pathname.startsWith('/company/onboarding')
+    if (!isOnboarding && userRole !== 'RECRUITER') {
+      const url = new URL('/dashboard', request.url)
+      return NextResponse.redirect(url)
+    }
+  }
+
+  if (isCandidateOnlyRoute(request) && userRole === 'RECRUITER') {
+    const url = new URL('/dashboard', request.url)
+    return NextResponse.redirect(url)
+  }
+
   return NextResponse.next()
 })
 

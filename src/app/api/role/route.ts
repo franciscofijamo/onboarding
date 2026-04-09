@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { getUserFromClerkId } from '@/lib/auth-utils';
 import { z } from 'zod';
@@ -36,13 +36,20 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
+    const role = validation.data.role;
     const user = await getUserFromClerkId(userId);
+
     await db.user.update({
       where: { id: user.id },
-      data: { role: validation.data.role },
+      data: { role },
     });
 
-    return NextResponse.json({ success: true, role: validation.data.role });
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      publicMetadata: { role },
+    });
+
+    return NextResponse.json({ success: true, role });
   } catch (error) {
     console.error('[Role API] PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
