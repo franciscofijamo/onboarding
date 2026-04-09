@@ -261,10 +261,12 @@ async function runAnalysisCore(params: {
   const latestHash = extractInputHash(latest?.rawResponse)
 
   if (latest && latestHash === inputHash) {
-    await db.jobApplication.update({
-      where: { id: jobApplication.id },
-      data: { status: "ANALYZED" },
-    })
+    if (!jobApplication.isPublicApplication) {
+      await db.jobApplication.update({
+        where: { id: jobApplication.id },
+        data: { status: "ANALYZED" },
+      })
+    }
     return latest
   }
 
@@ -276,17 +278,22 @@ async function runAnalysisCore(params: {
   })
 
   if (execution.status === "COMPLETED" && execution.applicationAnalysisId) {
-    await db.jobApplication.update({
-      where: { id: jobApplication.id },
-      data: { status: "ANALYZED" },
-    })
+    if (!jobApplication.isPublicApplication) {
+      await db.jobApplication.update({
+        where: { id: jobApplication.id },
+        data: { status: "ANALYZED" },
+      })
+    }
     return loadCompletedAnalysis(execution.applicationAnalysisId)
   }
 
-  await db.jobApplication.updateMany({
-    where: { id: jobApplication.id, userId },
-    data: { status: "ANALYZING" },
-  })
+  // Public applications stay APPLIED throughout — status is driven by pipeline stage only
+  if (!jobApplication.isPublicApplication) {
+    await db.jobApplication.updateMany({
+      where: { id: jobApplication.id, userId },
+      data: { status: "ANALYZING" },
+    })
+  }
 
   let creditsCharged = false
 
@@ -370,10 +377,13 @@ async function runAnalysisCore(params: {
       },
     })
 
-    await db.jobApplication.update({
-      where: { id: jobApplication.id },
-      data: { status: "ANALYZED" },
-    })
+    // Public/platform applications remain APPLIED — status is pipeline-stage-driven, not AI-driven
+    if (!jobApplication.isPublicApplication) {
+      await db.jobApplication.update({
+        where: { id: jobApplication.id },
+        data: { status: "ANALYZED" },
+      })
+    }
 
     return analysis
   } catch (error) {
