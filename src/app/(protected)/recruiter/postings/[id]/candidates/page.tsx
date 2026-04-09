@@ -304,218 +304,243 @@ function AnalysisModal({
 
   return (
     <Dialog open={Boolean(entry)} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            {candidate.name ?? candidate.email ?? "Candidato"}
-          </DialogTitle>
-        </DialogHeader>
-
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {!isLoading && (
-          <div className="space-y-6 pb-2">
-            <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
-              <div className="flex flex-wrap gap-3 text-sm">
-                {candidate.email && (
-                  <span className="text-muted-foreground">{candidate.email}</span>
-                )}
-                {candidate.province && (
-                  <Badge variant="outline" className="rounded-full text-xs">{candidate.province}</Badge>
-                )}
-                {candidate.experienceLevel && (
-                  <Badge variant="outline" className="rounded-full text-xs">{candidate.experienceLevel}</Badge>
-                )}
-                {candidate.currentRole && (
-                  <span className="text-muted-foreground">{candidate.currentRole}</span>
-                )}
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        {/* Header banner */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4 rounded-t-lg">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <User className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>Candidatura: {formatDate(fullEntry.jobApplication.createdAt)}</span>
-                <span>·</span>
-                <span>Fase: <strong className="text-foreground">{STAGE_LABELS[fullEntry.currentStage] ?? fullEntry.currentStage}</strong></span>
-              </div>
-              {fullEntry.jobApplication.resume?.fileUrl && (
-                <a
-                  href={fullEntry.jobApplication.resume.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <FileText className="h-3 w-3" />
-                  Ver CV
-                </a>
-              )}
-            </div>
-
-            {!analysis && (
-              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-8 text-center">
-                <Sparkles className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-40" />
-                <p className="text-sm font-medium text-muted-foreground">Análise IA ainda não disponível</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  A análise é processada em segundo plano após a candidatura.
+              <div className="min-w-0">
+                <p className="font-semibold leading-tight truncate">
+                  {candidate.name ?? candidate.email ?? "Candidato"}
                 </p>
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                  {candidate.currentRole && (
+                    <span className="text-xs text-muted-foreground truncate">{candidate.currentRole}</span>
+                  )}
+                  {candidate.province && (
+                    <Badge variant="outline" className="rounded-full text-[10px] px-1.5 py-0">{candidate.province}</Badge>
+                  )}
+                  {fullEntry.jobApplication.resume?.fileUrl && (
+                    <a
+                      href={fullEntry.jobApplication.resume.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 text-[11px] text-primary hover:underline"
+                    >
+                      <FileText className="h-2.5 w-2.5" />
+                      CV
+                    </a>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
+            <Badge variant="outline" className="rounded-full text-xs shrink-0">
+              {STAGE_LABELS[fullEntry.currentStage] ?? fullEntry.currentStage}
+            </Badge>
+          </div>
+        </div>
 
-            {analysis && (
-              <>
-                <div className="rounded-2xl border border-border bg-card p-6">
-                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                    <div className="relative shrink-0">
-                      <svg width="120" height="120" viewBox="0 0 120 120">
-                        <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/30" />
+        <div className="px-6 py-5 space-y-5">
+          {isLoading && (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!isLoading && !analysis && (
+            <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
+              <Sparkles className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-30" />
+              <p className="text-sm font-medium text-muted-foreground">Análise IA ainda não disponível</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                A análise é processada em segundo plano após a candidatura.
+              </p>
+            </div>
+          )}
+
+          {!isLoading && analysis && (
+            <>
+              {/* Score hero */}
+              <div className="rounded-2xl border border-border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
+                <div className="flex flex-col sm:flex-row">
+                  {/* Score ring */}
+                  <div className="flex flex-col items-center justify-center p-6 sm:border-r border-border sm:min-w-[180px]">
+                    <div className="relative">
+                      <svg width="140" height="140" viewBox="0 0 140 140">
+                        <circle cx="70" cy="70" r="58" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted/20" />
                         <circle
-                          cx="60" cy="60" r="50"
+                          cx="70" cy="70" r="58"
                           fill="none"
-                          strokeWidth="8"
+                          strokeWidth="10"
                           strokeLinecap="round"
-                          strokeDasharray={circumference}
-                          strokeDashoffset={dashOffset}
-                          className={cn("transition-all duration-700", getFitScoreRingColor(fitScore))}
-                          transform="rotate(-90 60 60)"
+                          strokeDasharray={2 * Math.PI * 58}
+                          strokeDashoffset={2 * Math.PI * 58 * (1 - (fitScore ?? 0) / 100)}
+                          className={cn("transition-all duration-1000", getFitScoreRingColor(fitScore))}
+                          transform="rotate(-90 70 70)"
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className={cn("text-2xl font-bold", getFitScoreColor(fitScore))}>
+                        <span className={cn("text-4xl font-bold tabular-nums", getFitScoreColor(fitScore))}>
                           {fitScore !== null ? Math.round(fitScore) : "—"}
                         </span>
-                        <span className="text-xs text-muted-foreground">/100</span>
+                        <span className="text-xs text-muted-foreground font-medium">/100</span>
                       </div>
                     </div>
-
-                    <div className="flex-1 space-y-3">
-                      <div>
-                        <h3 className="font-semibold">Score de Compatibilidade</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {(fitScore ?? 0) >= 70
-                            ? "Excelente compatibilidade com a vaga."
-                            : (fitScore ?? 0) >= 50
-                            ? "Compatibilidade razoável — vale a pena entrevistar."
-                            : "Compatibilidade baixa — reveja os gaps antes de avançar."}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="rounded-xl bg-emerald-50 p-3">
-                          <div className="text-lg font-bold text-emerald-600">{skillsMatch.length}</div>
-                          <div className="text-xs text-muted-foreground">Skills alinhadas</div>
-                        </div>
-                        <div className="rounded-xl bg-orange-50 p-3">
-                          <div className="text-lg font-bold text-orange-500">{missingSkills.length}</div>
-                          <div className="text-xs text-muted-foreground">Gaps</div>
-                        </div>
-                        <div className="rounded-xl bg-primary/5 p-3">
-                          <div className="text-lg font-bold text-primary/70">{recommendations.length}</div>
-                          <div className="text-xs text-muted-foreground">Recomendações</div>
-                        </div>
-                      </div>
-                    </div>
+                    <p className="text-xs font-semibold text-muted-foreground mt-2 text-center">Score de Compatibilidade</p>
                   </div>
 
-                  {analysis.summary && (
-                    <p className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
-                      {analysis.summary}
+                  {/* Score details */}
+                  <div className="flex-1 p-5 space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {(fitScore ?? 0) >= 70
+                        ? "Excelente compatibilidade com a vaga. Este candidato alinha bem com os requisitos."
+                        : (fitScore ?? 0) >= 50
+                        ? "Compatibilidade razoável — vale a pena aprofundar na entrevista."
+                        : "Compatibilidade baixa — reveja os gaps identificados antes de avançar."}
                     </p>
-                  )}
-                </div>
 
-                {(skillsMatch.length > 0 || missingSkills.length > 0) && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {skillsMatch.length > 0 && (
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
-                        <h4 className="text-sm font-semibold text-emerald-700 mb-3">Skills Compatíveis</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {skillsMatch.map((skill, i) => (
-                            <Badge key={i} variant="outline" className="rounded-full text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-center">
+                        <div className="text-2xl font-bold text-emerald-600 tabular-nums">{skillsMatch.length}</div>
+                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">Skills alinhadas</div>
                       </div>
-                    )}
-                    {missingSkills.length > 0 && (
-                      <div className="rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
-                        <h4 className="text-sm font-semibold text-orange-700 mb-3">Gaps Identificados</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {missingSkills.map((skill, i) => (
-                            <Badge key={i} variant="outline" className="rounded-full text-xs bg-orange-100 text-orange-700 border-orange-200">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
+                      <div className="rounded-xl bg-orange-50 border border-orange-100 p-3 text-center">
+                        <div className="text-2xl font-bold text-orange-500 tabular-nums">{missingSkills.length}</div>
+                        <div className="text-[11px] text-orange-700 font-medium mt-0.5">Gaps identificados</div>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {strengths.length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <h4 className="text-sm font-semibold mb-3">Pontos Fortes</h4>
-                    <ul className="space-y-2">
-                      {strengths.map((s, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
-                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
-                          <span>{s}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {improvements.length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <h4 className="text-sm font-semibold mb-3">Áreas de Melhoria</h4>
-                    <ul className="space-y-2">
-                      {improvements.map((s, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
-                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
-                          <span>{s}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {recommendations.length > 0 && (
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <h4 className="text-sm font-semibold mb-3">Recomendações</h4>
-                    <ul className="space-y-2">
-                      {recommendations.map((s, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
-                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                          <span>{s}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </>
-            )}
-
-            {fullEntry.stageHistory.length > 0 && (
-              <div className="rounded-2xl border border-border bg-muted/30 p-4">
-                <h4 className="text-sm font-semibold mb-3">Histórico de Fases</h4>
-                <div className="space-y-2">
-                  {fullEntry.stageHistory.map((h) => (
-                    <div key={h.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">{STAGE_LABELS[h.fromStage] ?? h.fromStage}</span>
-                      <ChevronRight className="h-3 w-3 shrink-0" />
-                      <span className="font-medium text-foreground">{STAGE_LABELS[h.toStage] ?? h.toStage}</span>
-                      <span className="ml-auto">{formatDate(h.movedAt)}</span>
-                      {h.mover.name && <span>por {h.mover.name}</span>}
+                      <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 text-center">
+                        <div className="text-2xl font-bold text-blue-600 tabular-nums">{recommendations.length}</div>
+                        <div className="text-[11px] text-blue-700 font-medium mt-0.5">Recomendações</div>
+                      </div>
                     </div>
-                  ))}
+
+                    {analysis.summary && (
+                      <p className="text-sm text-foreground/80 leading-relaxed border-t border-border pt-3">
+                        {analysis.summary}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Skills grid */}
+              {(skillsMatch.length > 0 || missingSkills.length > 0) && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {skillsMatch.length > 0 && (
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <span className="text-white text-[10px] font-bold">✓</span>
+                        </div>
+                        <h4 className="text-sm font-semibold text-emerald-800">Skills Compatíveis</h4>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {skillsMatch.map((skill, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs px-2.5 py-0.5 font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {missingSkills.length > 0 && (
+                    <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-5 w-5 rounded-full bg-orange-400 flex items-center justify-center">
+                          <span className="text-white text-[10px] font-bold">!</span>
+                        </div>
+                        <h4 className="text-sm font-semibold text-orange-800">Gaps Identificados</h4>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {missingSkills.map((skill, i) => (
+                          <span key={i} className="inline-flex items-center rounded-full bg-orange-100 border border-orange-200 text-orange-800 text-xs px-2.5 py-0.5 font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Strengths + Improvements side by side when both exist */}
+              {(strengths.length > 0 || improvements.length > 0) && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {strengths.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✓</span>
+                        Pontos Fortes
+                      </h4>
+                      <ul className="space-y-2">
+                        {strengths.map((s, i) => (
+                          <li key={i} className="text-sm text-muted-foreground leading-snug flex gap-2">
+                            <span className="shrink-0 mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {improvements.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">!</span>
+                        Áreas de Melhoria
+                      </h4>
+                      <ul className="space-y-2">
+                        {improvements.map((s, i) => (
+                          <li key={i} className="text-sm text-muted-foreground leading-snug flex gap-2">
+                            <span className="shrink-0 mt-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {recommendations.length > 0 && (
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
+                  <h4 className="text-sm font-semibold mb-3 text-blue-900 flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-blue-600" />
+                    Recomendações
+                  </h4>
+                  <ol className="space-y-2">
+                    {recommendations.map((s, i) => (
+                      <li key={i} className="flex gap-3 text-sm text-blue-900/80 leading-snug">
+                        <span className="shrink-0 h-5 w-5 rounded-full bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                          {i + 1}
+                        </span>
+                        {s}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </>
+          )}
+
+          {!isLoading && fullEntry.stageHistory.length > 0 && (
+            <div className="rounded-2xl border border-border bg-muted/20 p-4">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Histórico de Fases</h4>
+              <div className="space-y-1.5">
+                {fullEntry.stageHistory.map((h) => (
+                  <div key={h.id} className="flex items-center gap-2 text-xs">
+                    <span className="font-medium text-foreground">{STAGE_LABELS[h.fromStage] ?? h.fromStage}</span>
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span className="font-medium text-foreground">{STAGE_LABELS[h.toStage] ?? h.toStage}</span>
+                    <span className="ml-auto text-muted-foreground">{formatDate(h.movedAt)}</span>
+                    {h.mover.name && <span className="text-muted-foreground">· {h.mover.name}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -627,16 +652,23 @@ function InterviewSessionsModal({
 
   return (
     <Dialog open={Boolean(entry)} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Mic className="h-5 w-5 text-purple-600 shrink-0" />
-            <span className="truncate">Sessões — {entry.user.name ?? entry.user.email ?? "Candidato"}</span>
-          </DialogTitle>
-          <DialogDescription>
-            Respostas de áudio do candidato às perguntas das fases de entrevista.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4 rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+              <Mic className="h-4 w-4 text-purple-700" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold leading-tight truncate">
+                {entry.user.name ?? entry.user.email ?? "Candidato"}
+              </p>
+              <p className="text-xs text-muted-foreground">Sessões de entrevista IA</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
@@ -721,6 +753,7 @@ function InterviewSessionsModal({
             ))}
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
