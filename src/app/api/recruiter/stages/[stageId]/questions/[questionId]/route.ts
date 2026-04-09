@@ -41,6 +41,15 @@ export async function PUT(
       return NextResponse.json({ error: 'prompt must be a non-empty string' }, { status: 400 })
     }
 
+    const VALID_QUESTION_TYPES = ['TECHNICAL', 'BEHAVIORAL', 'SITUATIONAL', 'COMPETENCY', 'MIXED']
+    if (questionType !== undefined && !VALID_QUESTION_TYPES.includes(questionType)) {
+      return NextResponse.json({ error: `questionType must be one of: ${VALID_QUESTION_TYPES.join(', ')}` }, { status: 400 })
+    }
+
+    if (order !== undefined && (typeof order !== 'number' || !Number.isInteger(order) || order < 0)) {
+      return NextResponse.json({ error: 'order must be a non-negative integer' }, { status: 400 })
+    }
+
     const updated = await db.recruitmentInterviewQuestion.update({
       where: { id: questionId },
       data: {

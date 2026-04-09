@@ -826,18 +826,23 @@ function InterviewStageModal({
     try {
       await api.delete(`/api/recruiter/stages/${stageId}/questions/${questionId}`);
 
-      // Compute re-indexed list outside state updater so we can await order persists
-      const remaining = questions
-        .filter(q => q.id !== questionId)
-        .map((q, i) => ({ ...q, order: i }));
+      // Compute which questions need a new order BEFORE re-indexing
+      // (so we compare original order against new position, not the already-normalized value)
+      const afterDelete = questions.filter(q => q.id !== questionId);
+      const questionsNeedingReorder = afterDelete
+        .map((q, newIdx) => ({ ...q, newOrder: newIdx }))
+        .filter(q => q.order !== q.newOrder);
+
+      // Re-indexed list for local state (optimistic update)
+      const remaining = afterDelete.map((q, i) => ({ ...q, order: i }));
 
       // Optimistic UI update
       setQuestions(remaining);
 
-      // Persist new order for any questions whose index shifted
-      const orderUpdates = remaining
-        .filter((q, i) => q.order !== i)
-        .map(q => api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: q.order }));
+      // Persist new order for questions whose position changed
+      const orderUpdates = questionsNeedingReorder.map(q =>
+        api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: q.newOrder })
+      );
 
       if (orderUpdates.length > 0) {
         await Promise.all(orderUpdates).catch(() => {
@@ -891,6 +896,13 @@ function InterviewStageModal({
 
   async function handlePublish() {
     if (!stageId) return;
+    // Warn recruiter if question count is below the configured target (e.g. due to deduplication)
+    if (questions.length < questionCount) {
+      toast({
+        title: "Atenção: menos perguntas que o configurado",
+        description: `Esta fase tem ${questions.length} pergunta(s), mas foi configurada para ${questionCount}. Pode regenerar para atingir o total, ou publicar com as perguntas atuais.`,
+      });
+    }
     setPublishing(true);
     try {
       await api.post(`/api/recruiter/stages/${stageId}/publish`, {});
