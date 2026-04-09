@@ -33,7 +33,7 @@ export const navigationItems = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
   { nameKey: "nav.applications", hintKey: "nav.applications", href: "/applications", icon: Briefcase },
   { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare, disabled: true },
-  { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic, disabled: true },
+  { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },
   { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit, disabled: true },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
 ];
