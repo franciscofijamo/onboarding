@@ -13,6 +13,7 @@ const CreateJobApplicationSchema = z.object({
   companyInfo: z.string().max(10000).optional(),
   triggerAnalysis: z.boolean().default(false),
   idempotencyKey: z.string().max(200).optional(),
+  jobPostingId: z.string().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
       companyInfo,
       triggerAnalysis,
       idempotencyKey,
+      jobPostingId,
     } = parsed.data
 
     let resume = null
@@ -63,7 +65,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (triggerAnalysis) {
+    // Validate jobPostingId if provided
+    let jobPosting = null
+    if (jobPostingId) {
+      jobPosting = await db.jobPosting.findFirst({
+        where: { id: jobPostingId, status: 'PUBLISHED' },
+        include: { company: { select: { name: true, location: true, description: true } } },
+      })
+      if (!jobPosting) {
+        return NextResponse.json({ error: 'Job posting not found or not published' }, { status: 404 })
+      }
+
+      // Prevent duplicate applications to the same posting
+      const duplicate = await db.jobApplication.findFirst({
+        where: { userId: user.id, jobPostingId },
+      })
+      if (duplicate) {
+        return NextResponse.json(
+          { error: 'Já te candidataste a esta vaga', jobApplicationId: duplicate.id },
+          { status: 409 }
+        )
+      }
+    }
+
+    if (triggerAnalysis && !jobPostingId) {
       if (!jobDescription.trim()) {
         return NextResponse.json(
           { error: 'Job description is required when triggerAnalysis is true' },
@@ -78,18 +103,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const isPublicApplication = Boolean(jobPostingId)
+
     const jobApplication = await db.jobApplication.create({
       data: {
         userId: user.id,
         resumeId: resume?.id,
         coverLetterId: coverLetter?.id,
-        jobTitle,
-        companyName,
-        jobDescription,
-        companyInfo,
-        status: 'DRAFT',
+        jobTitle: jobPosting?.title ?? jobTitle,
+        companyName: jobPosting?.company.name ?? companyName,
+        jobDescription: jobPosting?.description ?? jobDescription,
+        companyInfo: jobPosting?.company.description ?? companyInfo,
+        status: isPublicApplication ? 'APPLIED' : 'DRAFT',
+        jobPostingId: jobPosting?.id,
+        isPublicApplication,
       },
     })
+
+    // For platform applications: create pipeline entry + trigger background AI analysis
+    if (jobPosting && isPublicApplication) {
+      await db.candidatePipelineEntry.create({
+        data: {
+          jobPostingId: jobPosting.id,
+          userId: user.id,
+          jobApplicationId: jobApplication.id,
+          currentStage: 'RECEIVED',
+        },
+      })
+
+      // Fire-and-forget background analysis (does NOT block response)
+      if (resume?.content?.trim()) {
+        const analysisKey = `platform-${jobApplication.id}-${Date.now()}`
+        runApplicationAnalysis({
+          clerkId,
+          userId: user.id,
+          jobApplicationId: jobApplication.id,
+          idempotencyKey: analysisKey,
+        })
+          .then(async (analysis) => {
+            if (analysis?.fitScore != null) {
+              await db.candidatePipelineEntry.updateMany({
+                where: { jobApplicationId: jobApplication.id },
+                data: { fitScore: analysis.fitScore },
+              })
+            }
+          })
+          .catch((err) => {
+            console.error('[Background analysis] Failed for application', jobApplication.id, err)
+          })
+      }
+
+      return NextResponse.json({ jobApplication }, { status: 201 })
+    }
 
     if (triggerAnalysis) {
       try {
@@ -147,6 +212,12 @@ export async function GET() {
         analyses: {
           orderBy: { createdAt: 'desc' },
           take: 1,
+        },
+        jobPosting: {
+          select: { id: true, title: true, company: { select: { name: true } } },
+        },
+        pipelineEntry: {
+          select: { id: true, currentStage: true, fitScore: true },
         },
       },
       orderBy: { createdAt: 'desc' },

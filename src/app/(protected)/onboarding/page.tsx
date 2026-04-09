@@ -31,9 +31,30 @@ import {
   XCircle,
   RefreshCw,
   Link,
+  Building2,
+  SendHorizonal,
 } from "lucide-react";
+import { RichTextViewer } from "@/components/editor/rich-text-editor";
+import {
+  CATEGORY_LABELS,
+  JOB_TYPE_LABELS,
+  SALARY_RANGE_LABELS,
+  type JobPostingCategory,
+  type JobType,
+  type SalaryRange,
+} from "@/lib/recruiter/postings";
 
 type Step = "resume" | "cover-letter" | "job-description" | "analysis";
+
+interface JobPostingPreview {
+  id: string;
+  title: string;
+  category: JobPostingCategory;
+  jobType: JobType;
+  salaryRange: SalaryRange;
+  description: string;
+  company: { name: string; location: string };
+}
 
 interface ResumeData {
   id: string;
@@ -96,17 +117,19 @@ function StepIndicator({
   currentStep,
   completedSteps,
   onStepClick,
+  isPublicApplication,
 }: {
   steps: typeof STEPS;
   currentStep: Step;
   completedSteps: Set<Step>;
   onStepClick: (step: Step) => void;
+  isPublicApplication?: boolean;
 }) {
   const labels: Record<Step, string> = {
     resume: "CV / Resume",
     "cover-letter": "Cover Letter",
-    "job-description": "Job Description",
-    analysis: "AI Analysis",
+    "job-description": "Descrição da Vaga",
+    analysis: isPublicApplication ? "Enviar Candidatura" : "AI Analysis",
   };
   const icons: Record<Step, React.ReactNode> = {
     resume: <FileText className="h-4 w-4" />,
@@ -218,6 +241,7 @@ export default function OnboardingPage() {
   const searchParams = useSearchParams();
   const requestedApplicationId = searchParams.get("applicationId");
   const startFresh = searchParams.get("new") === "1";
+  const jobPostingId = searchParams.get("jobPostingId");
   const queryClient = useQueryClient();
   const { t } = useLanguage();
   const { credits, refresh: refreshCredits } = useCredits();
@@ -258,6 +282,20 @@ export default function OnboardingPage() {
   const [isCrawling, setIsCrawling] = React.useState(false);
   const [crawlError, setCrawlError] = React.useState<string | null>(null);
   const analysisRequestKeyRef = React.useRef<string | null>(null);
+  const [isSubmittingPlatformApp, setIsSubmittingPlatformApp] = React.useState(false);
+  const [platformAppSubmitted, setPlatformAppSubmitted] = React.useState(false);
+  const [platformAppError, setPlatformAppError] = React.useState<string | null>(null);
+
+  const isPublicApplication = Boolean(jobPostingId);
+
+  const { data: jobPostingData, isLoading: loadingJobPosting } = useQuery<{ posting: JobPostingPreview }>({
+    queryKey: ["jobPosting", jobPostingId],
+    queryFn: () => fetch(`/api/jobs/${jobPostingId}`).then((r) => r.json()),
+    enabled: Boolean(jobPostingId),
+    staleTime: 5 * 60_000,
+  });
+
+  const jobPosting = jobPostingData?.posting ?? null;
 
   const { data: existingResumes, isLoading: loadingResumes } = useQuery<{
     resumes: ResumeData[];
@@ -289,10 +327,39 @@ export default function OnboardingPage() {
   React.useEffect(() => {
     if (dataLoaded) return;
     if (loadingResumes || loadingCoverLetters || loadingJobApplications) return;
+    if (isPublicApplication && loadingJobPosting) return;
 
     const resumes = existingResumes?.resumes || [];
     const coverLetters = existingCoverLetters?.coverLetters || [];
     const jobApps = existingJobApplications?.jobApplications || [];
+
+    // For platform applications, always start fresh but pre-load last resume if available
+    if (isPublicApplication) {
+      setSelectedJobApplicationId(null);
+      setJobTitle(jobPosting?.title || "");
+      setCompanyName(jobPosting?.company.name || "");
+      setJobDescription(jobPosting?.description || "");
+      setAnalysisResult(null);
+      setAnalysisError(null);
+
+      // Auto-select most recent resume if user has one
+      const lastResume = resumes[0];
+      if (lastResume) {
+        setSavedResumeId(lastResume.id);
+        setResumeTitle(lastResume.title || "");
+        setResumeText(lastResume.content || "");
+      } else {
+        setResumeText("");
+        setResumeTitle("");
+        setSavedResumeId(null);
+      }
+
+      setCoverLetterText("");
+      setCoverLetterTitle("");
+      setSavedCoverLetterId(null);
+      setDataLoaded(true);
+      return;
+    }
 
     if (!startFresh && jobApps.length > 0) {
       const selected =
@@ -348,11 +415,14 @@ export default function OnboardingPage() {
     loadingResumes,
     loadingCoverLetters,
     loadingJobApplications,
+    loadingJobPosting,
     existingResumes,
     existingCoverLetters,
     existingJobApplications,
     requestedApplicationId,
     startFresh,
+    isPublicApplication,
+    jobPosting,
   ]);
 
   const completedSteps = React.useMemo(() => {
@@ -520,7 +590,11 @@ export default function OnboardingPage() {
         title: resumeTitle || "My Resume",
         content: resumeText,
       });
-      await saveDraftForStep({ resumeId: saved.resume.id });
+      if (!isPublicApplication) {
+        await saveDraftForStep({ resumeId: saved.resume.id });
+      } else {
+        setSavedResumeId(saved.resume.id);
+      }
       showSaveStatus("Resume draft saved!");
     } finally {
       setIsSavingDraft(false);
@@ -535,7 +609,11 @@ export default function OnboardingPage() {
         title: resumeTitle || "My Resume",
         content: resumeText,
       });
-      await saveDraftForStep({ resumeId: saved.resume.id });
+      if (!isPublicApplication) {
+        await saveDraftForStep({ resumeId: saved.resume.id });
+      } else {
+        setSavedResumeId(saved.resume.id);
+      }
       showSaveStatus("Resume draft saved!");
       setCurrentStep("cover-letter");
     } finally {
@@ -551,7 +629,11 @@ export default function OnboardingPage() {
         title: coverLetterTitle || "My Cover Letter",
         content: coverLetterText,
       });
-      await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
+      if (!isPublicApplication) {
+        await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
+      } else {
+        setSavedCoverLetterId(saved.coverLetter.id);
+      }
       showSaveStatus("Cover letter draft saved!");
     } finally {
       setIsSavingDraft(false);
@@ -566,8 +648,12 @@ export default function OnboardingPage() {
           title: coverLetterTitle || "My Cover Letter",
           content: coverLetterText,
         });
-        await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
-      } else {
+        if (!isPublicApplication) {
+          await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
+        } else {
+          setSavedCoverLetterId(saved.coverLetter.id);
+        }
+      } else if (!isPublicApplication) {
         await saveDraftForStep();
       }
       showSaveStatus("Draft saved!");
@@ -700,6 +786,27 @@ export default function OnboardingPage() {
     }
   };
 
+  const handleSubmitPlatformApplication = async () => {
+    if (!savedResumeId || !jobPostingId) return;
+    setIsSubmittingPlatformApp(true);
+    setPlatformAppError(null);
+    try {
+      await api.post("/api/job-application", {
+        jobPostingId,
+        resumeId: savedResumeId,
+        coverLetterId: savedCoverLetterId || undefined,
+        triggerAnalysis: false,
+      });
+      setPlatformAppSubmitted(true);
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao submeter candidatura";
+      setPlatformAppError(msg);
+    } finally {
+      setIsSubmittingPlatformApp(false);
+    }
+  };
+
   const handleSubmitJobApplication = async () => {
     if (!jobDescription.trim() || !savedResumeId) return;
 
@@ -747,7 +854,7 @@ export default function OnboardingPage() {
   };
 
   const isLoading =
-    loadingResumes || loadingCoverLetters || loadingJobApplications;
+    loadingResumes || loadingCoverLetters || loadingJobApplications || (isPublicApplication && loadingJobPosting);
 
   if (isLoading) {
     return (
@@ -772,6 +879,7 @@ export default function OnboardingPage() {
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={setCurrentStep}
+        isPublicApplication={isPublicApplication}
       />
 
       <div className="bg-card rounded-2xl border border-border p-4">
@@ -1059,139 +1167,174 @@ export default function OnboardingPage() {
                 <Briefcase className="h-5 w-5 text-emerald-700" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Job Description</h2>
+                <h2 className="text-lg font-semibold">
+                  {isPublicApplication ? "Descrição da Vaga" : "Job Description"}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Paste the job posting you want to apply for. The AI will
-                  compare it against your resume.
+                  {isPublicApplication
+                    ? "Vaga seleccionada da bolsa pública. A descrição é carregada automaticamente."
+                    : "Paste the job posting you want to apply for. The AI will compare it against your resume."}
                 </p>
               </div>
-              <Badge variant="secondary" className="ml-auto">
-                Required
+              <Badge variant={isPublicApplication ? "outline" : "secondary"} className="ml-auto">
+                {isPublicApplication ? "Pré-preenchido" : "Required"}
               </Badge>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-1.5">
-                    Job Title
-                  </label>
-                  <input
-                    type="text"
-                    value={jobTitle}
-                    onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="e.g., Senior Software Engineer"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+            {isPublicApplication && jobPosting ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    <Briefcase className="h-3.5 w-3.5" />
+                    {jobPosting.title}
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {jobPosting.company.name}
+                  </div>
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    {CATEGORY_LABELS[jobPosting.category]}
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                    {JOB_TYPE_LABELS[jobPosting.jobType]}
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 font-medium">
+                    {SALARY_RANGE_LABELS[jobPosting.salaryRange]}
+                  </span>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-1.5">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="e.g., Google"
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                <div className="rounded-xl border border-border bg-muted/20 p-4">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Descrição</p>
+                  <RichTextViewer content={jobPosting.description} className="text-sm leading-relaxed" />
+                </div>
+                <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  A descrição foi carregada directamente da vaga e não pode ser editada.
                 </div>
               </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-sm font-medium text-foreground">
-                    Job Description
-                  </label>
-                  <div className="flex items-center gap-1 rounded-lg border border-input bg-muted/40 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => { setJobInputMode("paste"); setCrawlError(null); }}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                        jobInputMode === "paste"
-                          ? "bg-background shadow-sm text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      Paste text
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setJobInputMode("url"); setCrawlError(null); }}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                        jobInputMode === "url"
-                          ? "bg-background shadow-sm text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Link className="h-3.5 w-3.5" />
-                      Import from URL
-                    </button>
-                  </div>
-                </div>
-
-                {jobInputMode === "url" ? (
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={jobUrl}
-                        onChange={(e) => { setJobUrl(e.target.value); setCrawlError(null); }}
-                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCrawlUrl(); } }}
-                        placeholder="https://company.com/careers/job-posting"
-                        disabled={isCrawling}
-                        className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                      />
-                      <Button
-                        type="button"
-                        onClick={handleCrawlUrl}
-                        disabled={!jobUrl.trim() || isCrawling}
-                        className="shrink-0"
-                      >
-                        {isCrawling ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Fetching...
-                          </>
-                        ) : (
-                          <>
-                            <Search className="h-4 w-4" />
-                            Fetch
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    {crawlError && (
-                      <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
-                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                        <span>{crawlError}</span>
-                      </div>
-                    )}
-
-                    <p className="text-xs text-muted-foreground">
-                      Paste the public URL of the job posting. The app will extract the description automatically.
-                      Only public pages are supported — login-protected postings must be pasted manually.
-                    </p>
-                  </div>
-                ) : (
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <textarea
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      placeholder="Paste the full job description here..."
-                      rows={12}
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                    <label className="text-sm font-medium text-foreground block mb-1.5">
+                      Job Title
+                    </label>
+                    <input
+                      type="text"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                      placeholder="e.g., Senior Software Engineer"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {jobDescription.trim().split(/\s+/).filter(Boolean).length}{" "}
-                      words
-                    </p>
                   </div>
-                )}
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1.5">
+                      Company Name
+                    </label>
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="e.g., Google"
+                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-foreground">
+                      Job Description
+                    </label>
+                    <div className="flex items-center gap-1 rounded-lg border border-input bg-muted/40 p-0.5">
+                      <button
+                        type="button"
+                        onClick={() => { setJobInputMode("paste"); setCrawlError(null); }}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                          jobInputMode === "paste"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        Paste text
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setJobInputMode("url"); setCrawlError(null); }}
+                        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
+                          jobInputMode === "url"
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Link className="h-3.5 w-3.5" />
+                        Import from URL
+                      </button>
+                    </div>
+                  </div>
+
+                  {jobInputMode === "url" ? (
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={jobUrl}
+                          onChange={(e) => { setJobUrl(e.target.value); setCrawlError(null); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCrawlUrl(); } }}
+                          placeholder="https://company.com/careers/job-posting"
+                          disabled={isCrawling}
+                          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleCrawlUrl}
+                          disabled={!jobUrl.trim() || isCrawling}
+                          className="shrink-0"
+                        >
+                          {isCrawling ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Fetching...
+                            </>
+                          ) : (
+                            <>
+                              <Search className="h-4 w-4" />
+                              Fetch
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {crawlError && (
+                        <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                          <span>{crawlError}</span>
+                        </div>
+                      )}
+
+                      <p className="text-xs text-muted-foreground">
+                        Paste the public URL of the job posting. The app will extract the description automatically.
+                        Only public pages are supported — login-protected postings must be pasted manually.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <textarea
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        placeholder="Paste the full job description here..."
+                        rows={12}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {jobDescription.trim().split(/\s+/).filter(Boolean).length}{" "}
+                        words
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between">
@@ -1203,41 +1346,53 @@ export default function OnboardingPage() {
               Back
             </Button>
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleSaveJobDescriptionDraft}
-                disabled={!savedResumeId || isSavingDraft || isAnalyzingExisting}
-              >
-                {isSavingDraft ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
-                Save Draft
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Cost: 10 credits
-              </span>
-              <Button
-                onClick={handleSubmitJobApplication}
-                disabled={
-                  !jobDescription.trim() ||
-                  !savedResumeId ||
-                  analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting || isSavingDraft
-                }
-              >
-                {analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Analyze Application
-                  </>
-                )}
-              </Button>
+              {isPublicApplication ? (
+                <Button
+                  onClick={() => setCurrentStep("analysis")}
+                  disabled={!savedResumeId}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Continuar
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveJobDescriptionDraft}
+                    disabled={!savedResumeId || isSavingDraft || isAnalyzingExisting}
+                  >
+                    {isSavingDraft ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Save Draft
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Cost: 10 credits
+                  </span>
+                  <Button
+                    onClick={handleSubmitJobApplication}
+                    disabled={
+                      !jobDescription.trim() ||
+                      !savedResumeId ||
+                      analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting || isSavingDraft
+                    }
+                  >
+                    {analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Analyze Application
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -1250,7 +1405,110 @@ export default function OnboardingPage() {
         </div>
       )}
 
-      {currentStep === "analysis" && (
+      {currentStep === "analysis" && isPublicApplication && (
+        <div className="space-y-6">
+          {platformAppSubmitted ? (
+            <div className="bg-card rounded-2xl border border-border p-12 flex flex-col items-center justify-center text-center">
+              <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-semibold">Candidatura Enviada!</h3>
+              <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                A sua candidatura foi submetida com sucesso. O recrutador irá analisá-la em breve.
+              </p>
+              <Button
+                className="mt-6"
+                onClick={() => router.push("/applications")}
+              >
+                Ver as minhas candidaturas
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold">Confirmar Candidatura</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Reveja os detalhes antes de submeter a sua candidatura.
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {jobPosting && (
+                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                      <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Vaga</p>
+                        <p className="font-medium">{jobPosting.title}</p>
+                        <p className="text-sm text-muted-foreground">{jobPosting.company.name}</p>
+                      </div>
+                    </div>
+                  )}
+                  {savedResumeId && (
+                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">CV / Resume</p>
+                        <p className="font-medium">
+                          {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.title ?? "CV seleccionado"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {savedCoverLetterId && (
+                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                      <Copy className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Cover Letter</p>
+                        <p className="font-medium">
+                          {existingCoverLetters?.coverLetters?.find((c) => c.id === savedCoverLetterId)?.title ?? "Cover letter seleccionada"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {platformAppError && (
+                  <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive mt-4">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {platformAppError}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep("job-description")}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmitPlatformApplication}
+                  disabled={isSubmittingPlatformApp || !savedResumeId}
+                >
+                  {isSubmittingPlatformApp ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A submeter...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Confirmar Candidatura
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {currentStep === "analysis" && !isPublicApplication && (
         <div className="space-y-6">
           {(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) && (
             <div className="bg-card rounded-2xl border border-border p-12 flex flex-col items-center justify-center text-center">

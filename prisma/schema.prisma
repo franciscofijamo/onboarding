@@ -148,13 +148,45 @@ model JobPosting {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+  pipelineEntries CandidatePipelineEntry[]
 
   @@index([companyId])
   @@index([status])
   @@index([category])
   @@index([createdAt])
   @@index([companyId, status])
+}
+
+enum PipelineStage {
+  RECEIVED
+  REVIEWING
+  INTERVIEW
+  OFFER
+  REJECTED
+  ACCEPTED
+}
+
+// CandidatePipelineEntry - links a candidate's application to a recruiter's pipeline
+model CandidatePipelineEntry {
+  id               String        @id @default(cuid())
+  jobPostingId     String
+  userId           String
+  jobApplicationId String        @unique
+  currentStage     PipelineStage @default(RECEIVED)
+  fitScore         Float?
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  jobPosting       JobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  jobApplication   JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  @@index([jobPostingId])
+  @@index([userId])
+  @@index([jobPostingId, currentStage])
+  @@index([createdAt])
 }
 
 enum ExperienceLevel {
@@ -345,28 +377,33 @@ model CoverLetter {
 
 // JobApplication - stores job description text, company info, and links to resume
 model JobApplication {
-  id              String   @id @default(cuid())
-  userId          String
-  resumeId        String?
-  coverLetterId   String?
-  jobTitle        String?
-  companyName     String?
-  jobDescription  String   @db.Text
-  companyInfo     String?  @db.Text
-  status          JobApplicationStatus @default(DRAFT)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  userId              String
+  resumeId            String?
+  coverLetterId       String?
+  jobTitle            String?
+  companyName         String?
+  jobDescription      String   @db.Text
+  companyInfo         String?  @db.Text
+  status              JobApplicationStatus @default(DRAFT)
+  jobPostingId        String?
+  isPublicApplication Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resume           Resume?  @relation(fields: [resumeId], references: [id])
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume           Resume?    @relation(fields: [resumeId], references: [id])
   coverLetter      CoverLetter? @relation(fields: [coverLetterId], references: [id])
+  jobPosting       JobPosting? @relation(fields: [jobPostingId], references: [id], onDelete: SetNull)
   analyses         ApplicationAnalysis[]
   analysisExecutions ApplicationAnalysisExecution[]
   scenarioSessions WorkplaceScenarioSession[]
+  pipelineEntry    CandidatePipelineEntry?
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([jobPostingId])
 }
 
 enum JobApplicationStatus {

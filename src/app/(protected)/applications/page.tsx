@@ -55,6 +55,8 @@ type AnalysisSummary = {
   createdAt?: string;
 };
 
+type PipelineStage = "RECEIVED" | "REVIEWING" | "INTERVIEW" | "OFFER" | "REJECTED" | "ACCEPTED";
+
 type JobApplication = {
   id: string;
   jobTitle: string | null;
@@ -64,6 +66,10 @@ type JobApplication = {
   createdAt?: string;
   jobDescription?: string;
   analyses?: AnalysisSummary[];
+  jobPostingId?: string | null;
+  isPublicApplication?: boolean;
+  jobPosting?: { id: string; title: string; company: { name: string } } | null;
+  pipelineEntry?: { currentStage: PipelineStage; fitScore: number | null } | null;
 };
 
 type JobApplicationsResponse = {
@@ -153,6 +159,28 @@ function getLocalizedOutcomeLabel(status: JobApplicationStatus | string, t: Tran
       return t("applicationsPage.outcome.accepted");
     default:
       return null;
+  }
+}
+
+function getPipelineStageLabel(stage: PipelineStage): string {
+  switch (stage) {
+    case "RECEIVED": return "Candidatura enviada";
+    case "REVIEWING": return "Em avaliação";
+    case "INTERVIEW": return "Em entrevista";
+    case "OFFER": return "Oferta recebida";
+    case "REJECTED": return "Rejeitado";
+    case "ACCEPTED": return "Aceite";
+  }
+}
+
+function getPipelineStageBadgeClass(stage: PipelineStage): string {
+  switch (stage) {
+    case "RECEIVED": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "REVIEWING": return "bg-amber-50 text-amber-700 border-amber-200";
+    case "INTERVIEW": return "bg-violet-50 text-violet-700 border-violet-200";
+    case "OFFER": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "REJECTED": return "bg-red-50 text-red-700 border-red-200";
+    case "ACCEPTED": return "bg-emerald-100 text-emerald-800 border-emerald-300";
   }
 }
 
@@ -486,16 +514,31 @@ export default function ApplicationsPage() {
                             ? t("applicationsPage.updatedAt", { date: formatDate(application.updatedAt, locale) })
                             : t("applicationsPage.recentlyUpdated");
 
+                          const isPlatformApp = Boolean(application.isPublicApplication && application.jobPosting);
+                          const displayTitle = isPlatformApp
+                            ? (application.jobPosting?.title ?? application.jobTitle)
+                            : application.jobTitle;
+                          const displayCompany = isPlatformApp
+                            ? (application.jobPosting?.company?.name ?? application.companyName)
+                            : application.companyName;
+
                           return (
                             <article
                               key={application.id}
                               role="button"
                               tabIndex={0}
-                              onClick={() => router.push(`/onboarding?applicationId=${application.id}`)}
+                              onClick={() => isPlatformApp
+                                ? router.push(`/jobs/${application.jobPosting?.id}`)
+                                : router.push(`/onboarding?applicationId=${application.id}`)
+                              }
                               onKeyDown={(event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                   event.preventDefault();
-                                  router.push(`/onboarding?applicationId=${application.id}`);
+                                  if (isPlatformApp) {
+                                    router.push(`/jobs/${application.jobPosting?.id}`);
+                                  } else {
+                                    router.push(`/onboarding?applicationId=${application.id}`);
+                                  }
                                 }
                               }}
                               className="cursor-pointer rounded-2xl border border-border bg-background p-4 transition-all hover:border-primary/40 hover:bg-muted/30"
@@ -505,12 +548,21 @@ export default function ApplicationsPage() {
                                   <div className="space-y-1">
                                     <div className="flex flex-wrap items-center gap-2">
                                       <p className="font-semibold leading-tight">
-                                        {application.jobTitle || t("applicationsPage.defaults.untitledRole")}
+                                        {displayTitle || t("applicationsPage.defaults.untitledRole")}
                                       </p>
-                                      <Badge variant="outline">
-                                        {getLocalizedStatusLabel(application.status, t)}
-                                      </Badge>
-                                      {outcomeLabel && (
+                                      {isPlatformApp && application.pipelineEntry ? (
+                                        <Badge
+                                          variant="outline"
+                                          className={cn("rounded-full text-xs", getPipelineStageBadgeClass(application.pipelineEntry.currentStage))}
+                                        >
+                                          {getPipelineStageLabel(application.pipelineEntry.currentStage)}
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline">
+                                          {getLocalizedStatusLabel(application.status, t)}
+                                        </Badge>
+                                      )}
+                                      {!isPlatformApp && outcomeLabel && (
                                         <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
                                           {outcomeLabel}
                                         </Badge>
@@ -519,7 +571,7 @@ export default function ApplicationsPage() {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Building2 className="h-4 w-4" />
                                       <span className="truncate">
-                                        {application.companyName || t("applicationsPage.defaults.companyNotDefined")}
+                                        {displayCompany || t("applicationsPage.defaults.companyNotDefined")}
                                       </span>
                                     </div>
                                   </div>
@@ -529,7 +581,7 @@ export default function ApplicationsPage() {
                                       <Clock3 className="h-3 w-3" />
                                       {updatedAtText}
                                     </span>
-                                    {latestAnalysis?.fitScore !== null && latestAnalysis?.fitScore !== undefined && (
+                                    {!isPlatformApp && latestAnalysis?.fitScore !== null && latestAnalysis?.fitScore !== undefined && (
                                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
                                         <Sparkles className="h-3 w-3" />
                                         {t("applicationsPage.fitChip", { score: Math.round(latestAnalysis.fitScore) })}
@@ -540,44 +592,50 @@ export default function ApplicationsPage() {
                               </div>
 
                               <div className="mt-4 space-y-3" onClick={(event) => event.stopPropagation()}>
-                                <Select
-                                  value={currentStage}
-                                  onValueChange={(value) => {
-                                    const nextStage = value as KanbanStage;
-                                    if (nextStage === currentStage) return;
+                                {!isPlatformApp && (
+                                  <Select
+                                    value={currentStage}
+                                    onValueChange={(value) => {
+                                      const nextStage = value as KanbanStage;
+                                      if (nextStage === currentStage) return;
 
-                                    updateStatusMutation.mutate({
-                                      id: application.id,
-                                      nextStage,
-                                      currentStatus: application.status,
-                                      hasAnalysis: Boolean(application.analyses?.[0]),
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="rounded-xl">
-                                    <SelectValue placeholder={t("applicationsPage.actions.moveToStage")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="IN_PROGRESS">{t("applicationsPage.columns.inProgress.title")}</SelectItem>
-                                    <SelectItem value="APPLIED">{t("applicationsPage.columns.applied.title")}</SelectItem>
-                                    <SelectItem value="INTERVIEW">{t("applicationsPage.columns.interview.title")}</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                      updateStatusMutation.mutate({
+                                        id: application.id,
+                                        nextStage,
+                                        currentStatus: application.status,
+                                        hasAnalysis: Boolean(application.analyses?.[0]),
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="rounded-xl">
+                                      <SelectValue placeholder={t("applicationsPage.actions.moveToStage")} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="IN_PROGRESS">{t("applicationsPage.columns.inProgress.title")}</SelectItem>
+                                      <SelectItem value="APPLIED">{t("applicationsPage.columns.applied.title")}</SelectItem>
+                                      <SelectItem value="INTERVIEW">{t("applicationsPage.columns.interview.title")}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
 
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <Button asChild variant="outline" size="sm" className="rounded-xl">
-                                      <Link href={`/onboarding?applicationId=${application.id}`}>
-                                        Editar
-                                        <ArrowRight className="h-4 w-4" />
-                                      </Link>
-                                    </Button>
+                                    {!isPlatformApp && (
+                                      <Button asChild variant="outline" size="sm" className="rounded-xl">
+                                        <Link href={`/onboarding?applicationId=${application.id}`}>
+                                          Editar
+                                          <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                      </Button>
+                                    )}
+                                    {!isPlatformApp && (
                                     <Button asChild variant="outline" size="sm" className="rounded-xl border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 hover:border-green-300">
                                       <Link href={`/scenarios?jobApplicationId=${application.id}`}>
                                         <Mic className="h-4 w-4" />
                                         Practice Interview
                                       </Link>
                                     </Button>
+                                    )}
                                     {isUpdating && (
                                       <span className="text-xs text-muted-foreground">
                                         {t("applicationsPage.actions.updatingStage")}
