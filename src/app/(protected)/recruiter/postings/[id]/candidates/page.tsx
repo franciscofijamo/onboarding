@@ -839,13 +839,11 @@ function InterviewStageModal({
       // Optimistic UI update
       setQuestions(remaining);
 
-      // Persist new order for questions whose position changed
-      const orderUpdates = questionsNeedingReorder.map(q =>
-        api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: q.newOrder })
-      );
-
-      if (orderUpdates.length > 0) {
-        await Promise.all(orderUpdates).catch(() => {
+      // Persist new order atomically via batch endpoint (only if any positions changed)
+      if (questionsNeedingReorder.length > 0) {
+        await api.put(`/api/recruiter/stages/${stageId}/questions/reorder`, {
+          orders: remaining.map(q => ({ id: q.id, order: q.order })),
+        }).catch(() => {
           toast({
             title: "Atenção",
             description: "Pergunta eliminada, mas a reordenação pode não ter sido guardada.",
@@ -877,12 +875,11 @@ function InterviewStageModal({
     // Optimistic UI update
     setQuestions(normalized);
 
-    // Persist new order for the two swapped questions
+    // Persist the full new order atomically via batch endpoint
     try {
-      await Promise.all([
-        api.put(`/api/recruiter/stages/${stageId}/questions/${normalized[idx].id}`, { order: idx }),
-        api.put(`/api/recruiter/stages/${stageId}/questions/${normalized[newIdx].id}`, { order: newIdx }),
-      ]);
+      await api.put(`/api/recruiter/stages/${stageId}/questions/reorder`, {
+        orders: normalized.map(q => ({ id: q.id, order: q.order })),
+      });
     } catch {
       toast({
         title: "Erro ao reordenar",
