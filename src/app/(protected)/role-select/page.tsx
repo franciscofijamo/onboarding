@@ -20,10 +20,12 @@ export default function RoleSelectPage() {
       await api.put("/api/role", { role });
       await session?.reload();
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      // Use a full page reload so the middleware reads the updated Clerk JWT
+      // (client-side router.replace may carry the old JWT before propagation)
       if (role === "RECRUITER") {
-        router.replace("/company/onboarding");
+        window.location.assign("/company/onboarding");
       } else {
-        router.replace("/dashboard");
+        window.location.assign("/dashboard");
       }
     } catch {
       setLoading(null);

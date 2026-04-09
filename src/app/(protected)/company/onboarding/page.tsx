@@ -63,7 +63,9 @@ export default function CompanyOnboardingPage() {
       await session?.reload();
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       setDone(true);
-      setTimeout(() => router.replace("/recruiter/postings"), 1500);
+      // Full page reload so the middleware reads the updated Clerk JWT with the
+      // RECRUITER role before navigating to the protected recruiter route.
+      setTimeout(() => { window.location.assign("/recruiter/postings"); }, 1500);
     } catch {
       setErrors({ name: "Erro ao guardar. Tente novamente." });
     } finally {
