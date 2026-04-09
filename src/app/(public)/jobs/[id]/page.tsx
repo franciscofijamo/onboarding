@@ -134,7 +134,6 @@ export default function JobDetailPage() {
 
               <ApplyButton
                 jobId={posting.id}
-                jobTitle={posting.title}
                 isSignedIn={!!isSignedIn}
                 authLoaded={authLoaded}
                 role={role}
@@ -206,7 +205,6 @@ export default function JobDetailPage() {
           <div className="pt-2 flex items-center justify-center">
             <ApplyButton
               jobId={posting.id}
-              jobTitle={posting.title}
               isSignedIn={!!isSignedIn}
               authLoaded={authLoaded}
               role={role}
@@ -229,7 +227,6 @@ function ApplyButton({
   size = "default",
 }: {
   jobId: string;
-  jobTitle: string;
   isSignedIn: boolean;
   authLoaded: boolean;
   role: string | null;
