@@ -32,7 +32,6 @@ import {
   RefreshCw,
   Link,
   Building2,
-  SendHorizonal,
 } from "lucide-react";
 import { RichTextViewer } from "@/components/editor/rich-text-editor";
 import {
