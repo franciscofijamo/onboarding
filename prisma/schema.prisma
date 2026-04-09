@@ -269,6 +269,7 @@ model JobApplication {
   resume           Resume?  @relation(fields: [resumeId], references: [id])
   coverLetter      CoverLetter? @relation(fields: [coverLetterId], references: [id])
   analyses         ApplicationAnalysis[]
+  analysisExecutions ApplicationAnalysisExecution[]
   scenarioSessions WorkplaceScenarioSession[]
 
   @@index([userId])
@@ -285,6 +286,12 @@ enum JobApplicationStatus {
   OFFERED
   REJECTED
   ACCEPTED
+}
+
+enum ApplicationAnalysisExecutionStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
 
 // ApplicationAnalysis - AI comparison results (resume vs job description)
@@ -308,6 +315,29 @@ model ApplicationAnalysis {
 
   @@index([jobApplicationId])
   @@index([jobApplicationId, createdAt])
+}
+
+model ApplicationAnalysisExecution {
+  id                    String   @id @default(cuid())
+  jobApplicationId      String
+  userId                String
+  inputHash             String
+  idempotencyKey        String?
+  status                ApplicationAnalysisExecutionStatus @default(PENDING)
+  applicationAnalysisId String?  @unique
+  creditsCharged        Boolean  @default(false)
+  creditsRefunded       Boolean  @default(false)
+  lastError             String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  jobApplication        JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+
+  @@unique([jobApplicationId, inputHash])
+  @@unique([jobApplicationId, idempotencyKey])
+  @@index([userId])
+  @@index([status])
+  @@index([jobApplicationId, status])
 }
 
 // Track subscription lifecycle events for revenue analytics

@@ -1,6 +1,6 @@
 import { createHash } from "crypto"
 import { db } from "@/lib/db"
-import { deductCreditsForFeature } from "@/lib/credits/deduct"
+import { deductCreditsForFeature, refundCreditsForFeature } from "@/lib/credits/deduct"
 import { routeToSkill } from "@/lib/agents/orchestrator"
 import { AgentSkill, type UserContext } from "@/lib/agents/types"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
@@ -10,9 +10,15 @@ const PROVIDER = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 })
 
-const IDEMPOTENCY_TTL_MS = 5 * 60 * 1000
-const inFlightByKey = new Map<string, Promise<unknown>>()
-const recentResultByKey = new Map<string, { expiresAt: number; value: unknown }>()
+const MAX_ERROR_LENGTH = 10_000
+
+type AnalysisExecution = {
+  id: string
+  status: "PENDING" | "COMPLETED" | "FAILED"
+  applicationAnalysisId: string | null
+  creditsCharged: boolean
+  creditsRefunded: boolean
+}
 
 function toJsonArray(val: unknown): string[] | null {
   if (Array.isArray(val) && val.length > 0) return val.map(String)
@@ -54,6 +60,20 @@ function extractInputHash(rawResponse?: string | null): string | null {
   return match?.[1]?.trim() || null
 }
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "P2002"
+  )
+}
+
 export class AnalysisInProgressError extends Error {
   constructor() {
     super("Analysis already in progress")
@@ -61,72 +81,230 @@ export class AnalysisInProgressError extends Error {
   }
 }
 
+async function loadCompletedAnalysis(applicationAnalysisId: string) {
+  const analysis = await db.applicationAnalysis.findUnique({
+    where: { id: applicationAnalysisId },
+  })
+
+  if (!analysis) {
+    throw new Error("Completed analysis record could not be found")
+  }
+
+  return analysis
+}
+
+async function findExistingExecution(params: {
+  jobApplicationId: string
+  inputHash: string
+  idempotencyKey?: string
+}) {
+  const { jobApplicationId, inputHash, idempotencyKey } = params
+  const orConditions: Array<{ inputHash: string } | { idempotencyKey: string }> = [{ inputHash }]
+
+  if (idempotencyKey) {
+    orConditions.push({ idempotencyKey })
+  }
+
+  return db.applicationAnalysisExecution.findFirst({
+    where: {
+      jobApplicationId,
+      OR: orConditions,
+    },
+    select: {
+      id: true,
+      status: true,
+      applicationAnalysisId: true,
+      creditsCharged: true,
+      creditsRefunded: true,
+    },
+  })
+}
+
+async function reserveExecution(params: {
+  jobApplicationId: string
+  userId: string
+  inputHash: string
+  idempotencyKey?: string
+}): Promise<AnalysisExecution> {
+  const { jobApplicationId, userId, inputHash, idempotencyKey } = params
+
+  try {
+    return await db.applicationAnalysisExecution.create({
+      data: {
+        jobApplicationId,
+        userId,
+        inputHash,
+        idempotencyKey,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+        status: true,
+        applicationAnalysisId: true,
+        creditsCharged: true,
+        creditsRefunded: true,
+      },
+    })
+  } catch (error) {
+    if (!isUniqueConstraintError(error)) {
+      throw error
+    }
+
+    const existing = await findExistingExecution({ jobApplicationId, inputHash, idempotencyKey })
+    if (!existing) {
+      throw error
+    }
+
+    if (existing.status === "COMPLETED" && existing.applicationAnalysisId) {
+      return existing
+    }
+
+    if (existing.status === "PENDING") {
+      throw new AnalysisInProgressError()
+    }
+
+    const reset = await db.applicationAnalysisExecution.updateMany({
+      where: {
+        id: existing.id,
+        status: "FAILED",
+      },
+      data: {
+        status: "PENDING",
+        applicationAnalysisId: null,
+        creditsCharged: false,
+        creditsRefunded: false,
+        lastError: null,
+      },
+    })
+
+    if (reset.count === 0) {
+      const current = await db.applicationAnalysisExecution.findUnique({
+        where: { id: existing.id },
+        select: {
+          id: true,
+          status: true,
+          applicationAnalysisId: true,
+          creditsCharged: true,
+          creditsRefunded: true,
+        },
+      })
+
+      if (current?.status === "COMPLETED" && current.applicationAnalysisId) {
+        return current
+      }
+
+      throw new AnalysisInProgressError()
+    }
+
+    const restarted = await db.applicationAnalysisExecution.findUnique({
+      where: { id: existing.id },
+      select: {
+        id: true,
+        status: true,
+        applicationAnalysisId: true,
+        creditsCharged: true,
+        creditsRefunded: true,
+      },
+    })
+
+    if (!restarted) {
+      throw new Error("Failed to reserve analysis execution")
+    }
+
+    return restarted
+  }
+}
+
 async function runAnalysisCore(params: {
   clerkId: string
   userId: string
   jobApplicationId: string
+  idempotencyKey?: string
 }) {
-  const { clerkId, userId, jobApplicationId } = params
+  const { clerkId, userId, jobApplicationId, idempotencyKey } = params
 
-  const lock = await db.jobApplication.updateMany({
-    where: { id: jobApplicationId, userId, status: { not: "ANALYZING" } },
+  const jobApplication = await db.jobApplication.findFirst({
+    where: { id: jobApplicationId, userId },
+    include: {
+      resume: true,
+      coverLetter: true,
+      user: true,
+      analyses: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+    },
+  })
+
+  if (jobApplication == null) {
+    throw new Error("Job application not found")
+  }
+
+  if ((jobApplication.resume?.content || "").trim() === "") {
+    throw new Error("Resume content is required to run analysis")
+  }
+
+  if ((jobApplication.jobDescription || "").trim() === "") {
+    throw new Error("Job description is required to run analysis")
+  }
+
+  const inputHash = getInputHash({
+    resumeText: jobApplication.resume?.content || "",
+    coverLetterText: jobApplication.coverLetter?.content || undefined,
+    jobDescription: jobApplication.jobDescription,
+    jobTitle: jobApplication.jobTitle || undefined,
+    companyName: jobApplication.companyName || undefined,
+    companyInfo: jobApplication.companyInfo || undefined,
+  })
+
+  const latest = jobApplication.analyses[0]
+  const latestHash = extractInputHash(latest?.rawResponse)
+
+  if (latest && latestHash === inputHash) {
+    await db.jobApplication.update({
+      where: { id: jobApplication.id },
+      data: { status: "ANALYZED" },
+    })
+    return latest
+  }
+
+  const execution = await reserveExecution({
+    jobApplicationId: jobApplication.id,
+    userId,
+    inputHash,
+    idempotencyKey,
+  })
+
+  if (execution.status === "COMPLETED" && execution.applicationAnalysisId) {
+    await db.jobApplication.update({
+      where: { id: jobApplication.id },
+      data: { status: "ANALYZED" },
+    })
+    return loadCompletedAnalysis(execution.applicationAnalysisId)
+  }
+
+  await db.jobApplication.updateMany({
+    where: { id: jobApplication.id, userId },
     data: { status: "ANALYZING" },
   })
 
-  if (lock.count === 0) {
-    throw new AnalysisInProgressError()
-  }
+  let creditsCharged = false
 
   try {
-    const jobApplication = await db.jobApplication.findFirst({
-      where: { id: jobApplicationId, userId },
-      include: {
-        resume: true,
-        coverLetter: true,
-        user: true,
-        analyses: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-        },
-      },
-    })
-
-    if (jobApplication == null) {
-      throw new Error("Job application not found")
-    }
-
-    if ((jobApplication.resume?.content || "").trim() === "") {
-      throw new Error("Resume content is required to run analysis")
-    }
-
-    if ((jobApplication.jobDescription || "").trim() === "") {
-      throw new Error("Job description is required to run analysis")
-    }
-
-    const inputHash = getInputHash({
-      resumeText: jobApplication.resume?.content || "",
-      coverLetterText: jobApplication.coverLetter?.content || undefined,
-      jobDescription: jobApplication.jobDescription,
-      jobTitle: jobApplication.jobTitle || undefined,
-      companyName: jobApplication.companyName || undefined,
-      companyInfo: jobApplication.companyInfo || undefined,
-    })
-
-    const latest = jobApplication.analyses[0]
-    const latestHash = extractInputHash(latest?.rawResponse)
-
-    if (latest && latestHash === inputHash) {
-      await db.jobApplication.update({
-        where: { id: jobApplication.id },
-        data: { status: "ANALYZED" },
-      })
-      return latest
-    }
-
     await deductCreditsForFeature({
       clerkUserId: clerkId,
       feature: "cv_analysis",
-      details: { jobApplicationId: jobApplication.id },
+      details: { jobApplicationId: jobApplication.id, inputHash },
+    })
+    creditsCharged = true
+
+    await db.applicationAnalysisExecution.update({
+      where: { id: execution.id },
+      data: {
+        creditsCharged: true,
+        creditsRefunded: false,
+        lastError: null,
+      },
     })
 
     const userContext: UserContext = {
@@ -165,8 +343,8 @@ async function runAnalysisCore(params: {
           typeof analysisResult.fitScore === "number"
             ? analysisResult.fitScore
             : typeof analysisResult.fitScore === "string"
-            ? parseFloat(analysisResult.fitScore) || null
-            : null,
+              ? parseFloat(analysisResult.fitScore) || null
+              : null,
         summary: typeof analysisResult.summary === "string" ? analysisResult.summary : null,
         skillsMatch: toJsonArray(analysisResult.skillsMatch || analysisResult.matchingSkills),
         missingSkills: toJsonArray(analysisResult.missingSkills),
@@ -175,11 +353,20 @@ async function runAnalysisCore(params: {
         recommendations: toJsonArray(analysisResult.recommendations),
         keywordAnalysis:
           analysisResult.keywordAnalysis && typeof analysisResult.keywordAnalysis === "object"
-            ? (analysisResult.keywordAnalysis as Record<string, unknown>)
+            ? (analysisResult.keywordAnalysis as any)
             : null,
         rawResponse: withInputHash(analysisContent, inputHash),
         agentSkill: "APPLICATION_OPTIMIZER",
         creditsUsed: skill.creditCost,
+      },
+    })
+
+    await db.applicationAnalysisExecution.update({
+      where: { id: execution.id },
+      data: {
+        status: "COMPLETED",
+        applicationAnalysisId: analysis.id,
+        lastError: null,
       },
     })
 
@@ -190,6 +377,29 @@ async function runAnalysisCore(params: {
 
     return analysis
   } catch (error) {
+    const errorMessage = getErrorMessage(error).slice(0, MAX_ERROR_LENGTH)
+    let creditsRefunded = false
+
+    if (creditsCharged) {
+      const refundResult = await refundCreditsForFeature({
+        clerkUserId: clerkId,
+        feature: "cv_analysis",
+        reason: "analysis_execution_failed",
+        details: { jobApplicationId: jobApplication.id, inputHash },
+      })
+      creditsRefunded = refundResult != null
+    }
+
+    await db.applicationAnalysisExecution.updateMany({
+      where: { id: execution.id },
+      data: {
+        status: "FAILED",
+        applicationAnalysisId: null,
+        creditsRefunded,
+        lastError: errorMessage,
+      },
+    })
+
     await db.jobApplication.updateMany({
       where: { id: jobApplicationId, userId },
       data: { status: "DRAFT" },
@@ -205,39 +415,5 @@ export async function runApplicationAnalysis(params: {
   jobApplicationId: string
   idempotencyKey?: string
 }) {
-  const { clerkId, userId, jobApplicationId, idempotencyKey } = params
-
-  if (idempotencyKey == null || idempotencyKey === "") {
-    return runAnalysisCore({ clerkId, userId, jobApplicationId })
-  }
-
-  const compoundKey = userId + ":" + jobApplicationId + ":" + idempotencyKey
-  const now = Date.now()
-  const recent = recentResultByKey.get(compoundKey)
-  if (recent && recent.expiresAt > now) {
-    return recent.value
-  }
-  if (recent && recent.expiresAt <= now) {
-    recentResultByKey.delete(compoundKey)
-  }
-
-  const existingInFlight = inFlightByKey.get(compoundKey)
-  if (existingInFlight) {
-    return existingInFlight
-  }
-
-  const currentPromise = runAnalysisCore({ clerkId, userId, jobApplicationId })
-    .then((result) => {
-      recentResultByKey.set(compoundKey, {
-        value: result,
-        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
-      })
-      return result
-    })
-    .finally(() => {
-      inFlightByKey.delete(compoundKey)
-    })
-
-  inFlightByKey.set(compoundKey, currentPromise)
-  return currentPromise
+  return runAnalysisCore(params)
 }

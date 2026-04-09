@@ -24,11 +24,28 @@ vi.mock('@/lib/db', () => ({
     },
     usageHistory: {
       deleteMany: vi.fn(),
+      create: vi.fn(),
     },
     storageObject: {
       deleteMany: vi.fn(),
     },
     subscriptionEvent: {
+      updateMany: vi.fn(),
+    },
+    jobApplication: {
+      findFirst: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    applicationAnalysis: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+    },
+    applicationAnalysisExecution: {
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
     },
   },
@@ -38,5 +55,3 @@ vi.mock('@/lib/db', () => ({
 vi.mock('@/lib/logging/api', () => ({
   withApiLogging: (handler: any) => handler,
 }))
-
-
