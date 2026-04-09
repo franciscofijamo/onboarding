@@ -522,23 +522,30 @@ export default function ApplicationsPage() {
                                   </SelectContent>
                                 </Select>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Button asChild variant="outline" size="sm" className="rounded-xl">
-                                    <Link href={`/onboarding?applicationId=${application.id}`}>
-                                      {t("applicationsPage.actions.continue")}
-                                      <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                  </Button>
-                                  <Button asChild variant="outline" size="sm" className="rounded-xl">
-                                    <Link href={`/scenarios?jobApplicationId=${application.id}`}>
-                                      <Mic className="h-4 w-4" />
-                                      Practice Interview
-                                    </Link>
-                                  </Button>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Button asChild variant="outline" size="sm" className="rounded-xl">
+                                      <Link href={`/onboarding?applicationId=${application.id}`}>
+                                        {t("applicationsPage.actions.continue")}
+                                        <ArrowRight className="h-4 w-4" />
+                                      </Link>
+                                    </Button>
+                                    <Button asChild variant="outline" size="sm" className="rounded-xl">
+                                      <Link href={`/scenarios?jobApplicationId=${application.id}`}>
+                                        <Mic className="h-4 w-4" />
+                                        Practice Interview
+                                      </Link>
+                                    </Button>
+                                    {isUpdating && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {t("applicationsPage.actions.updatingStage")}
+                                      </span>
+                                    )}
+                                  </div>
                                   <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-xl"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-xl h-8 w-8 shrink-0 text-red-400 hover:text-red-500 hover:bg-red-50"
                                     onClick={() => {
                                       setDeleteError(null);
                                       setDeleteTarget(application);
@@ -546,15 +553,7 @@ export default function ApplicationsPage() {
                                     disabled={isDeleting}
                                   >
                                     <Trash2 className="h-4 w-4" />
-                                    {isDeleting
-                                      ? t("applicationsPage.actions.deleting")
-                                      : t("applicationsPage.actions.delete")}
                                   </Button>
-                                  {isUpdating && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {t("applicationsPage.actions.updatingStage")}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
                             </article>
