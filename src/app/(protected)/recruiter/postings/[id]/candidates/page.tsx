@@ -26,7 +26,18 @@ import {
   ChevronDown,
   ChevronUp,
   Trash2,
+  GripVertical,
 } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { Button } from "@/components/ui/button";
@@ -582,12 +593,14 @@ function InterviewSessionsModal({
         <p className="text-xs font-semibold text-purple-700">Avaliação IA</p>
         {summary && <p className="text-xs text-foreground leading-snug">{summary}</p>}
         {criteria.length > 0 && (
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {criteria.map(c => c && (
-              <div key={c.key} className="text-xs text-muted-foreground">
-                <span className="capitalize">{c.key.replace(/([A-Z])/g, " $1").trim()}</span>
-                {c.score !== null && <span className="ml-1 font-semibold text-foreground">{c.score}/10</span>}
-                {c.feedback && <p className="text-[10px] mt-0.5 leading-tight">{c.feedback}</p>}
+              <div key={c.key} className="rounded-lg bg-white/60 border border-purple-100 p-2 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="capitalize font-medium text-foreground">{c.key.replace(/([A-Z])/g, " $1").trim()}</span>
+                  {c.score !== null && <span className="font-bold text-purple-700 shrink-0">{c.score}/10</span>}
+                </div>
+                {c.feedback && <p className="text-[11px] mt-1 leading-tight text-muted-foreground">{c.feedback}</p>}
               </div>
             ))}
           </div>
@@ -614,11 +627,11 @@ function InterviewSessionsModal({
 
   return (
     <Dialog open={Boolean(entry)} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Mic className="h-5 w-5 text-purple-600" />
-            Sessões de Entrevista — {entry.user.name ?? entry.user.email ?? "Candidato"}
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Mic className="h-5 w-5 text-purple-600 shrink-0" />
+            <span className="truncate">Sessões — {entry.user.name ?? entry.user.email ?? "Candidato"}</span>
           </DialogTitle>
           <DialogDescription>
             Respostas de áudio do candidato às perguntas das fases de entrevista.
@@ -1208,6 +1221,7 @@ function CandidateCard({
   onMove,
   onMoveToInterviewStage,
   isMoving,
+  isDragOverlay,
 }: {
   entry: PipelineEntry;
   postingId: string;
@@ -1219,34 +1233,64 @@ function CandidateCard({
   onMove: (entryId: string, toStage: PipelineStage) => void;
   onMoveToInterviewStage: (entryId: string, stageId: string) => void;
   isMoving: boolean;
+  isDragOverlay?: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: entry.id,
+    data: { entryId: entry.id, isInterviewStage: isInterviewStageColumn, interviewStageId },
+  });
+
+  const style = transform
+    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
+    : undefined;
+
   const fitScore = entry.fitScore ?? entry.jobApplication.analyses[0]?.fitScore ?? null;
   const nextStage = NEXT_STAGE[entry.currentStage];
   const hasAnalysis = entry.jobApplication.analyses.length > 0;
   const session = entry.interviewSession ?? null;
 
   return (
-    <article className="rounded-2xl border border-border bg-background p-4 space-y-3 transition-colors hover:border-primary/30">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold truncate leading-tight">
-            {entry.user.name ?? entry.user.email ?? "Candidato"}
-          </p>
-          {entry.user.currentRole && (
-            <p className="text-xs text-muted-foreground truncate">{entry.user.currentRole}</p>
+    <article
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "rounded-2xl border border-border bg-background p-4 space-y-3 transition-colors hover:border-primary/30",
+        isDragging && !isDragOverlay && "opacity-40 scale-[0.98]",
+        isDragOverlay && "shadow-2xl ring-2 ring-primary/30 rotate-1 cursor-grabbing",
+      )}
+    >
+      {/* Header row: drag handle + name + score */}
+      <div className="flex items-start gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0 touch-none"
+          tabIndex={-1}
+          aria-label="Arrastar candidato"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="flex-1 flex items-start justify-between gap-2 min-w-0">
+          <div className="min-w-0">
+            <p className="font-semibold truncate leading-tight text-sm">
+              {entry.user.name ?? entry.user.email ?? "Candidato"}
+            </p>
+            {entry.user.currentRole && (
+              <p className="text-xs text-muted-foreground truncate">{entry.user.currentRole}</p>
+            )}
+          </div>
+          {fitScore !== null ? (
+            <div className={cn("shrink-0 text-right", getFitScoreColor(fitScore))}>
+              <span className="text-lg font-bold leading-none">{Math.round(fitScore)}</span>
+              <span className="text-[10px] text-muted-foreground">/100</span>
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground shrink-0">—</span>
           )}
         </div>
-        {fitScore !== null ? (
-          <div className={cn("shrink-0 text-right", getFitScoreColor(fitScore))}>
-            <span className="text-xl font-bold">{Math.round(fitScore)}</span>
-            <span className="text-xs text-muted-foreground">/100</span>
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground shrink-0">Sem score</span>
-        )}
       </div>
 
-      <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-1 text-xs text-muted-foreground pl-6">
         <span>{formatDate(entry.jobApplication.createdAt)}</span>
         {entry.user.province && (
           <>
@@ -1265,11 +1309,11 @@ function CandidateCard({
         )}
       </div>
 
-      {/* Interview session status (for regular INTERVIEW stage) */}
+      {/* Interview session status */}
       {isInterviewStageColumn && session && (
-        <div className="rounded-xl bg-purple-50 border border-purple-200 p-3 space-y-1">
+        <div className="rounded-xl bg-purple-50 border border-purple-200 p-2.5 space-y-1 ml-6">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-purple-700">Sessão de entrevista</span>
+            <span className="text-xs font-medium text-purple-700">Sessão</span>
             {session.averageScore !== null && (
               <span className="flex items-center gap-1 text-xs font-bold text-amber-600">
                 <Star className="h-3 w-3" />
@@ -1279,53 +1323,53 @@ function CandidateCard({
           </div>
           <div className="flex items-center gap-2 text-xs text-purple-600">
             <Mic className="h-3 w-3" />
-            <span>{session.answeredCount}/{session.totalQuestions} respondidas</span>
-            <span>·</span>
-            <span>{session.analyzedCount} analisadas</span>
+            <span>{session.answeredCount}/{session.totalQuestions} respondidas · {session.analyzedCount} analisadas</span>
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-xl flex-1 text-xs"
-          onClick={() => onViewAnalysis(entry)}
-        >
-          <BarChart3 className="h-3 w-3" />
-          Ver análise
-        </Button>
-
-        {isInterviewStageColumn && (
+      {/* Actions */}
+      <div className="space-y-2 pt-1 border-t border-border/40">
+        {/* Secondary view actions */}
+        <div className="flex gap-1.5 flex-wrap">
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl flex-1 text-xs border-purple-200 text-purple-700 hover:bg-purple-50"
-            onClick={() => onViewSessions(entry)}
+            className="rounded-xl h-7 px-2.5 text-xs gap-1"
+            onClick={() => onViewAnalysis(entry)}
           >
-            <Mic className="h-3 w-3" />
-            Respostas
+            <BarChart3 className="h-3 w-3" />
+            Análise
           </Button>
-        )}
+          {isInterviewStageColumn && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-7 px-2.5 text-xs gap-1 border-purple-200 text-purple-700 hover:bg-purple-50"
+              onClick={() => onViewSessions(entry)}
+            >
+              <Mic className="h-3 w-3" />
+              Respostas
+            </Button>
+          )}
+        </div>
 
-        {/* Move to next stage — shown for all columns including interview sub-stages */}
+        {/* Navigation actions */}
         {isInterviewStageColumn ? (
-          // Interview sub-stage: allow recruiter to advance to OFFER or REJECTED
-          <div className="flex gap-1 flex-1">
+          <div className="flex gap-1.5">
             <Button
               size="sm"
               variant="outline"
-              className="rounded-xl flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5"
+              className="rounded-xl h-7 flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5 gap-1"
               onClick={() => onMove(entry.id, "OFFER")}
               disabled={isMoving}
             >
-              {isMoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <>Oferta <ArrowRight className="h-3 w-3" /></>}
+              {isMoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <><span>Oferta</span> <ArrowRight className="h-3 w-3" /></>}
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="rounded-xl text-xs border-destructive/30 text-destructive hover:bg-destructive/5 px-2"
+              className="rounded-xl h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/5 px-2.5"
               onClick={() => onMove(entry.id, "REJECTED")}
               disabled={isMoving}
               title="Rejeitar candidato"
@@ -1333,36 +1377,31 @@ function CandidateCard({
               <X className="h-3 w-3" />
             </Button>
           </div>
-        ) : (
-          nextStage && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="rounded-xl flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5"
-              onClick={() => onMove(entry.id, nextStage)}
-              disabled={isMoving}
-            >
-              {isMoving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <>
-                  Mover
-                  <ArrowRight className="h-3 w-3" />
-                </>
-              )}
-            </Button>
-          )
-        )}
+        ) : nextStage ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-xl h-7 w-full text-xs border-primary/30 text-primary hover:bg-primary/5 gap-1"
+            onClick={() => onMove(entry.id, nextStage)}
+            disabled={isMoving}
+          >
+            {isMoving ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <><span>Avançar</span> <ArrowRight className="h-3 w-3" /></>
+            )}
+          </Button>
+        ) : null}
 
-        {/* Move to published interview stages (only shown in REVIEWING stage) */}
+        {/* Move to interview sub-stages (only in REVIEWING column) */}
         {!isInterviewStageColumn && entry.currentStage === "REVIEWING" && publishedInterviewStages.length > 0 && (
-          <div className="w-full flex flex-wrap gap-1 pt-1 border-t border-border/50">
+          <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
             {publishedInterviewStages.map(stage => (
               <Button
                 key={stage.id}
                 size="sm"
                 variant="outline"
-                className="rounded-xl text-xs border-purple-200 text-purple-700 hover:bg-purple-50 flex-1"
+                className="rounded-xl h-7 text-xs border-purple-200 text-purple-700 hover:bg-purple-50 gap-1"
                 onClick={() => onMoveToInterviewStage(entry.id, stage.id)}
                 disabled={isMoving}
               >
@@ -1374,6 +1413,63 @@ function CandidateCard({
         )}
       </div>
     </article>
+  );
+}
+
+// ─── Kanban Column (droppable) ────────────────────────────────────────────────
+
+function KanbanColumn({
+  columnId,
+  accent,
+  badge,
+  label,
+  isInterviewStage,
+  count,
+  children,
+}: {
+  columnId: string;
+  accent: string;
+  badge: string;
+  label: string;
+  isInterviewStage: boolean;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnId });
+
+  return (
+    <div
+      className={cn(
+        "rounded-3xl border border-border bg-card p-4 min-w-[280px] transition-colors",
+        isOver && "border-primary/40 bg-primary/5 ring-1 ring-primary/20",
+      )}
+    >
+      <div className={cn("mb-4 rounded-2xl bg-gradient-to-br p-[1px]", accent)}>
+        <div className="rounded-[15px] bg-card p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {isInterviewStage && <Mic className="h-3.5 w-3.5 text-purple-600 shrink-0" />}
+              <h2 className="text-sm font-semibold truncate">{label}</h2>
+            </div>
+            <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-xs shrink-0", badge)}>
+              {count}
+            </Badge>
+          </div>
+        </div>
+      </div>
+      <div ref={setNodeRef} className="space-y-3 min-h-[80px]">
+        {count === 0 ? (
+          <div className={cn(
+            "rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-xs text-muted-foreground transition-colors",
+            isOver && "border-primary/40 bg-primary/10 text-primary",
+          )}>
+            {isOver ? "Largar aqui" : "Sem candidatos nesta fase"}
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1393,6 +1489,8 @@ export default function RecruiterCandidatesPage() {
   const [sessionEntry, setSessionEntry] = React.useState<PipelineEntry | null>(null);
   const [movingEntryId, setMovingEntryId] = React.useState<string | null>(null);
   const [stageModalOpen, setStageModalOpen] = React.useState(false);
+  const [activeEntry, setActiveEntry] = React.useState<PipelineEntry | null>(null);
+  const [activeColumnData, setActiveColumnData] = React.useState<{ isInterviewStage: boolean; interviewStageId: string | null } | null>(null);
 
   const { data, isLoading } = useQuery<PipelineResponse>({
     queryKey: ["recruiterPipeline", postingId],
@@ -1425,6 +1523,38 @@ export default function RecruiterCandidatesPage() {
   const stageGroups = data?.stages ?? [];
   const interviewStages = data?.interviewStages ?? [];
   const publishedInterviewStages = interviewStages.filter(s => s.status === "PUBLISHED");
+
+  const REGULAR_STAGES = new Set(["RECEIVED", "REVIEWING", "INTERVIEW", "OFFER", "REJECTED", "ACCEPTED"]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  function handleDragStart(event: { active: { id: string | number; data: { current?: { entryId?: string; isInterviewStage?: boolean; interviewStageId?: string | null } } } }) {
+    const entryId = event.active.id as string;
+    const found = pipeline.find(e => e.id === entryId) ?? null;
+    setActiveEntry(found);
+    const colData = event.active.data.current;
+    setActiveColumnData(colData ? { isInterviewStage: colData.isInterviewStage ?? false, interviewStageId: colData.interviewStageId ?? null } : null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveEntry(null);
+    setActiveColumnData(null);
+    const { active, over } = event;
+    if (!over) return;
+    const entryId = active.id as string;
+    const overId = over.id as string;
+    const entry = pipeline.find(e => e.id === entryId);
+    if (!entry) return;
+    if (REGULAR_STAGES.has(overId)) {
+      if (entry.currentStage !== overId) {
+        moveMutation.mutate({ entryId, stage: overId as PipelineStage });
+      }
+    } else {
+      moveMutation.mutate({ entryId, stage: "INTERVIEW", recruitmentStageId: overId });
+    }
+  }
 
   const totalCount = pipeline.length;
   const analyzedCount = pipeline.filter((e) => e.fitScore !== null || e.jobApplication.analyses.length > 0).length;
@@ -1539,61 +1669,73 @@ export default function RecruiterCandidatesPage() {
 
         {/* Kanban */}
         {stageGroups.length > 0 && (
-          <div className="overflow-x-auto pb-4">
-            <div
-              className="grid gap-4"
-              style={{ gridTemplateColumns: `repeat(${stageGroups.length}, minmax(280px, 1fr))` }}
-            >
-              {stageGroups.map(({ stage, label, isInterviewStage, stageId, candidates: entries }) => {
-                const colorKey = isInterviewStage ? "INTERVIEW_STAGE" : (STAGE_COLORS[stage] ? stage : "RECEIVED");
-                const { accent, badge } = STAGE_COLORS[colorKey] ?? STAGE_COLORS.RECEIVED;
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => { setActiveEntry(null); setActiveColumnData(null); }}
+          >
+            <div className="overflow-x-auto pb-4">
+              <div
+                className="grid gap-4"
+                style={{ gridTemplateColumns: `repeat(${stageGroups.length}, minmax(280px, 1fr))` }}
+              >
+                {stageGroups.map(({ stage, label, isInterviewStage, stageId, candidates: entries }) => {
+                  const colorKey = isInterviewStage ? "INTERVIEW_STAGE" : (STAGE_COLORS[stage] ? stage : "RECEIVED");
+                  const { accent, badge } = STAGE_COLORS[colorKey] ?? STAGE_COLORS.RECEIVED;
+                  const columnId = isInterviewStage && stageId ? stageId : stage;
 
-                return (
-                  <div key={stage} className="rounded-3xl border border-border bg-card p-4 min-w-[280px]">
-                    <div className={cn("mb-4 rounded-2xl bg-gradient-to-br p-[1px]", accent)}>
-                      <div className="rounded-[15px] bg-card p-4">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {isInterviewStage && <Mic className="h-3.5 w-3.5 text-purple-600 shrink-0" />}
-                            <h2 className="text-sm font-semibold truncate">{label}</h2>
-                          </div>
-                          <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-xs shrink-0", badge)}>
-                            {entries.length}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {entries.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-xs text-muted-foreground">
-                          Sem candidatos nesta fase
-                        </div>
-                      ) : (
-                        entries.map((entry) => (
-                          <CandidateCard
-                            key={entry.id}
-                            entry={entry}
-                            postingId={postingId}
-                            isInterviewStageColumn={isInterviewStage}
-                            interviewStageId={stageId}
-                            publishedInterviewStages={publishedInterviewStages}
-                            onViewAnalysis={setSelectedEntry}
-                            onViewSessions={setSessionEntry}
-                            onMove={(entryId, toStage) => moveMutation.mutate({ entryId, stage: toStage })}
-                            onMoveToInterviewStage={(entryId, rsId) =>
-                              moveMutation.mutate({ entryId, stage: "INTERVIEW", recruitmentStageId: rsId })
-                            }
-                            isMoving={movingEntryId === entry.id && moveMutation.isPending}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  return (
+                    <KanbanColumn
+                      key={stage}
+                      columnId={columnId}
+                      accent={accent}
+                      badge={badge}
+                      label={label}
+                      isInterviewStage={isInterviewStage}
+                      count={entries.length}
+                    >
+                      {entries.map((entry) => (
+                        <CandidateCard
+                          key={entry.id}
+                          entry={entry}
+                          postingId={postingId}
+                          isInterviewStageColumn={isInterviewStage}
+                          interviewStageId={stageId}
+                          publishedInterviewStages={publishedInterviewStages}
+                          onViewAnalysis={setSelectedEntry}
+                          onViewSessions={setSessionEntry}
+                          onMove={(entryId, toStage) => moveMutation.mutate({ entryId, stage: toStage })}
+                          onMoveToInterviewStage={(entryId, rsId) =>
+                            moveMutation.mutate({ entryId, stage: "INTERVIEW", recruitmentStageId: rsId })
+                          }
+                          isMoving={movingEntryId === entry.id && moveMutation.isPending}
+                        />
+                      ))}
+                    </KanbanColumn>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+
+            <DragOverlay>
+              {activeEntry ? (
+                <CandidateCard
+                  entry={activeEntry}
+                  postingId={postingId}
+                  isInterviewStageColumn={activeColumnData?.isInterviewStage ?? false}
+                  interviewStageId={activeColumnData?.interviewStageId ?? null}
+                  publishedInterviewStages={publishedInterviewStages}
+                  onViewAnalysis={() => {}}
+                  onViewSessions={() => {}}
+                  onMove={() => {}}
+                  onMoveToInterviewStage={() => {}}
+                  isMoving={false}
+                  isDragOverlay
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
     </>

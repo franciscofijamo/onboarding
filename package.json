@@ -33,6 +33,8 @@
     "@ai-sdk/react": "^2.0.140",
     "@clerk/backend": "^2.32.1",
     "@clerk/nextjs": "^6.38.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
     "@eslint/eslintrc": "^3.3.3",
     "@google-cloud/storage": "^7.19.0",
     "@hookform/resolvers": "^5.2.2",
