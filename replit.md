@@ -120,6 +120,15 @@ scripts/           - Dev/helper scripts
 - **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, scenarios.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
+- 2026-04-09: B2B pivot — F2: Job posting creation & management (Kanban + Wizard + Rich text editor)
+  - Added `JobPosting` Prisma model with 4 new enums (JobPostingStatus, JobPostingCategory, SalaryRange, JobType)
+  - API routes: `GET/POST /api/recruiter/postings`, `GET/PUT/DELETE /api/recruiter/postings/[id]`
+  - Kanban board at `/recruiter/postings` with 4 columns (Rascunho/Publicada/Pausada/Encerrada)
+  - 2-step posting wizard at `/recruiter/postings/new`
+  - Edit page at `/recruiter/postings/[id]/edit`
+  - `RichTextEditor` + `RichTextViewer` Tiptap components in `src/components/editor/`
+  - Installed: `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-placeholder`, `@tailwindcss/typography`
+  - Tiptap styles + placeholder CSS added to `globals.css`
 - 2026-04-09: B2B pivot — F1: Dual role system + Company profile
   - Added `UserRole` enum (CANDIDATE | RECRUITER) and `role` field to `User` model
   - Added `Company` model (1:1 with User) for recruiter company profiles

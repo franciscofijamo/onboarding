@@ -86,9 +86,75 @@ model Company {
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postings    JobPosting[]
 
   @@index([userId])
   @@index([createdAt])
+}
+
+enum JobPostingStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  CLOSED
+}
+
+enum JobPostingCategory {
+  TECHNOLOGY
+  FINANCE
+  HEALTHCARE
+  EDUCATION
+  ENGINEERING
+  MARKETING
+  SALES
+  HUMAN_RESOURCES
+  LEGAL
+  OPERATIONS
+  LOGISTICS
+  HOSPITALITY
+  CONSTRUCTION
+  MEDIA
+  OTHER
+}
+
+enum SalaryRange {
+  UNDER_15K
+  FROM_15K_TO_25K
+  FROM_25K_TO_40K
+  FROM_40K_TO_60K
+  FROM_60K_TO_90K
+  ABOVE_90K
+  NEGOTIABLE
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+  HYBRID
+}
+
+model JobPosting {
+  id          String             @id @default(cuid())
+  companyId   String
+  title       String
+  category    JobPostingCategory
+  salaryRange SalaryRange
+  jobType     JobType
+  description String             @db.Text
+  status      JobPostingStatus   @default(DRAFT)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  company     Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+  @@index([companyId, status])
 }
 
 enum ExperienceLevel {
