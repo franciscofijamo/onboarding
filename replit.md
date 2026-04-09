@@ -138,6 +138,8 @@ scripts/           - Dev/helper scripts
   - `NotificationBell` component added to topbar — polls every 30s, unread count badge, popover list, click-to-navigate
   - Candidate `/scenarios` page: recruiter-assigned sessions shown with purple "Entrevista da empresa" badge + company/job info
   - Migration file: `prisma/migrations/20260409200000_add_interview_stages_and_notifications/`
+  - **Engineering note — unique index strategy**: `WorkplaceScenarioSession` uses a partial unique index (`WHERE recruitmentStageId IS NOT NULL`) instead of a plain `@@unique` so that self-practice sessions (`recruitmentStageId = NULL`) remain unrestricted. The Prisma schema declares `@@unique([userId, recruitmentStageId])` which Prisma uses for type-level awareness; the SQL migration overrides the generated index with the partial variant. Future Prisma-generated migrations must preserve the `WHERE IS NOT NULL` condition on this index.
+  - **Engineering note — re-entry notification behavior**: A candidate receives an `INTERVIEW_STAGE_ASSIGNED` notification only on first session creation for a given stage (`shouldCreateSession = !existingSession`). If a recruiter moves the candidate out and back into the same interview stage, no duplicate session or notification is created — the existing session is reused. This is intentional: one session per candidate per stage.
 - 2026-04-09: B2B pivot — F3: Public job board (Bolsa de Vagas)
   - `/jobs` and `/jobs/[id]` moved to `(public)` route group — accessible without authentication
   - Middleware updated to mark `/jobs(.*)` and `/api/jobs(.*)` as public routes
