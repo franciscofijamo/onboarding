@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
 
     const rawCategory = searchParams.get('category');
-    const rawJobType = searchParams.get('jobType');
+    const rawJobType = searchParams.get('jobType') ?? searchParams.get('type');
     const rawSalaryRange = searchParams.get('salaryRange') ?? searchParams.get('salary');
     const q = searchParams.get('q')?.trim() ?? '';
     const cursor = searchParams.get('cursor');

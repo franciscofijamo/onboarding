@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
   Building2,
+  ChevronDown,
+  Loader2,
   MapPin,
   Search,
   SlidersHorizontal,
@@ -58,10 +59,23 @@ function formatDate(iso: string) {
   }).format(new Date(iso));
 }
 
-function buildQueryString(params: Record<string, string>) {
-  const qs = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => { if (v) qs.set(k, v); });
-  return qs.toString();
+async function fetchJobs(
+  q: string,
+  category: string,
+  jobType: string,
+  salaryRange: string,
+  cursor?: string
+): Promise<JobsResponse> {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (category !== "ALL") params.set("category", category);
+  if (jobType !== "ALL") params.set("jobType", jobType);
+  if (salaryRange !== "ALL") params.set("salaryRange", salaryRange);
+  if (cursor) params.set("cursor", cursor);
+  params.set("limit", "12");
+  const res = await fetch(`/api/jobs?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch jobs");
+  return res.json();
 }
 
 const NONE = "ALL";
@@ -74,25 +88,44 @@ export default function JobBoardPage() {
   const [salaryRange, setSalaryRange] = React.useState(NONE);
   const [showFilters, setShowFilters] = React.useState(false);
 
+  const [allPostings, setAllPostings] = React.useState<PublicPosting[]>([]);
+  const [cursor, setCursor] = React.useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
+
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  const qs = buildQueryString({
-    q: debouncedSearch,
-    category: category !== NONE ? category : "",
-    jobType: jobType !== NONE ? jobType : "",
-    salaryRange: salaryRange !== NONE ? salaryRange : "",
-  });
+  React.useEffect(() => {
+    setIsLoading(true);
+    setAllPostings([]);
+    setCursor(undefined);
+    fetchJobs(debouncedSearch, category, jobType, salaryRange)
+      .then((data) => {
+        setAllPostings(data.postings);
+        setHasMore(data.hasMore);
+        setCursor(data.nextCursor ?? undefined);
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [debouncedSearch, category, jobType, salaryRange]);
 
-  const { data, isLoading } = useQuery<JobsResponse>({
-    queryKey: ["publicJobs", debouncedSearch, category, jobType, salaryRange],
-    queryFn: () => fetch(`/api/jobs${qs ? `?${qs}` : ""}`).then((r) => r.json()),
-    staleTime: 60_000,
-  });
+  const loadMore = () => {
+    if (!cursor || isLoadingMore) return;
+    setIsLoadingMore(true);
+    fetchJobs(debouncedSearch, category, jobType, salaryRange, cursor)
+      .then((data) => {
+        setAllPostings((prev) => [...prev, ...data.postings]);
+        setHasMore(data.hasMore);
+        setCursor(data.nextCursor ?? undefined);
+      })
+      .catch(console.error)
+      .finally(() => setIsLoadingMore(false));
+  };
 
-  const postings = data?.postings ?? [];
   const activeFilterCount = [
     category !== NONE,
     jobType !== NONE,
@@ -218,7 +251,7 @@ export default function JobBoardPage() {
               <Skeleton key={i} className="h-52 rounded-3xl" />
             ))}
           </div>
-        ) : postings.length === 0 ? (
+        ) : allPostings.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-border bg-card p-16 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Briefcase className="h-8 w-8" />
@@ -242,13 +275,37 @@ export default function JobBoardPage() {
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              {postings.length} vaga{postings.length !== 1 ? "s" : ""} encontrada{postings.length !== 1 ? "s" : ""}
+              {allPostings.length} vaga{allPostings.length !== 1 ? "s" : ""} encontrada{allPostings.length !== 1 ? "s" : ""}
+              {hasMore ? "+" : ""}
             </p>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {postings.map((posting) => (
+              {allPostings.map((posting) => (
                 <JobCard key={posting.id} posting={posting} />
               ))}
             </div>
+
+            {hasMore && (
+              <div className="mt-8 flex justify-center">
+                <Button
+                  variant="outline"
+                  className="rounded-2xl gap-2"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      A carregar...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      Carregar mais vagas
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>
