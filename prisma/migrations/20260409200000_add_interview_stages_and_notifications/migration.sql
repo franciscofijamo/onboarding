@@ -65,3 +65,8 @@ ALTER TABLE "RecruitmentInterviewStage" ADD CONSTRAINT "RecruitmentInterviewStag
 ALTER TABLE "RecruitmentInterviewQuestion" ADD CONSTRAINT "RecruitmentInterviewQuestion_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "RecruitmentInterviewStage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "InAppNotification" ADD CONSTRAINT "InAppNotification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "WorkplaceScenarioSession" ADD CONSTRAINT "WorkplaceScenarioSession_recruitmentStageId_fkey" FOREIGN KEY ("recruitmentStageId") REFERENCES "RecruitmentInterviewStage"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AlterTable: Add currentRecruitmentStageId to CandidatePipelineEntry
+ALTER TABLE "CandidatePipelineEntry" ADD COLUMN "currentRecruitmentStageId" TEXT;
+CREATE INDEX "CandidatePipelineEntry_currentRecruitmentStageId_idx" ON "CandidatePipelineEntry"("currentRecruitmentStageId");
+ALTER TABLE "CandidatePipelineEntry" ADD CONSTRAINT "CandidatePipelineEntry_currentRecruitmentStageId_fkey" FOREIGN KEY ("currentRecruitmentStageId") REFERENCES "RecruitmentInterviewStage"("id") ON DELETE SET NULL ON UPDATE CASCADE;

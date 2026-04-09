@@ -55,11 +55,19 @@ export async function PATCH(
       return NextResponse.json({ entry });
     }
 
+    // When moving to INTERVIEW with a sub-stage, set currentRecruitmentStageId.
+    // When moving away from INTERVIEW (or to base INTERVIEW), clear it.
+    const recruitmentStageUpdate =
+      stage === 'INTERVIEW' && recruitmentStageId
+        ? { currentRecruitmentStageId: recruitmentStageId }
+        : { currentRecruitmentStageId: null };
+
     const [updated] = await db.$transaction([
       db.candidatePipelineEntry.update({
         where: { id: entryId },
         data: {
           currentStage: stage as PipelineStage,
+          ...recruitmentStageUpdate,
           ...(notes !== undefined ? { notes } : {}),
         },
       }),

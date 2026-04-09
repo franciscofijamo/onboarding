@@ -174,24 +174,27 @@ enum PipelineStage {
 
 // CandidatePipelineEntry - links a candidate's application to a recruiter's pipeline
 model CandidatePipelineEntry {
-  id               String        @id @default(cuid())
-  jobPostingId     String
-  userId           String
-  jobApplicationId String        @unique
-  currentStage     PipelineStage @default(RECEIVED)
-  fitScore         Float?
-  notes            String?       @db.Text
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                        String        @id @default(cuid())
+  jobPostingId              String
+  userId                    String
+  jobApplicationId          String        @unique
+  currentStage              PipelineStage @default(RECEIVED)
+  currentRecruitmentStageId String?
+  fitScore                  Float?
+  notes                     String?       @db.Text
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
 
-  jobPosting       JobPosting    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
-  jobApplication   JobApplication @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stageHistory     CandidateStageHistory[]
+  jobPosting               JobPosting               @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  jobApplication           JobApplication           @relation(fields: [jobApplicationId], references: [id], onDelete: Cascade)
+  user                     User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentRecruitmentStage  RecruitmentInterviewStage? @relation(fields: [currentRecruitmentStageId], references: [id], onDelete: SetNull)
+  stageHistory             CandidateStageHistory[]
 
   @@index([jobPostingId])
   @@index([userId])
   @@index([jobPostingId, currentStage])
+  @@index([currentRecruitmentStageId])
   @@index([createdAt])
 }
 
@@ -234,9 +237,10 @@ model RecruitmentInterviewStage {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 
-  jobPosting  JobPosting                    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
-  questions   RecruitmentInterviewQuestion[]
-  sessions    WorkplaceScenarioSession[]
+  jobPosting      JobPosting                    @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  questions       RecruitmentInterviewQuestion[]
+  sessions        WorkplaceScenarioSession[]
+  pipelineEntries CandidatePipelineEntry[]
 
   @@index([jobPostingId])
   @@index([status])

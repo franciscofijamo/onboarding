@@ -25,6 +25,7 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
@@ -752,6 +753,47 @@ function InterviewStageModal({
     }
   }
 
+  async function handleDeleteQuestion(questionId: string) {
+    if (!stageId) return;
+    try {
+      await api.delete(`/api/recruiter/stages/${stageId}/questions/${questionId}`);
+      setQuestions(prev => {
+        const updated = prev.filter(q => q.id !== questionId);
+        // Persist new order values after deletion
+        updated.forEach((q, i) => {
+          if (q.order !== i) {
+            api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: i }).catch(() => {});
+          }
+        });
+        return updated.map((q, i) => ({ ...q, order: i }));
+      });
+    } catch (err) {
+      toast({
+        title: "Erro ao eliminar pergunta",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleMoveQuestion(questionId: string, direction: "up" | "down") {
+    if (!stageId) return;
+    setQuestions(prev => {
+      const idx = prev.findIndex(q => q.id === questionId);
+      if (idx === -1) return prev;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const reordered = [...prev];
+      [reordered[idx], reordered[newIdx]] = [reordered[newIdx], reordered[idx]];
+      // Persist new order for swapped questions
+      const a = reordered[idx];
+      const b = reordered[newIdx];
+      api.put(`/api/recruiter/stages/${stageId}/questions/${a.id}`, { order: idx }).catch(() => {});
+      api.put(`/api/recruiter/stages/${stageId}/questions/${b.id}`, { order: newIdx }).catch(() => {});
+      return reordered.map((q, i) => ({ ...q, order: i }));
+    });
+  }
+
   async function handlePublish() {
     if (!stageId) return;
     setPublishing(true);
@@ -873,8 +915,12 @@ function InterviewStageModal({
                 <EditableQuestion
                   key={q.id}
                   index={i}
+                  total={questions.length}
                   question={q}
                   onSave={(newPrompt) => handleEditQuestion(q.id, newPrompt)}
+                  onDelete={() => handleDeleteQuestion(q.id)}
+                  onMoveUp={i > 0 ? () => handleMoveQuestion(q.id, "up") : undefined}
+                  onMoveDown={i < questions.length - 1 ? () => handleMoveQuestion(q.id, "down") : undefined}
                 />
               ))}
             </div>
@@ -908,16 +954,25 @@ function InterviewStageModal({
 
 function EditableQuestion({
   index,
+  total,
   question,
   onSave,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
 }: {
   index: number;
+  total: number;
   question: InterviewQuestion;
   onSave: (newPrompt: string) => Promise<void>;
+  onDelete: () => Promise<void>;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   const [editing, setEditing] = React.useState(false);
   const [value, setValue] = React.useState(question.prompt);
   const [saving, setSaving] = React.useState(false);
+  const [deleting, setDeleting] = React.useState(false);
 
   async function handleSave() {
     if (value.trim() === question.prompt) { setEditing(false); return; }
@@ -927,6 +982,15 @@ function EditableQuestion({
       setEditing(false);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -947,14 +1011,53 @@ function EditableQuestion({
           )}
         </div>
         {!editing && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="rounded-xl h-7 px-2"
-            onClick={() => { setValue(question.prompt); setEditing(true); }}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* Reorder up */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-xl h-7 w-7 p-0"
+              disabled={!onMoveUp}
+              onClick={onMoveUp}
+              title="Mover para cima"
+            >
+              <ChevronUp className="h-3 w-3" />
+            </Button>
+            {/* Reorder down */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-xl h-7 w-7 p-0"
+              disabled={!onMoveDown}
+              onClick={onMoveDown}
+              title="Mover para baixo"
+            >
+              <ChevronDown className="h-3 w-3" />
+            </Button>
+            {/* Edit */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-xl h-7 w-7 p-0"
+              onClick={() => { setValue(question.prompt); setEditing(true); }}
+              title="Editar"
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+            {/* Delete — only allow if more than 1 question remains */}
+            {total > 1 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-xl h-7 w-7 p-0 text-destructive hover:text-destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+                title="Eliminar"
+              >
+                {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+              </Button>
+            )}
+          </div>
         )}
       </div>
 

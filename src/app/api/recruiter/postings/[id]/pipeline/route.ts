@@ -136,7 +136,10 @@ export async function GET(
     }));
     stageConfig.splice(interviewIdx + 1, 0, ...interviewStageConfigs);
 
-    // Group entries by currentStage
+    // Group entries by currentStage + currentRecruitmentStageId
+    // Candidates in a published interview-stage column are identified by
+    // currentStage=INTERVIEW AND currentRecruitmentStageId === that stage's id.
+    // The base INTERVIEW column only shows candidates with no currentRecruitmentStageId.
     const grouped = stageConfig.map(({ stage, label, isInterviewStage, stageId }) => ({
       stage,
       label,
@@ -144,20 +147,17 @@ export async function GET(
       stageId: stageId ?? null,
       candidates: isInterviewStage && stageId
         ? entries
-            .filter(e => {
-              if (e.currentStage !== 'INTERVIEW') return false;
-              // Check if candidate has a session for this recruitment stage
-              const rs = recruitmentStages.find(r => r.id === stageId);
-              if (!rs) return false;
-              return rs.sessions.some(s => s.userId === e.userId);
-            })
+            .filter(e => e.currentStage === 'INTERVIEW' && e.currentRecruitmentStageId === stageId)
             .sort(sortByFitScore)
             .map(entry => {
               const rs = recruitmentStages.find(r => r.id === stageId)!;
-              const session = rs.sessions.find(s => s.userId === entry.userId) ?? null;
-              return { ...entry, interviewSession: session }
+              const session = rs?.sessions.find(s => s.userId === entry.userId) ?? null;
+              return { ...entry, interviewSession: session };
             })
-        : entries.filter(e => e.currentStage === (stage as PipelineStage)).sort(sortByFitScore),
+        : stage === 'INTERVIEW'
+          // Base INTERVIEW column: only candidates not yet placed in a sub-stage
+          ? entries.filter(e => e.currentStage === 'INTERVIEW' && !e.currentRecruitmentStageId).sort(sortByFitScore)
+          : entries.filter(e => e.currentStage === (stage as PipelineStage)).sort(sortByFitScore),
     }));
 
     const sortedFlat = [...entries].sort(sortByFitScore);
