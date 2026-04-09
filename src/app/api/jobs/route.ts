@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
 
     const rawCategory = searchParams.get('category');
     const rawJobType = searchParams.get('jobType');
-    const rawSalaryRange = searchParams.get('salaryRange');
+    const rawSalaryRange = searchParams.get('salaryRange') ?? searchParams.get('salary');
+    const q = searchParams.get('q')?.trim() ?? '';
     const cursor = searchParams.get('cursor');
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 50);
 
@@ -33,6 +34,14 @@ export async function GET(request: NextRequest) {
         ...(category ? { category } : {}),
         ...(jobType ? { jobType } : {}),
         ...(salaryRange ? { salaryRange } : {}),
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: 'insensitive' } },
+                { company: { name: { contains: q, mode: 'insensitive' } } },
+              ],
+            }
+          : {}),
       },
       include: {
         company: {

@@ -120,6 +120,19 @@ scripts/           - Dev/helper scripts
 - **Translation Keys**: Hierarchical (common.*, nav.*, onboarding.*, mockInterview.*, audioMock.*, scenarios.*, feedback.*, dashboard.*, marketing.*)
 
 ## Recent Changes
+- 2026-04-09: B2B pivot — F3: Public job board (Bolsa de Vagas)
+  - `/jobs` and `/jobs/[id]` moved to `(public)` route group — accessible without authentication
+  - Middleware updated to mark `/jobs(.*)` and `/api/jobs(.*)` as public routes
+  - `GET /api/jobs` updated with `?q=` text search (title/company), `?salary=` alias for salaryRange
+  - `GET /api/jobs/[id]` — new public endpoint returning PUBLISHED posting with company info
+  - Public jobs listing page: search bar, filter panel (category/type/salary), 3-column grid, skeleton loading
+  - Public job detail page: rich text description, company info block, Apply button with auth-aware logic
+    - Unauthenticated → redirects to `/sign-up?redirect_url=/jobs/[id]`
+    - Candidate → routes to `/applications/new?postingId=[id]` (F4 will build this)
+    - Recruiter → disabled button with "Recrutadores não podem candidatar-se" message
+  - `PublicHeader` enhanced with "Vagas" nav link (all users), sign-in/sign-up buttons, mobile hamburger menu
+  - `useProfile` hook updated to accept optional `enabled` parameter (prevents 401 calls for unauthenticated users)
+  - Removed old `(protected)/jobs/page.tsx` placeholder
 - 2026-04-09: B2B pivot — F2: Job posting creation & management (Kanban + Wizard + Rich text editor)
   - Added `JobPosting` Prisma model with 4 new enums (JobPostingStatus, JobPostingCategory, SalaryRange, JobType)
   - API routes: `GET/POST /api/recruiter/postings`, `GET/PUT/DELETE /api/recruiter/postings/[id]`

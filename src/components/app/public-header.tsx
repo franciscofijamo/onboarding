@@ -2,32 +2,115 @@
 
 import React from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useAuth } from '@clerk/nextjs'
 import { cn } from '@/lib/utils'
 import { site } from '@/lib/brand-config'
+import { Button } from '@/components/ui/button'
+import { Briefcase, Menu, X } from 'lucide-react'
 
 export function PublicHeader() {
   const [isScrolled, setIsScrolled] = React.useState(false)
+  const [menuOpen, setMenuOpen] = React.useState(false)
+  const pathname = usePathname()
+  const { isSignedIn, isLoaded } = useAuth()
 
   React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
-    }
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  React.useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
+
+  const isJobsActive = pathname.startsWith('/jobs')
 
   return (
     <header>
       <nav className="fixed z-20 w-full px-2">
         <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5')}>
-          <div className="flex items-center justify-center py-3 lg:py-4">
+          <div className="flex items-center justify-between py-3 lg:py-4">
             <Link
               href="/"
               aria-label={site.shortName}
-              className="flex items-center space-x-2">
+              className="flex items-center space-x-2 shrink-0"
+            >
               <Logo />
             </Link>
+
+            <div className="hidden sm:flex items-center gap-6">
+              <Link
+                href="/jobs"
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium transition-colors",
+                  isJobsActive
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Briefcase className="h-3.5 w-3.5" />
+                Vagas
+              </Link>
+
+              {isLoaded && (
+                isSignedIn ? (
+                  <Button asChild variant="outline" size="sm" className="rounded-xl">
+                    <Link href="/dashboard">Entrar na app</Link>
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="ghost" size="sm" className="rounded-xl">
+                      <Link href="/sign-in">Entrar</Link>
+                    </Button>
+                    <Button asChild size="sm" className="rounded-xl">
+                      <Link href="/sign-up">Registar</Link>
+                    </Button>
+                  </div>
+                )
+              )}
+            </div>
+
+            <button
+              className="sm:hidden text-muted-foreground hover:text-foreground"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
+
+          {menuOpen && (
+            <div className="sm:hidden pb-4 space-y-2 border-t border-border pt-3">
+              <Link
+                href="/jobs"
+                className={cn(
+                  "flex items-center gap-2 px-2 py-2 rounded-xl text-sm font-medium transition-colors",
+                  isJobsActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                )}
+              >
+                <Briefcase className="h-4 w-4" />
+                Vagas
+              </Link>
+              {isLoaded && (
+                isSignedIn ? (
+                  <Button asChild variant="outline" className="w-full rounded-xl">
+                    <Link href="/dashboard">Entrar na app</Link>
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <Button asChild variant="outline" className="w-full rounded-xl">
+                      <Link href="/sign-in">Entrar</Link>
+                    </Button>
+                    <Button asChild className="w-full rounded-xl">
+                      <Link href="/sign-up">Registar</Link>
+                    </Button>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       </nav>
     </header>

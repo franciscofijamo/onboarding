@@ -16,12 +16,19 @@ interface ProfileData {
     university: string | null;
 }
 
-export function useProfile() {
+interface UseProfileOptions {
+    enabled?: boolean;
+}
+
+export function useProfile(options?: UseProfileOptions) {
+    const enabled = options?.enabled ?? true;
+
     const query = useQuery<ProfileData>({
         queryKey: ["profile"],
         queryFn: () => api.get("/api/profile"),
         staleTime: 5 * 60_000,
         gcTime: 10 * 60_000,
+        enabled,
     });
 
     return {
