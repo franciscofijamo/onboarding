@@ -22,11 +22,16 @@ export async function POST(
 
     const existing = await db.jobApplication.findFirst({
       where: { id, userId: user.id },
-      select: { id: true },
+      select: { id: true, isPublicApplication: true },
     })
 
     if (!existing) {
       return NextResponse.json({ error: 'Job application not found' }, { status: 404 })
+    }
+
+    // Analysis for public/platform applications is reserved for recruiters only
+    if (existing.isPublicApplication) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     let idempotencyKey: string | undefined
