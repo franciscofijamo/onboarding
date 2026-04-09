@@ -18,7 +18,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Sparkles,
@@ -26,24 +25,16 @@ import {
   Clock,
   Target,
   TrendingUp,
-  MoreVertical,
   Play,
-  Trash2,
-  Loader2,
   CheckCircle2,
   Coins,
   CircleDot,
   AlertCircle,
   Briefcase,
-  ArrowLeft,
   Building2,
+  Plus,
+  Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -85,18 +76,6 @@ interface SessionsResponse {
   };
 }
 
-interface JobApplicationDetail {
-  id: string;
-  jobTitle: string | null;
-  companyName: string | null;
-  status: string;
-  jobDescription: string;
-}
-
-interface JobApplicationResponse {
-  jobApplication: JobApplicationDetail;
-}
-
 const GENERATION_STEPS = [
   "Analysing job description...",
   "Reviewing your CV and profile...",
@@ -105,136 +84,118 @@ const GENERATION_STEPS = [
   "Finalising interview session...",
 ];
 
+function getStatusBadge(session: SessionData) {
+  if (session.analyzedCount === session.totalQuestions && session.totalQuestions > 0) {
+    return <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">Completed</Badge>;
+  }
+  if (session.answeredCount > 0) {
+    return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-xs">In Progress</Badge>;
+  }
+  return <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">New</Badge>;
+}
+
 function ScenariosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { t, locale } = useLanguage();
+  const { locale } = useLanguage();
   const { credits, isLoading: creditsLoading } = useCredits();
 
   const jobApplicationId = searchParams.get("jobApplicationId");
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmJobId, setConfirmJobId] = useState<string | null>(
+    jobApplicationId ?? null
+  );
   const [generating, setGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
-  const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
 
   useSetPageMetadata({
     title: "Interview Practice",
-    description: "Practice interview questions tailored to your job applications",
-    breadcrumbs: [
-      { label: "Interview Practice" },
-    ],
+    description: "All your interview practice sessions, organised by job application",
+    breadcrumbs: [{ label: "Interview Practice" }],
   });
 
   const { data, isLoading } = useQuery<SessionsResponse>({
-    queryKey: ["scenario-sessions", jobApplicationId],
-    queryFn: () => {
-      const url = jobApplicationId
-        ? `/api/scenarios/sessions?jobApplicationId=${jobApplicationId}`
-        : `/api/scenarios/sessions`;
-      return api.get(url);
-    },
+    queryKey: ["scenario-sessions"],
+    queryFn: () => api.get("/api/scenarios/sessions"),
   });
 
-  const { data: jobAppData, isLoading: jobAppLoading } = useQuery<JobApplicationResponse>({
-    queryKey: ["job-application", jobApplicationId],
-    queryFn: () => api.get(`/api/job-application/${jobApplicationId}`),
-    enabled: Boolean(jobApplicationId),
+  const { data: confirmJobData } = useQuery<{ jobApplication: JobApplicationInfo & { jobDescription: string } }>({
+    queryKey: ["job-application", confirmJobId],
+    queryFn: () => api.get(`/api/job-application/${confirmJobId}`),
+    enabled: Boolean(confirmJobId),
   });
-
-  const jobApp = jobAppData?.jobApplication;
 
   const generateMutation = useMutation({
-    mutationFn: () => api.post("/api/scenarios/sessions", {
-      language: locale,
-      jobApplicationId,
-    }),
+    mutationFn: (jobId: string) =>
+      api.post("/api/scenarios/sessions", { language: locale, jobApplicationId: jobId }),
     onSuccess: (data: { session: SessionData }) => {
       setGenerating(false);
-      setConfirmOpen(false);
+      setConfirmJobId(null);
+      // Clear jobApplicationId from URL without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("jobApplicationId");
+      window.history.replaceState({}, "", url.toString());
       queryClient.invalidateQueries({ queryKey: ["scenario-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       toast({
         title: "Interview session created!",
-        description: "5 personalised interview questions are ready for you to practise.",
+        description: "5 personalised interview questions are ready.",
       });
       router.push(`/scenarios/${data.session.id}`);
     },
     onError: (error: Error) => {
       setGenerating(false);
       toast({
-        title: "Error generating interview questions",
+        title: "Error generating questions",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/scenarios/sessions/${id}`),
-    onSuccess: () => {
-      setDeleteOpen(null);
-      queryClient.invalidateQueries({ queryKey: ["scenario-sessions"] });
-      toast({ title: "Session removed" });
-    },
-  });
-
-  const handleGenerate = () => {
-    setConfirmOpen(false);
+  const handleGenerate = (jobId: string) => {
+    setConfirmJobId(null);
     setGenerating(true);
     setGenerationStep(0);
 
     const stepInterval = setInterval(() => {
-      setGenerationStep((prev) => {
-        if (prev < GENERATION_STEPS.length - 1) return prev + 1;
-        return prev;
-      });
+      setGenerationStep((prev) => (prev < GENERATION_STEPS.length - 1 ? prev + 1 : prev));
     }, 8000);
 
-    generateMutation.mutate(undefined, {
+    generateMutation.mutate(jobId, {
       onSettled: () => clearInterval(stepInterval),
     });
   };
 
   const hasCredits = (credits?.creditsRemaining ?? 0) >= 15;
 
-  if (!jobApplicationId) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-        <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-          <Briefcase className="h-10 w-10 text-primary/60" />
-        </div>
-        <h2 className="text-2xl font-semibold mb-3">Select a Job to Practice For</h2>
-        <p className="text-muted-foreground max-w-md mb-2">
-          Interview practice sessions are tailored to a specific job application. The AI uses the job description and your CV to generate relevant interview questions.
-        </p>
-        <p className="text-sm text-muted-foreground max-w-md mb-8">
-          Go to your Applications, open a job card, and click <strong>Practice Interview</strong>.
-        </p>
-        <Button asChild size="lg" className="rounded-2xl">
-          <Link href="/applications">
-            <Briefcase className="h-4 w-4 mr-2" />
-            Go to Applications
-          </Link>
-        </Button>
-      </div>
-    );
-  }
+  const sessions = data?.sessions ?? [];
+  const stats = data?.stats;
 
-  if (isLoading || jobAppLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <div className="grid gap-3 grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl" />
-          ))}
-        </div>
-        <Skeleton className="h-48 rounded-2xl" />
-      </div>
-    );
-  }
+  // Find job info for confirm dialog — from existing sessions or from direct API fetch
+  const confirmJob =
+    sessions.find((s) => s.jobApplicationId === confirmJobId)?.jobApplication ??
+    confirmJobData?.jobApplication ??
+    null;
+
+  // Group sessions by jobApplicationId
+  const grouped = sessions.reduce<
+    Record<string, { jobApplication: JobApplicationInfo | null; sessions: SessionData[] }>
+  >((acc, session) => {
+    const key = session.jobApplicationId ?? "__no_job__";
+    if (!acc[key]) {
+      acc[key] = { jobApplication: session.jobApplication, sessions: [] };
+    }
+    acc[key].sessions.push(session);
+    return acc;
+  }, {});
+
+  const groupEntries = Object.entries(grouped).sort(([, a], [, b]) => {
+    const aLatest = new Date(a.sessions[0]?.createdAt ?? 0).getTime();
+    const bLatest = new Date(b.sessions[0]?.createdAt ?? 0).getTime();
+    return bLatest - aLatest;
+  });
 
   if (generating) {
     return (
@@ -265,242 +226,226 @@ function ScenariosContent() {
     );
   }
 
-  const sessions = data?.sessions ?? [];
-  const stats = data?.stats;
-
-  function getStatusBadge(session: SessionData) {
-    if (session.analyzedCount === session.totalQuestions) {
-      return <Badge className="bg-green-100 text-green-700 border-green-200">Completed</Badge>;
-    }
-    if (session.answeredCount > 0) {
-      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">In Progress</Badge>;
-    }
-    return <Badge className="bg-blue-100 text-blue-700 border-blue-200">New</Badge>;
-  }
-
   return (
-    <div className="space-y-6">
-      {jobApp && (
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 rounded-xl border-border/60 shrink-0"
-            onClick={() => router.push("/applications")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="bg-card rounded-2xl border border-border px-4 py-3 flex items-center gap-3 flex-1">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Briefcase className="h-4 w-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold leading-tight truncate">
-                {jobApp.jobTitle || "Untitled Role"}
-              </p>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Building2 className="h-3 w-3 shrink-0" />
-                <span className="truncate">{jobApp.companyName || "Company not defined"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center">
-              <Briefcase className="h-4 w-4 text-purple-700" />
-            </div>
-            <span className="text-sm text-muted-foreground">Sessions</span>
-          </div>
-          <p className="text-2xl font-bold">{stats?.totalSessions ?? 0}</p>
-        </div>
-
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center">
-              <Target className="h-4 w-4 text-emerald-700" />
-            </div>
-            <span className="text-sm text-muted-foreground">Questions Analysed</span>
-          </div>
-          <p className="text-2xl font-bold">{stats?.totalAnalyzed ?? 0}</p>
-        </div>
-
-        <div className="bg-card rounded-2xl border border-border p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-blue-700" />
-            </div>
-            <span className="text-sm text-muted-foreground">Average Score</span>
-          </div>
-          <p className="text-2xl font-bold">
-            {stats?.averageScore != null ? `${stats.averageScore}/10` : "—"}
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Generate Interview Questions</h3>
-            <p className="text-sm text-muted-foreground">
-              5 AI-generated questions based on the job description and your CV
-            </p>
-          </div>
-          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={!jobApplicationId || !hasCredits || creditsLoading}>
-                <Sparkles className="h-4 w-4" />
-                Generate (15 credits)
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirm Interview Session</DialogTitle>
-                <DialogDescription>
-                  15 credits will be deducted to generate 5 interview questions tailored to this job application.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 py-4">
-                {jobApp && (
-                  <div className="space-y-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Job</span>
-                    <p className="text-sm font-medium leading-tight line-clamp-2">
-                      {jobApp.jobTitle || "Untitled"} @ {jobApp.companyName || "Company"}
-                    </p>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Cost:</span>
-                  <Badge>15 credits</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Current balance:</span>
-                  <span className="flex items-center gap-1 font-medium">
-                    <Coins className="h-4 w-4 text-yellow-500" />
-                    {credits?.creditsRemaining ?? 0} credits
-                  </span>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleGenerate}>
-                  <Sparkles className="h-4 w-4" />
-                  Confirm
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-        {!hasCredits && !creditsLoading && (
-          <p className="text-sm text-red-500 mt-3 flex items-center gap-1">
-            <AlertCircle className="h-4 w-4" />
-            Insufficient credits. Purchase more to generate interview sessions.
-          </p>
-        )}
-      </div>
-
-      {sessions.length > 0 ? (
-        <div className="space-y-3">
-          <h3 className="font-semibold">Your Practice Sessions</h3>
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="bg-card rounded-2xl border border-border p-5 flex items-center gap-5"
-            >
-              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Mic className="h-5 w-5 text-primary" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="font-semibold">{session.name}</h4>
-                  {getStatusBadge(session)}
-                  {session.averageScore != null && (
-                    <Badge variant="outline" className="text-xs">
-                      {session.averageScore}/10
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <CircleDot className="h-3 w-3" />
-                    {session.answeredCount}/{session.totalQuestions} answered
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {session.analyzedCount}/{session.totalQuestions} analysed
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(session.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => router.push(`/scenarios/${session.id}`)}
-                >
-                  <Play className="h-4 w-4" />
-                  {session.analyzedCount === session.totalQuestions ? "View Results" : "Continue"}
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="ghost">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      className="text-red-500"
-                      onClick={() => setDeleteOpen(session.id)}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remove
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          <Mic className="h-12 w-12 mx-auto mb-4 opacity-30" />
-          <p className="font-medium">No practice sessions yet</p>
-          <p className="text-sm mt-1">Generate your first interview session to start practising.</p>
-        </div>
-      )}
-
-      <Dialog open={!!deleteOpen} onOpenChange={() => setDeleteOpen(null)}>
+    <>
+      {/* Confirm generate dialog */}
+      <Dialog
+        open={Boolean(confirmJobId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmJobId(null);
+            const url = new URL(window.location.href);
+            url.searchParams.delete("jobApplicationId");
+            window.history.replaceState({}, "", url.toString());
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Remove Session</DialogTitle>
+            <DialogTitle>Generate Interview Session</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Credits will not be refunded.
+              5 AI-generated questions tailored to this job application. 15 credits will be deducted.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-3 py-2">
+            {confirmJob && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Job:</span>
+                <span className="font-medium">
+                  {confirmJob.jobTitle || "Untitled"} @ {confirmJob.companyName || "Company"}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Cost:</span>
+              <Badge>15 credits</Badge>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Balance:</span>
+              <span className="flex items-center gap-1 font-medium">
+                <Coins className="h-4 w-4 text-yellow-500" />
+                {credits?.creditsRemaining ?? 0}
+              </span>
+            </div>
+            {!hasCredits && !creditsLoading && (
+              <p className="text-sm text-red-500 flex items-center gap-1 pt-1">
+                <AlertCircle className="h-4 w-4" />
+                Insufficient credits. Please purchase more.
+              </p>
+            )}
+          </div>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setDeleteOpen(null)}>
+            <Button variant="secondary" onClick={() => setConfirmJobId(null)}>
               Cancel
             </Button>
             <Button
-              variant="destructive"
-              onClick={() => deleteOpen && deleteMutation.mutate(deleteOpen)}
-              disabled={deleteMutation.isPending}
+              disabled={!hasCredits || creditsLoading}
+              onClick={() => confirmJobId && handleGenerate(confirmJobId)}
             >
-              Remove
+              <Sparkles className="h-4 w-4" />
+              Confirm
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <div className="space-y-6">
+        {/* Stats */}
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
+          <div className="bg-card rounded-2xl border border-border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center">
+                <Briefcase className="h-4 w-4 text-purple-700" />
+              </div>
+              <span className="text-sm text-muted-foreground">Total Sessions</span>
+            </div>
+            <p className="text-2xl font-bold">{stats?.totalSessions ?? 0}</p>
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                <Target className="h-4 w-4 text-emerald-700" />
+              </div>
+              <span className="text-sm text-muted-foreground">Questions Analysed</span>
+            </div>
+            <p className="text-2xl font-bold">{stats?.totalAnalyzed ?? 0}</p>
+          </div>
+
+          <div className="bg-card rounded-2xl border border-border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-blue-700" />
+              </div>
+              <span className="text-sm text-muted-foreground">Average Score</span>
+            </div>
+            <p className="text-2xl font-bold">
+              {stats?.averageScore != null ? `${stats.averageScore}/10` : "—"}
+            </p>
+          </div>
+        </div>
+
+        {/* Empty state */}
+        {isLoading ? (
+          <div className="space-y-6">
+            {[1, 2].map((i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-10 w-64 rounded-xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+                <Skeleton className="h-20 rounded-2xl" />
+              </div>
+            ))}
+          </div>
+        ) : groupEntries.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <Mic className="h-10 w-10 text-primary/60" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">No interview sessions yet</h2>
+            <p className="text-muted-foreground max-w-sm mx-auto mb-8">
+              Open a job application and click <strong>Practice Interview</strong> to generate your first session.
+            </p>
+            <Button asChild size="lg" className="rounded-2xl">
+              <Link href="/applications">
+                <Briefcase className="h-4 w-4 mr-2" />
+                Go to Applications
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {groupEntries.map(([key, group]) => {
+              const job = group.jobApplication;
+              return (
+                <div key={key}>
+                  {/* Job header */}
+                  <div className="flex items-center justify-between mb-3 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold leading-tight">
+                          {job?.jobTitle || "Untitled Role"}
+                        </p>
+                        {job?.companyName && (
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Building2 className="h-3 w-3" />
+                            <span>{job.companyName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {job?.id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-xl border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:border-green-300 shrink-0"
+                        onClick={() => setConfirmJobId(job.id)}
+                      >
+                        <Plus className="h-4 w-4" />
+                        New Session
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Sessions */}
+                  <div className="space-y-2">
+                    {group.sessions.map((session) => (
+                      <div
+                        key={session.id}
+                        className="bg-card rounded-2xl border border-border p-4 flex items-center gap-4"
+                      >
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <Mic className="h-4 w-4 text-primary" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium text-sm truncate">{session.name}</h4>
+                            {getStatusBadge(session)}
+                            {session.averageScore != null && (
+                              <Badge variant="outline" className="text-xs">
+                                {session.averageScore}/10
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <CircleDot className="h-3 w-3" />
+                              {session.answeredCount}/{session.totalQuestions} answered
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {session.analyzedCount}/{session.totalQuestions} analysed
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(session.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          onClick={() => router.push(`/scenarios/${session.id}`)}
+                          className="shrink-0"
+                        >
+                          <Play className="h-4 w-4" />
+                          {session.analyzedCount === session.totalQuestions && session.totalQuestions > 0
+                            ? "View"
+                            : "Continue"}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -508,11 +453,10 @@ export default function ScenariosPage() {
   return (
     <Suspense fallback={
       <div className="space-y-6">
-        <Skeleton className="h-8 w-48" />
         <div className="grid gap-3 grid-cols-3">
           {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
         </div>
-        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl" />
       </div>
     }>
       <ScenariosContent />
