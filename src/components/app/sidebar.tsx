@@ -15,6 +15,7 @@ import {
   BrainCircuit,
   Building2,
   LayoutGrid,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export const candidateNavigationItems: NavItem[] = [
 export const recruiterNavigationItems: NavItem[] = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
   { nameKey: "nav.recruiterPostings", hintKey: "nav.recruiterPostings", href: "/recruiter/postings", icon: LayoutGrid },
+  { nameKey: "nav.candidates", hintKey: "nav.candidates", href: "/recruiter/candidates", icon: Users, disabled: true },
   { nameKey: "nav.companyProfile", hintKey: "nav.companyProfile", href: "/company/profile", icon: Building2 },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
 ];

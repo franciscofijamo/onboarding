@@ -11,22 +11,16 @@ const isPublicRoute = createRouteMatcher([
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
-const isRecruiterRoute = createRouteMatcher([
+const isRecruiterPageRoute = createRouteMatcher([
   '/recruiter(.*)',
   '/company(.*)',
-  '/api/recruiter(.*)',
-  '/api/company(.*)',
 ])
 
-const isCandidateOnlyRoute = createRouteMatcher([
+const isCandidateOnlyPageRoute = createRouteMatcher([
   '/applications(.*)',
   '/scenarios(.*)',
   '/interview-prep(.*)',
   '/onboarding(.*)',
-  '/api/job-application(.*)',
-  '/api/scenarios(.*)',
-  '/api/resume(.*)',
-  '/api/cover-letter(.*)',
 ])
 
 const E2E_BYPASS = process.env.E2E_AUTH_BYPASS === '1'
@@ -46,7 +40,6 @@ export default E2E_BYPASS
   }
 
   const authResult = await auth()
-  const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null
 
   if (isAdminRoute(request)) {
     if (!authResult.userId) {
@@ -58,13 +51,16 @@ export default E2E_BYPASS
       const url = new URL('/dashboard', request.url)
       return NextResponse.redirect(url)
     }
+    return NextResponse.next()
   }
 
   if (!authResult.userId) {
     return NextResponse.next()
   }
 
-  if (isRecruiterRoute(request)) {
+  const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null
+
+  if (isRecruiterPageRoute(request)) {
     const isOnboarding = request.nextUrl.pathname.startsWith('/company/onboarding')
     if (!isOnboarding && userRole !== 'RECRUITER') {
       const url = new URL('/dashboard', request.url)
@@ -72,7 +68,7 @@ export default E2E_BYPASS
     }
   }
 
-  if (isCandidateOnlyRoute(request) && userRole === 'RECRUITER') {
+  if (isCandidateOnlyPageRoute(request) && userRole === 'RECRUITER') {
     const url = new URL('/dashboard', request.url)
     return NextResponse.redirect(url)
   }
