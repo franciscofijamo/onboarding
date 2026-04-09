@@ -272,6 +272,24 @@ function ApplyButton({
     );
   }
 
+  if (role !== "CANDIDATE") {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <Button
+          size={size}
+          variant="outline"
+          className="rounded-2xl shrink-0"
+          onClick={() => router.push("/onboarding")}
+        >
+          Completar perfil para candidatar-se
+        </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          Complete o seu perfil primeiro
+        </p>
+      </div>
+    );
+  }
+
   return (
     <Button
       size={size}
