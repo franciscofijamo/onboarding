@@ -69,7 +69,7 @@ type JobApplication = {
   jobPostingId?: string | null;
   isPublicApplication?: boolean;
   jobPosting?: { id: string; title: string; company: { name: string } } | null;
-  pipelineEntry?: { currentStage: PipelineStage; fitScore: number | null } | null;
+  pipelineEntry?: { currentStage: PipelineStage; fitScore?: number | null } | null;
 };
 
 type JobApplicationsResponse = {

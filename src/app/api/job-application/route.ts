@@ -226,7 +226,14 @@ export async function GET() {
     // Strip AI analysis data from public/platform applications — visible to recruiters only
     const sanitized = jobApplications.map((app) => {
       if (app.isPublicApplication) {
-        return { ...app, analyses: [] }
+        return {
+          ...app,
+          analyses: [],
+          // Expose only pipeline stage (not fitScore) to candidates
+          pipelineEntry: app.pipelineEntry
+            ? { currentStage: app.pipelineEntry.currentStage }
+            : null,
+        }
       }
       return app
     })
