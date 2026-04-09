@@ -10,10 +10,6 @@ CREATE TYPE "SalaryRange" AS ENUM ('UNDER_15K', 'FROM_15K_TO_25K', 'FROM_25K_TO_
 -- CreateEnum
 CREATE TYPE "JobType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE', 'HYBRID');
 
--- AlterTable
-ALTER TABLE "Company" ADD COLUMN IF NOT EXISTS dummy_placeholder TEXT;
-ALTER TABLE "Company" DROP COLUMN IF EXISTS dummy_placeholder;
-
 -- CreateTable
 CREATE TABLE "JobPosting" (
     "id" TEXT NOT NULL,

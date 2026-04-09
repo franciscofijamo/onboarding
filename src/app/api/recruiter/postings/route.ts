@@ -3,27 +3,27 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { getUserFromClerkId } from '@/lib/auth-utils';
 import { z } from 'zod';
+import sanitizeHtml from 'sanitize-html';
+import { JOB_POSTING_STATUSES, JOB_POSTING_CATEGORIES, SALARY_RANGES, JOB_TYPES, type JobPostingStatus } from '@/lib/recruiter/postings';
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: ['p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'h2', 'h3', 'blockquote'],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard',
+};
 
 const CreateJobPostingSchema = z.object({
   title: z.string().min(2).max(200),
-  category: z.enum([
-    'TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'ENGINEERING',
-    'MARKETING', 'SALES', 'HUMAN_RESOURCES', 'LEGAL', 'OPERATIONS',
-    'LOGISTICS', 'HOSPITALITY', 'CONSTRUCTION', 'MEDIA', 'OTHER',
-  ]),
-  salaryRange: z.enum([
-    'UNDER_15K', 'FROM_15K_TO_25K', 'FROM_25K_TO_40K',
-    'FROM_40K_TO_60K', 'FROM_60K_TO_90K', 'ABOVE_90K', 'NEGOTIABLE',
-  ]),
-  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE', 'HYBRID']),
+  category: z.enum(JOB_POSTING_CATEGORIES),
+  salaryRange: z.enum(SALARY_RANGES),
+  jobType: z.enum(JOB_TYPES),
   description: z.string().min(10),
-  status: z.enum(['DRAFT', 'PUBLISHED']).optional().default('DRAFT'),
+  status: z.enum(['DRAFT', 'PUBLISHED'] as const).optional().default('DRAFT'),
 });
 
 async function getRecruiterCompany(clerkId: string) {
   const user = await getUserFromClerkId(clerkId);
   if (user.role !== 'RECRUITER') return null;
-
   const company = await db.company.findUnique({ where: { userId: user.id } });
   return company;
 }
@@ -37,17 +37,28 @@ export async function GET(request: NextRequest) {
     if (!company) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
+    const rawStatus = searchParams.get('status');
+
+    const statusFilter: JobPostingStatus | undefined =
+      rawStatus && (JOB_POSTING_STATUSES as readonly string[]).includes(rawStatus)
+        ? (rawStatus as JobPostingStatus)
+        : undefined;
+
+    if (rawStatus && !statusFilter) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+    }
 
     const postings = await db.jobPosting.findMany({
       where: {
         companyId: company.id,
-        ...(status ? { status: status as never } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ postings });
+    return NextResponse.json({
+      postings: postings.map((p) => ({ ...p, applicationCount: 0 })),
+    });
   } catch (error) {
     console.error('[Recruiter Postings API] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -71,6 +82,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanDescription = sanitizeHtml(validation.data.description, SANITIZE_OPTIONS);
+
     const posting = await db.jobPosting.create({
       data: {
         companyId: company.id,
@@ -78,12 +91,12 @@ export async function POST(request: NextRequest) {
         category: validation.data.category,
         salaryRange: validation.data.salaryRange,
         jobType: validation.data.jobType,
-        description: validation.data.description,
+        description: cleanDescription,
         status: validation.data.status,
       },
     });
 
-    return NextResponse.json({ posting }, { status: 201 });
+    return NextResponse.json({ posting: { ...posting, applicationCount: 0 } }, { status: 201 });
   } catch (error) {
     console.error('[Recruiter Postings API] POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -38,6 +38,7 @@ type NavItem = {
 
 export const candidateNavigationItems: NavItem[] = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
+  { nameKey: "nav.jobBoard", hintKey: "nav.jobBoard", href: "/jobs", icon: LayoutGrid },
   { nameKey: "nav.applications", hintKey: "nav.applications", href: "/applications", icon: Briefcase },
   { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare, disabled: true },
   { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },

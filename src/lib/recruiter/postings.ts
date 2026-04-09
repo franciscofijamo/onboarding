@@ -26,6 +26,7 @@ export type JobPosting = {
   jobType: JobType;
   description: string;
   status: JobPostingStatus;
+  applicationCount: number;
   createdAt: string;
   updatedAt: string;
 };

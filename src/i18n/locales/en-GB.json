@@ -53,7 +53,8 @@
     "mainSidebar": "Main sidebar",
     "recruiterPostings": "Postings",
     "candidates": "Candidates",
-    "companyProfile": "Company Profile"
+    "companyProfile": "Company Profile",
+    "jobBoard": "Job Board"
   },
   "billing": {
     "title": "Credits",

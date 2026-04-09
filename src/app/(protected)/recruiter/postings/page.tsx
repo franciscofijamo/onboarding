@@ -13,6 +13,7 @@ import {
   Play,
   Plus,
   Trash2,
+  Users,
   X,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
@@ -248,7 +249,13 @@ function PostingCard({
           </span>
         </div>
         <p className="text-[11px] text-emerald-600 font-medium">{SALARY_RANGE_LABELS[posting.salaryRange]}</p>
-        <p className="text-[10px] text-muted-foreground">{formatDate(posting.createdAt)}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] text-muted-foreground">{formatDate(posting.createdAt)}</p>
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+            <Users className="h-2.5 w-2.5" />
+            {posting.applicationCount}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">

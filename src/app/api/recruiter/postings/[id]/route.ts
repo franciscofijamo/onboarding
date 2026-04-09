@@ -3,21 +3,22 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { getUserFromClerkId } from '@/lib/auth-utils';
 import { z } from 'zod';
+import sanitizeHtml from 'sanitize-html';
+import { JOB_POSTING_CATEGORIES, SALARY_RANGES, JOB_TYPES } from '@/lib/recruiter/postings';
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: ['p', 'br', 'strong', 'em', 'u', 'ul', 'ol', 'li', 'h2', 'h3', 'blockquote'],
+  allowedAttributes: {},
+  disallowedTagsMode: 'discard',
+};
 
 const UpdateJobPostingSchema = z.object({
   title: z.string().min(2).max(200).optional(),
-  category: z.enum([
-    'TECHNOLOGY', 'FINANCE', 'HEALTHCARE', 'EDUCATION', 'ENGINEERING',
-    'MARKETING', 'SALES', 'HUMAN_RESOURCES', 'LEGAL', 'OPERATIONS',
-    'LOGISTICS', 'HOSPITALITY', 'CONSTRUCTION', 'MEDIA', 'OTHER',
-  ]).optional(),
-  salaryRange: z.enum([
-    'UNDER_15K', 'FROM_15K_TO_25K', 'FROM_25K_TO_40K',
-    'FROM_40K_TO_60K', 'FROM_60K_TO_90K', 'ABOVE_90K', 'NEGOTIABLE',
-  ]).optional(),
-  jobType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'REMOTE', 'HYBRID']).optional(),
+  category: z.enum(JOB_POSTING_CATEGORIES).optional(),
+  salaryRange: z.enum(SALARY_RANGES).optional(),
+  jobType: z.enum(JOB_TYPES).optional(),
   description: z.string().min(10).optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'PAUSED', 'CLOSED']).optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'PAUSED', 'CLOSED'] as const).optional(),
 });
 
 async function getCompanyForRecruiter(clerkId: string) {
@@ -44,7 +45,7 @@ export async function GET(
 
     if (!posting) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    return NextResponse.json({ posting });
+    return NextResponse.json({ posting: { ...posting, applicationCount: 0 } });
   } catch (error) {
     console.error('[Recruiter Postings API] GET [id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -78,12 +79,17 @@ export async function PUT(
       );
     }
 
+    const updateData = { ...validation.data };
+    if (updateData.description) {
+      updateData.description = sanitizeHtml(updateData.description, SANITIZE_OPTIONS);
+    }
+
     const posting = await db.jobPosting.update({
       where: { id },
-      data: validation.data,
+      data: updateData,
     });
 
-    return NextResponse.json({ posting });
+    return NextResponse.json({ posting: { ...posting, applicationCount: 0 } });
   } catch (error) {
     console.error('[Recruiter Postings API] PUT [id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

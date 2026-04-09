@@ -49,7 +49,7 @@ export function RichTextEditor({
 
   React.useEffect(() => {
     if (editor && value !== undefined && value !== editor.getHTML()) {
-      editor.commands.setContent(value || "", false);
+      editor.commands.setContent(value || "", { emitUpdate: false });
     }
   }, [value, editor]);
 
