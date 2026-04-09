@@ -5,7 +5,6 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Bold,
   Italic,
