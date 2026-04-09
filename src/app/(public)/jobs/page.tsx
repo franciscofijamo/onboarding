@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   Briefcase,
   Building2,
@@ -35,6 +36,9 @@ import {
   type SalaryRange,
 } from "@/lib/recruiter/postings";
 
+const PAGE_SIZE = 12;
+const NONE = "ALL";
+
 type PublicPosting = {
   id: string;
   title: string;
@@ -51,6 +55,31 @@ type JobsResponse = {
   nextCursor: string | null;
 };
 
+async function fetchJobsPage({
+  q,
+  category,
+  jobType,
+  salaryRange,
+  cursor,
+}: {
+  q: string;
+  category: string;
+  jobType: string;
+  salaryRange: string;
+  cursor?: string;
+}): Promise<JobsResponse> {
+  const params = new URLSearchParams();
+  params.set("limit", String(PAGE_SIZE));
+  if (q) params.set("q", q);
+  if (category !== NONE) params.set("category", category);
+  if (jobType !== NONE) params.set("jobType", jobType);
+  if (salaryRange !== NONE) params.set("salaryRange", salaryRange);
+  if (cursor) params.set("cursor", cursor);
+  const res = await fetch(`/api/jobs?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch jobs");
+  return res.json();
+}
+
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat("pt-MZ", {
     day: "numeric",
@@ -58,27 +87,6 @@ function formatDate(iso: string) {
     year: "numeric",
   }).format(new Date(iso));
 }
-
-async function fetchJobs(
-  q: string,
-  category: string,
-  jobType: string,
-  salaryRange: string,
-  cursor?: string
-): Promise<JobsResponse> {
-  const params = new URLSearchParams();
-  if (q) params.set("q", q);
-  if (category !== "ALL") params.set("category", category);
-  if (jobType !== "ALL") params.set("jobType", jobType);
-  if (salaryRange !== "ALL") params.set("salaryRange", salaryRange);
-  if (cursor) params.set("cursor", cursor);
-  params.set("limit", "12");
-  const res = await fetch(`/api/jobs?${params.toString()}`);
-  if (!res.ok) throw new Error("Failed to fetch jobs");
-  return res.json();
-}
-
-const NONE = "ALL";
 
 export default function JobBoardPage() {
   const [search, setSearch] = React.useState("");
@@ -88,43 +96,36 @@ export default function JobBoardPage() {
   const [salaryRange, setSalaryRange] = React.useState(NONE);
   const [showFilters, setShowFilters] = React.useState(false);
 
-  const [allPostings, setAllPostings] = React.useState<PublicPosting[]>([]);
-  const [cursor, setCursor] = React.useState<string | undefined>(undefined);
-  const [hasMore, setHasMore] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
-
   React.useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350);
     return () => clearTimeout(t);
   }, [search]);
 
-  React.useEffect(() => {
-    setIsLoading(true);
-    setAllPostings([]);
-    setCursor(undefined);
-    fetchJobs(debouncedSearch, category, jobType, salaryRange)
-      .then((data) => {
-        setAllPostings(data.postings);
-        setHasMore(data.hasMore);
-        setCursor(data.nextCursor ?? undefined);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [debouncedSearch, category, jobType, salaryRange]);
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery<JobsResponse, Error, { pages: JobsResponse[] }, [string, string, string, string, string], string | undefined>({
+    queryKey: ["publicJobs", debouncedSearch, category, jobType, salaryRange],
+    queryFn: ({ pageParam }) =>
+      fetchJobsPage({
+        q: debouncedSearch,
+        category,
+        jobType,
+        salaryRange,
+        cursor: pageParam,
+      }),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    staleTime: 60_000,
+  });
 
-  const loadMore = () => {
-    if (!cursor || isLoadingMore) return;
-    setIsLoadingMore(true);
-    fetchJobs(debouncedSearch, category, jobType, salaryRange, cursor)
-      .then((data) => {
-        setAllPostings((prev) => [...prev, ...data.postings]);
-        setHasMore(data.hasMore);
-        setCursor(data.nextCursor ?? undefined);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoadingMore(false));
-  };
+  const allPostings = React.useMemo(
+    () => data?.pages.flatMap((page) => page.postings) ?? [],
+    [data]
+  );
 
   const activeFilterCount = [
     category !== NONE,
@@ -276,7 +277,7 @@ export default function JobBoardPage() {
           <>
             <p className="mb-4 text-sm text-muted-foreground">
               {allPostings.length} vaga{allPostings.length !== 1 ? "s" : ""} encontrada{allPostings.length !== 1 ? "s" : ""}
-              {hasMore ? "+" : ""}
+              {hasNextPage ? "+" : ""}
             </p>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {allPostings.map((posting) => (
@@ -284,15 +285,15 @@ export default function JobBoardPage() {
               ))}
             </div>
 
-            {hasMore && (
+            {hasNextPage && (
               <div className="mt-8 flex justify-center">
                 <Button
                   variant="outline"
                   className="rounded-2xl gap-2"
-                  onClick={loadMore}
-                  disabled={isLoadingMore}
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
                 >
-                  {isLoadingMore ? (
+                  {isFetchingNextPage ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       A carregar...

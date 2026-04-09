@@ -43,7 +43,6 @@ type PostingDetail = {
     name: string;
     location: string;
     website: string | null;
-    email: string;
     description: string;
   };
 };
