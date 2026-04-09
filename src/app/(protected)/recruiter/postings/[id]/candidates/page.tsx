@@ -764,8 +764,11 @@ function InterviewStageModal({
 
       const genRes = await api.post(
         `/api/recruiter/postings/${postingId}/stages/${newStageId}/generate`, {}
-      ) as { stage: InterviewStage };
+      ) as { stage: InterviewStage; warning?: string };
       setQuestions(genRes.stage.questions ?? []);
+      if (genRes.warning) {
+        toast({ title: "Atenção", description: genRes.warning });
+      }
       setStep("questions");
     } catch (err) {
       toast({
@@ -784,9 +787,13 @@ function InterviewStageModal({
     try {
       const genRes = await api.post(
         `/api/recruiter/postings/${postingId}/stages/${stageId}/generate`, {}
-      ) as { stage: InterviewStage };
+      ) as { stage: InterviewStage; warning?: string };
       setQuestions(genRes.stage.questions ?? []);
-      toast({ title: "Perguntas regeneradas!" });
+      if (genRes.warning) {
+        toast({ title: "Atenção", description: genRes.warning });
+      } else {
+        toast({ title: "Perguntas regeneradas!" });
+      }
     } catch (err) {
       toast({
         title: "Erro ao regenerar",
@@ -818,16 +825,28 @@ function InterviewStageModal({
     if (!stageId) return;
     try {
       await api.delete(`/api/recruiter/stages/${stageId}/questions/${questionId}`);
-      setQuestions(prev => {
-        const updated = prev.filter(q => q.id !== questionId);
-        // Persist new order values after deletion
-        updated.forEach((q, i) => {
-          if (q.order !== i) {
-            api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: i }).catch(() => {});
-          }
+
+      // Compute re-indexed list outside state updater so we can await order persists
+      const remaining = questions
+        .filter(q => q.id !== questionId)
+        .map((q, i) => ({ ...q, order: i }));
+
+      // Optimistic UI update
+      setQuestions(remaining);
+
+      // Persist new order for any questions whose index shifted
+      const orderUpdates = remaining
+        .filter((q, i) => q.order !== i)
+        .map(q => api.put(`/api/recruiter/stages/${stageId}/questions/${q.id}`, { order: q.order }));
+
+      if (orderUpdates.length > 0) {
+        await Promise.all(orderUpdates).catch(() => {
+          toast({
+            title: "Atenção",
+            description: "Pergunta eliminada, mas a reordenação pode não ter sido guardada.",
+          });
         });
-        return updated.map((q, i) => ({ ...q, order: i }));
-      });
+      }
     } catch (err) {
       toast({
         title: "Erro ao eliminar pergunta",

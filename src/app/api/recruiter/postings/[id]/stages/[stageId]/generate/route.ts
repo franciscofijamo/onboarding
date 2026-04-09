@@ -117,7 +117,12 @@ export async function POST(
       include: { questions: { orderBy: { order: 'asc' } } },
     })
 
-    return NextResponse.json({ stage: updatedStage })
+    const dedupWarning =
+      deduplicated.length < stage.questionCount
+        ? `Only ${deduplicated.length} of ${stage.questionCount} requested questions could be generated without repeating prior stages. You can regenerate or edit the remaining questions.`
+        : null
+
+    return NextResponse.json({ stage: updatedStage, warning: dedupWarning })
   } catch (err) {
     console.error('Generate questions error:', err)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
