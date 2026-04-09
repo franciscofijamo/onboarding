@@ -1266,24 +1266,49 @@ function CandidateCard({
           </Button>
         )}
 
-        {/* Move to next default stage */}
-        {!isInterviewStageColumn && nextStage && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="rounded-xl flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5"
-            onClick={() => onMove(entry.id, nextStage)}
-            disabled={isMoving}
-          >
-            {isMoving ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <>
-                Mover
-                <ArrowRight className="h-3 w-3" />
-              </>
-            )}
-          </Button>
+        {/* Move to next stage — shown for all columns including interview sub-stages */}
+        {isInterviewStageColumn ? (
+          // Interview sub-stage: allow recruiter to advance to OFFER or REJECTED
+          <div className="flex gap-1 flex-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5"
+              onClick={() => onMove(entry.id, "OFFER")}
+              disabled={isMoving}
+            >
+              {isMoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <>Oferta <ArrowRight className="h-3 w-3" /></>}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl text-xs border-destructive/30 text-destructive hover:bg-destructive/5 px-2"
+              onClick={() => onMove(entry.id, "REJECTED")}
+              disabled={isMoving}
+              title="Rejeitar candidato"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          nextStage && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl flex-1 text-xs border-primary/30 text-primary hover:bg-primary/5"
+              onClick={() => onMove(entry.id, nextStage)}
+              disabled={isMoving}
+            >
+              {isMoving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <>
+                  Mover
+                  <ArrowRight className="h-3 w-3" />
+                </>
+              )}
+            </Button>
+          )
         )}
 
         {/* Move to published interview stages (only shown in REVIEWING stage) */}
@@ -1449,7 +1474,7 @@ export default function RecruiterCandidatesPage() {
                 <Mic className="h-3.5 w-3.5" />
                 <span className="font-medium">{stage.name}</span>
                 <Badge variant="outline" className="text-xs bg-purple-100 border-purple-300 text-purple-700">
-                  {stage.questions?.length ?? 0} perguntas
+                  {stage.questionCount} perguntas
                 </Badge>
               </div>
             ))}

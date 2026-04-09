@@ -80,10 +80,22 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to generate questions. Please try again.' }, { status: 502 })
     }
 
+    // Server-side deduplication: remove generated questions whose prompts are too
+    // similar to prompts already used in OTHER stages of this posting.
+    // (The current stage's questions are about to be replaced, so exclude them.)
+    const otherStagePrompts = existingStages
+      .filter(s => s.id !== stageId)
+      .flatMap(s => s.questions.map(q => normalizePrompt(q.prompt)))
+
+    const deduplicated = generatedQuestions.filter(q => {
+      const norm = normalizePrompt(q.prompt)
+      return !otherStagePrompts.some(existing => promptsAreDuplicate(norm, existing))
+    })
+
     // Delete existing questions for this stage and replace
     await db.recruitmentInterviewQuestion.deleteMany({ where: { stageId } })
     await db.recruitmentInterviewQuestion.createMany({
-      data: generatedQuestions.map((q, i) => ({
+      data: deduplicated.map((q, i) => ({
         stageId,
         prompt: q.prompt,
         questionType: q.question_type || 'MIXED',
@@ -102,6 +114,27 @@ export async function POST(
     console.error('Generate questions error:', err)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
+}
+
+/** Normalize a prompt for deduplication comparison */
+function normalizePrompt(prompt: string): string {
+  return prompt
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/** Returns true if two normalized prompts are considered duplicates (>=70% word overlap) */
+function promptsAreDuplicate(a: string, b: string): boolean {
+  if (a === b) return true
+  const wordsA = new Set(a.split(' ').filter(w => w.length > 3))
+  const wordsB = new Set(b.split(' ').filter(w => w.length > 3))
+  if (wordsA.size === 0 || wordsB.size === 0) return false
+  let overlap = 0
+  for (const w of wordsA) if (wordsB.has(w)) overlap++
+  const similarity = overlap / Math.max(wordsA.size, wordsB.size)
+  return similarity >= 0.7
 }
 
 function buildRecruiterInterviewPrompt(
