@@ -14,7 +14,6 @@ import {
   Loader2,
   Sparkles,
   User,
-  X,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
@@ -62,6 +61,7 @@ type CandidateUser = {
   experienceLevel: string | null;
   targetRole: string | null;
   currentRole: string | null;
+  skills?: string[];
 };
 
 type PipelineEntry = {
@@ -166,17 +166,27 @@ function getFitScoreRingColor(score: number | null) {
 // ─── Analysis Modal ───────────────────────────────────────────────────────────
 
 function AnalysisModal({
+  postingId,
   entry,
   onClose,
 }: {
+  postingId: string;
   entry: PipelineEntry | null;
   onClose: () => void;
 }) {
+  const { data, isLoading } = useQuery<{ pipelineEntry: PipelineEntry }>({
+    queryKey: ["recruiterCandidateAnalysis", postingId, entry?.user.id],
+    queryFn: () => api.get(`/api/recruiter/postings/${postingId}/candidates/${entry!.user.id}/analysis`),
+    enabled: Boolean(entry),
+    staleTime: 30_000,
+  });
+
   if (!entry) return null;
 
-  const analysis = entry.jobApplication.analyses[0] ?? null;
-  const candidate = entry.user;
-  const fitScore = entry.fitScore ?? analysis?.fitScore ?? null;
+  const fullEntry = data?.pipelineEntry ?? entry;
+  const analysis = fullEntry.jobApplication.analyses[0] ?? null;
+  const candidate = fullEntry.user;
+  const fitScore = fullEntry.fitScore ?? analysis?.fitScore ?? null;
 
   const skillsMatch = toStringArray(analysis?.skillsMatch);
   const missingSkills = toStringArray(analysis?.missingSkills);
@@ -197,211 +207,219 @@ function AnalysisModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 pb-2">
-          {/* Candidate Info */}
-          <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
-            <div className="flex flex-wrap gap-3 text-sm">
-              {candidate.email && (
-                <span className="text-muted-foreground">{candidate.email}</span>
-              )}
-              {candidate.province && (
-                <Badge variant="outline" className="rounded-full text-xs">{candidate.province}</Badge>
-              )}
-              {candidate.experienceLevel && (
-                <Badge variant="outline" className="rounded-full text-xs">{candidate.experienceLevel}</Badge>
-              )}
-              {candidate.currentRole && (
-                <span className="text-muted-foreground">{candidate.currentRole}</span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>Candidatura: {formatDate(entry.jobApplication.createdAt)}</span>
-              <span>·</span>
-              <span>Fase: <strong className="text-foreground">{STAGE_LABELS[entry.currentStage]}</strong></span>
-            </div>
-            {entry.jobApplication.resume?.fileUrl && (
-              <a
-                href={entry.jobApplication.resume.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                <FileText className="h-3 w-3" />
-                Ver CV
-              </a>
-            )}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
+        )}
 
-          {/* Analysis — no data */}
-          {!analysis && (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-8 text-center">
-              <Sparkles className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-40" />
-              <p className="text-sm font-medium text-muted-foreground">Análise IA ainda não disponível</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                A análise é processada em segundo plano após a candidatura.
-              </p>
-            </div>
-          )}
-
-          {/* Analysis — score circle + stats */}
-          {analysis && (
-            <>
-              <div className="rounded-2xl border border-border bg-card p-6">
-                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-                  {/* Score ring */}
-                  <div className="relative shrink-0">
-                    <svg width="120" height="120" viewBox="0 0 120 120">
-                      <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/30" />
-                      <circle
-                        cx="60" cy="60" r="50"
-                        fill="none"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={circumference}
-                        strokeDashoffset={dashOffset}
-                        className={cn("transition-all duration-700", getFitScoreRingColor(fitScore))}
-                        transform="rotate(-90 60 60)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className={cn("text-2xl font-bold", getFitScoreColor(fitScore))}>
-                        {fitScore !== null ? Math.round(fitScore) : "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">/100</span>
-                    </div>
-                  </div>
-
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <h3 className="font-semibold">Score de Compatibilidade</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {(fitScore ?? 0) >= 70
-                          ? "Excelente compatibilidade com a vaga."
-                          : (fitScore ?? 0) >= 50
-                          ? "Compatibilidade razoável — vale a pena entrevistar."
-                          : "Compatibilidade baixa — reveja os gaps antes de avançar."}
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="rounded-xl bg-emerald-50 p-3">
-                        <div className="text-lg font-bold text-emerald-600">{skillsMatch.length}</div>
-                        <div className="text-xs text-muted-foreground">Skills alinhadas</div>
-                      </div>
-                      <div className="rounded-xl bg-orange-50 p-3">
-                        <div className="text-lg font-bold text-orange-500">{missingSkills.length}</div>
-                        <div className="text-xs text-muted-foreground">Gaps</div>
-                      </div>
-                      <div className="rounded-xl bg-primary/5 p-3">
-                        <div className="text-lg font-bold text-primary/70">{recommendations.length}</div>
-                        <div className="text-xs text-muted-foreground">Recomendações</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {analysis.summary && (
-                  <p className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
-                    {analysis.summary}
-                  </p>
+        {!isLoading && (
+          <div className="space-y-6 pb-2">
+            {/* Candidate Info */}
+            <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-2">
+              <div className="flex flex-wrap gap-3 text-sm">
+                {candidate.email && (
+                  <span className="text-muted-foreground">{candidate.email}</span>
+                )}
+                {candidate.province && (
+                  <Badge variant="outline" className="rounded-full text-xs">{candidate.province}</Badge>
+                )}
+                {candidate.experienceLevel && (
+                  <Badge variant="outline" className="rounded-full text-xs">{candidate.experienceLevel}</Badge>
+                )}
+                {candidate.currentRole && (
+                  <span className="text-muted-foreground">{candidate.currentRole}</span>
                 )}
               </div>
-
-              {/* Skills + Gaps */}
-              {(skillsMatch.length > 0 || missingSkills.length > 0) && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {skillsMatch.length > 0 && (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
-                      <h4 className="text-sm font-semibold text-emerald-700 mb-3">Skills Compatíveis</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {skillsMatch.map((skill, i) => (
-                          <Badge key={i} variant="outline" className="rounded-full text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {missingSkills.length > 0 && (
-                    <div className="rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
-                      <h4 className="text-sm font-semibold text-orange-700 mb-3">Gaps Identificados</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {missingSkills.map((skill, i) => (
-                          <Badge key={i} variant="outline" className="rounded-full text-xs bg-orange-100 text-orange-700 border-orange-200">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Strengths */}
-              {strengths.length > 0 && (
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <h4 className="text-sm font-semibold mb-3">Pontos Fortes</h4>
-                  <ul className="space-y-2">
-                    {strengths.map((s, i) => (
-                      <li key={i} className="flex gap-2 text-sm">
-                        <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Improvements */}
-              {improvements.length > 0 && (
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <h4 className="text-sm font-semibold mb-3">Áreas de Melhoria</h4>
-                  <ul className="space-y-2">
-                    {improvements.map((s, i) => (
-                      <li key={i} className="flex gap-2 text-sm">
-                        <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Recommendations */}
-              {recommendations.length > 0 && (
-                <div className="rounded-2xl border border-border bg-card p-4">
-                  <h4 className="text-sm font-semibold mb-3">Recomendações</h4>
-                  <ul className="space-y-2">
-                    {recommendations.map((s, i) => (
-                      <li key={i} className="flex gap-2 text-sm">
-                        <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i + 1}</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Stage History */}
-          {entry.stageHistory.length > 0 && (
-            <div className="rounded-2xl border border-border bg-muted/30 p-4">
-              <h4 className="text-sm font-semibold mb-3">Histórico de Fases</h4>
-              <div className="space-y-2">
-                {entry.stageHistory.map((h) => (
-                  <div key={h.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">{STAGE_LABELS[h.fromStage]}</span>
-                    <ChevronRight className="h-3 w-3 shrink-0" />
-                    <span className="font-medium text-foreground">{STAGE_LABELS[h.toStage]}</span>
-                    <span className="ml-auto">{formatDate(h.movedAt)}</span>
-                    {h.mover.name && <span>por {h.mover.name}</span>}
-                  </div>
-                ))}
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span>Candidatura: {formatDate(fullEntry.jobApplication.createdAt)}</span>
+                <span>·</span>
+                <span>Fase: <strong className="text-foreground">{STAGE_LABELS[fullEntry.currentStage]}</strong></span>
               </div>
+              {fullEntry.jobApplication.resume?.fileUrl && (
+                <a
+                  href={fullEntry.jobApplication.resume.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <FileText className="h-3 w-3" />
+                  Ver CV
+                </a>
+              )}
             </div>
-          )}
-        </div>
+
+            {/* Analysis — no data */}
+            {!analysis && (
+              <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-8 text-center">
+                <Sparkles className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="text-sm font-medium text-muted-foreground">Análise IA ainda não disponível</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  A análise é processada em segundo plano após a candidatura.
+                </p>
+              </div>
+            )}
+
+            {/* Analysis — score circle + stats */}
+            {analysis && (
+              <>
+                <div className="rounded-2xl border border-border bg-card p-6">
+                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                    {/* Score ring */}
+                    <div className="relative shrink-0">
+                      <svg width="120" height="120" viewBox="0 0 120 120">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted/30" />
+                        <circle
+                          cx="60" cy="60" r="50"
+                          fill="none"
+                          strokeWidth="8"
+                          strokeLinecap="round"
+                          strokeDasharray={circumference}
+                          strokeDashoffset={dashOffset}
+                          className={cn("transition-all duration-700", getFitScoreRingColor(fitScore))}
+                          transform="rotate(-90 60 60)"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className={cn("text-2xl font-bold", getFitScoreColor(fitScore))}>
+                          {fitScore !== null ? Math.round(fitScore) : "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">/100</span>
+                      </div>
+                    </div>
+
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <h3 className="font-semibold">Score de Compatibilidade</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(fitScore ?? 0) >= 70
+                            ? "Excelente compatibilidade com a vaga."
+                            : (fitScore ?? 0) >= 50
+                            ? "Compatibilidade razoável — vale a pena entrevistar."
+                            : "Compatibilidade baixa — reveja os gaps antes de avançar."}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="rounded-xl bg-emerald-50 p-3">
+                          <div className="text-lg font-bold text-emerald-600">{skillsMatch.length}</div>
+                          <div className="text-xs text-muted-foreground">Skills alinhadas</div>
+                        </div>
+                        <div className="rounded-xl bg-orange-50 p-3">
+                          <div className="text-lg font-bold text-orange-500">{missingSkills.length}</div>
+                          <div className="text-xs text-muted-foreground">Gaps</div>
+                        </div>
+                        <div className="rounded-xl bg-primary/5 p-3">
+                          <div className="text-lg font-bold text-primary/70">{recommendations.length}</div>
+                          <div className="text-xs text-muted-foreground">Recomendações</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {analysis.summary && (
+                    <p className="mt-4 text-sm text-muted-foreground border-t border-border pt-4">
+                      {analysis.summary}
+                    </p>
+                  )}
+                </div>
+
+                {/* Skills + Gaps */}
+                {(skillsMatch.length > 0 || missingSkills.length > 0) && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {skillsMatch.length > 0 && (
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4">
+                        <h4 className="text-sm font-semibold text-emerald-700 mb-3">Skills Compatíveis</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {skillsMatch.map((skill, i) => (
+                            <Badge key={i} variant="outline" className="rounded-full text-xs bg-emerald-100 text-emerald-700 border-emerald-200">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {missingSkills.length > 0 && (
+                      <div className="rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
+                        <h4 className="text-sm font-semibold text-orange-700 mb-3">Gaps Identificados</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {missingSkills.map((skill, i) => (
+                            <Badge key={i} variant="outline" className="rounded-full text-xs bg-orange-100 text-orange-700 border-orange-200">
+                              {skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Strengths */}
+                {strengths.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <h4 className="text-sm font-semibold mb-3">Pontos Fortes</h4>
+                    <ul className="space-y-2">
+                      {strengths.map((s, i) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Improvements */}
+                {improvements.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <h4 className="text-sm font-semibold mb-3">Áreas de Melhoria</h4>
+                    <ul className="space-y-2">
+                      {improvements.map((s, i) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {recommendations.length > 0 && (
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <h4 className="text-sm font-semibold mb-3">Recomendações</h4>
+                    <ul className="space-y-2">
+                      {recommendations.map((s, i) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Stage History */}
+            {fullEntry.stageHistory.length > 0 && (
+              <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                <h4 className="text-sm font-semibold mb-3">Histórico de Fases</h4>
+                <div className="space-y-2">
+                  {fullEntry.stageHistory.map((h) => (
+                    <div key={h.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{STAGE_LABELS[h.fromStage]}</span>
+                      <ChevronRight className="h-3 w-3 shrink-0" />
+                      <span className="font-medium text-foreground">{STAGE_LABELS[h.toStage]}</span>
+                      <span className="ml-auto">{formatDate(h.movedAt)}</span>
+                      {h.mover.name && <span>por {h.mover.name}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -492,7 +510,7 @@ function CandidateCard({
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               <>
-                Mover para {STAGE_LABELS[nextStage]}
+                Mover
                 <ArrowRight className="h-3 w-3" />
               </>
             )}
@@ -526,7 +544,7 @@ export default function RecruiterCandidatesPage() {
 
   const moveMutation = useMutation({
     mutationFn: ({ entryId, stage }: { entryId: string; stage: PipelineStage }) =>
-      api.patch(`/api/recruiter/postings/${postingId}/pipeline`, { entryId, stage }),
+      api.patch(`/api/recruiter/postings/${postingId}/pipeline/${entryId}/move`, { stage }),
     onMutate: ({ entryId, stage }) => {
       setMovingEntryId(entryId);
       queryClient.setQueryData<PipelineResponse>(["recruiterPipeline", postingId], (cur) => {
@@ -554,9 +572,10 @@ export default function RecruiterCandidatesPage() {
     return map;
   }, [pipeline]);
 
-  // Only show stages that have candidates, always show RECEIVED
-  const activeStages = STAGES.filter(
-    (s) => s === "RECEIVED" || grouped[s].length > 0
+  // Derive active stages from actual data — always show RECEIVED, show others only with candidates
+  const activeStages = React.useMemo(
+    () => STAGES.filter((s) => s === "RECEIVED" || grouped[s].length > 0),
+    [grouped]
   );
 
   const totalCount = pipeline.length;
@@ -579,7 +598,11 @@ export default function RecruiterCandidatesPage() {
 
   return (
     <>
-      <AnalysisModal entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+      <AnalysisModal
+        postingId={postingId}
+        entry={selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+      />
 
       <div className="space-y-6">
         {/* Header */}
