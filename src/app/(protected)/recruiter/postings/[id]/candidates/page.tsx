@@ -83,12 +83,23 @@ type PipelineEntry = {
   stageHistory: StageHistoryEntry[];
 };
 
-type PipelineResponse = { pipeline: PipelineEntry[] };
+type StageGroup = {
+  stage: PipelineStage;
+  label: string;
+  candidates: PipelineEntry[];
+};
+
+type StageConfigItem = { stage: PipelineStage; label: string };
+
+type PipelineResponse = {
+  stages: StageGroup[];
+  pipeline: PipelineEntry[];
+  stageConfig: StageConfigItem[];
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STAGES: PipelineStage[] = ["RECEIVED", "REVIEWING", "INTERVIEW", "OFFER", "REJECTED", "ACCEPTED"];
-
+// Stage labels used in history display — kept in sync with server DEFAULT_STAGE_CONFIG
 const STAGE_LABELS: Record<PipelineStage, string> = {
   RECEIVED: "Candidaturas Recebidas",
   REVIEWING: "Em Avaliação",
@@ -549,11 +560,16 @@ export default function RecruiterCandidatesPage() {
       setMovingEntryId(entryId);
       queryClient.setQueryData<PipelineResponse>(["recruiterPipeline", postingId], (cur) => {
         if (!cur) return cur;
-        return {
-          pipeline: cur.pipeline.map((e) =>
-            e.id === entryId ? { ...e, currentStage: stage } : e
-          ),
-        };
+        const updatedPipeline = cur.pipeline.map((e) =>
+          e.id === entryId ? { ...e, currentStage: stage } : e
+        );
+        const updatedStages = cur.stages.map((g) => ({
+          ...g,
+          candidates: g.stage === stage
+            ? [...g.candidates, ...cur.stages.flatMap((s) => s.candidates.filter((e) => e.id === entryId))]
+            : g.candidates.filter((e) => e.id !== entryId),
+        }));
+        return { ...cur, pipeline: updatedPipeline, stages: updatedStages };
       });
     },
     onSettled: () => {
@@ -563,20 +579,8 @@ export default function RecruiterCandidatesPage() {
   });
 
   const pipeline = data?.pipeline ?? [];
-
-  const grouped = React.useMemo(() => {
-    const map: Record<PipelineStage, PipelineEntry[]> = {
-      RECEIVED: [], REVIEWING: [], INTERVIEW: [], OFFER: [], REJECTED: [], ACCEPTED: [],
-    };
-    pipeline.forEach((e) => map[e.currentStage].push(e));
-    return map;
-  }, [pipeline]);
-
-  // Derive active stages from actual data — always show RECEIVED, show others only with candidates
-  const activeStages = React.useMemo(
-    () => STAGES.filter((s) => s === "RECEIVED" || grouped[s].length > 0),
-    [grouped]
-  );
+  // Use server-grouped stages — all configured stages present (empty columns included)
+  const stageGroups = data?.stages ?? [];
 
   const totalCount = pipeline.length;
   const analyzedCount = pipeline.filter((e) => e.fitScore !== null || e.jobApplication.analyses.length > 0).length;
@@ -655,16 +659,16 @@ export default function RecruiterCandidatesPage() {
           </section>
         )}
 
-        {/* Kanban */}
-        {totalCount > 0 && (
+        {/* Kanban — all configured stages rendered (including empty columns) */}
+        {stageGroups.length > 0 && (
           <div className="overflow-x-auto pb-4">
             <div
               className="grid gap-4"
-              style={{ gridTemplateColumns: `repeat(${activeStages.length}, minmax(280px, 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(${stageGroups.length}, minmax(280px, 1fr))` }}
             >
-              {activeStages.map((stage) => {
-                const { accent, badge } = STAGE_COLORS[stage];
-                const entries = grouped[stage];
+              {stageGroups.map(({ stage, label, candidates: entries }) => {
+                const colors = STAGE_COLORS[stage] ?? STAGE_COLORS.RECEIVED;
+                const { accent, badge } = colors;
 
                 return (
                   <div key={stage} className="rounded-3xl border border-border bg-card p-4 min-w-[280px]">
@@ -672,7 +676,7 @@ export default function RecruiterCandidatesPage() {
                     <div className={cn("mb-4 rounded-2xl bg-gradient-to-br p-[1px]", accent)}>
                       <div className="rounded-[15px] bg-card p-4">
                         <div className="flex items-center justify-between gap-2">
-                          <h2 className="text-sm font-semibold">{STAGE_LABELS[stage]}</h2>
+                          <h2 className="text-sm font-semibold">{label}</h2>
                           <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-xs", badge)}>
                             {entries.length}
                           </Badge>
@@ -693,7 +697,7 @@ export default function RecruiterCandidatesPage() {
                             entry={entry}
                             postingId={postingId}
                             onViewAnalysis={setSelectedEntry}
-                            onMove={(entryId, stage) => moveMutation.mutate({ entryId, stage })}
+                            onMove={(entryId, toStage) => moveMutation.mutate({ entryId, stage: toStage })}
                             isMoving={movingEntryId === entry.id && moveMutation.isPending}
                           />
                         ))
