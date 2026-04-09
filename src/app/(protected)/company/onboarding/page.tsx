@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useClerk } from "@clerk/nextjs";
 
 interface FormErrors {
   name?: string;
@@ -22,6 +23,7 @@ interface FormErrors {
 export default function CompanyOnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { session } = useClerk();
 
   const [form, setForm] = React.useState({
     name: "",
@@ -58,9 +60,10 @@ export default function CompanyOnboardingPage() {
     setLoading(true);
     try {
       await api.put("/api/company/profile", form);
+      await session?.reload();
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       setDone(true);
-      setTimeout(() => router.replace("/dashboard"), 1500);
+      setTimeout(() => router.replace("/recruiter/postings"), 1500);
     } catch {
       setErrors({ name: "Erro ao guardar. Tente novamente." });
     } finally {

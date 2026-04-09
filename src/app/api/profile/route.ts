@@ -22,9 +22,14 @@ async function handleGetProfile() {
 
         const user = await getUserFromClerkId(userId);
 
+        const company = user.role === 'RECRUITER'
+            ? await db.company.findUnique({ where: { userId: user.id }, select: { id: true } })
+            : null;
+
         return NextResponse.json({
             profileComplete: user.profileComplete ?? false,
             role: user.role ?? null,
+            hasCompany: company !== null,
             province: user.province,
             birthYear: user.birthYear,
             gender: user.gender,

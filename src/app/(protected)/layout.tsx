@@ -27,7 +27,7 @@ export default function ProtectedLayout({
 
   const { data: subscriptionStatus, isLoading: isLoadingSubscription } = useSubscription();
 
-  const { isProfileComplete, isLoading: isLoadingProfile, role, hasRole, refetch: refetchProfile } = useProfile();
+  const { isProfileComplete, isLoading: isLoadingProfile, role, hasRole, hasCompany, refetch: refetchProfile } = useProfile();
   const [showProfileModal, setShowProfileModal] = React.useState(false);
 
   const isRoleExempt = ROLE_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
@@ -38,6 +38,13 @@ export default function ProtectedLayout({
       router.replace('/role-select');
     }
   }, [isLoadingProfile, isSignedIn, hasRole, isRoleExempt, router]);
+
+  // Redirect recruiters who haven't completed company onboarding
+  React.useEffect(() => {
+    if (!isLoadingProfile && isSignedIn && role === 'RECRUITER' && !hasCompany && !isRoleExempt) {
+      router.replace('/company/onboarding');
+    }
+  }, [isLoadingProfile, isSignedIn, role, hasCompany, isRoleExempt, router]);
 
   // Show profile modal only for CANDIDATEs who haven't completed their profile
   React.useEffect(() => {

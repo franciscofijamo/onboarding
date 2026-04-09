@@ -6,16 +6,19 @@ import { Briefcase, User, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useClerk } from "@clerk/nextjs";
 
 export default function RoleSelectPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { session } = useClerk();
   const [loading, setLoading] = React.useState<"CANDIDATE" | "RECRUITER" | null>(null);
 
   const selectRole = async (role: "CANDIDATE" | "RECRUITER") => {
     setLoading(role);
     try {
       await api.put("/api/role", { role });
+      await session?.reload();
       await queryClient.invalidateQueries({ queryKey: ["profile"] });
       if (role === "RECRUITER") {
         router.replace("/company/onboarding");
