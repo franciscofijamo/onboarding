@@ -138,6 +138,15 @@ export async function POST(
 
     const session = await db.workplaceScenarioSession.findFirst({
       where: { id: sessionId, userId: user.id },
+      include: {
+        jobApplication: {
+          select: {
+            jobTitle: true,
+            companyName: true,
+            jobDescription: true,
+          },
+        },
+      },
     })
 
     if (!session) {
@@ -292,7 +301,7 @@ export async function POST(
       const analysisResult = await generateText({
         model: PROVIDER('google/gemini-2.0-flash-001'),
         prompt: wrapPromptWithLanguage(
-          buildAnalysisPrompt(response.prompt, transcript, session.scenarioType, user),
+          buildAnalysisPrompt(response.prompt, transcript, session.scenarioType, user, session.jobApplication),
           language
         ),
         temperature: 0.3,
@@ -395,6 +404,7 @@ function buildAnalysisPrompt(
   transcript: string,
   scenarioType: string | null,
   user: { industry?: string | null; currentRole?: string | null; englishLevel?: string | null },
+  jobApplication?: { jobTitle?: string | null; companyName?: string | null; jobDescription?: string } | null,
 ): string {
   const userContext = [
     user.industry ? `Industry: ${user.industry}` : null,
@@ -402,24 +412,28 @@ function buildAnalysisPrompt(
     user.englishLevel ? `English Level: ${user.englishLevel}` : null,
   ].filter(Boolean).join(', ')
 
-  return `You are an expert Business English coach with 10+ years of experience evaluating professional workplace communication. Analyze the user's spoken response to the following workplace scenario.
+  const jobContext = jobApplication
+    ? `\nJOB CONTEXT:\nPosition: ${jobApplication.jobTitle || 'Not specified'}\nCompany: ${jobApplication.companyName || 'Not specified'}\nJob Description (excerpt): ${(jobApplication.jobDescription || '').slice(0, 600)}\n`
+    : ''
 
-WORKPLACE SCENARIO (${scenarioType || 'General'}):
+  return `You are an expert interview coach and Business English specialist. Analyze the candidate's spoken response to the following job interview question.
+
+INTERVIEW QUESTION:
 "${scenarioPrompt}"
-
-${userContext ? `USER CONTEXT: ${userContext}\n` : ''}
-TRANSCRIPTION OF THE USER'S SPOKEN RESPONSE:
+${jobContext}
+${userContext ? `CANDIDATE CONTEXT: ${userContext}\n` : ''}
+TRANSCRIPTION OF THE CANDIDATE'S SPOKEN RESPONSE:
 """
 ${transcript}
 """
 
-EVALUATION CRITERIA FOR WORKPLACE COMMUNICATION:
-1. Business English Proficiency (1-10): Vocabulary accuracy, appropriate register, industry terminology
+EVALUATION CRITERIA FOR INTERVIEW PERFORMANCE:
+1. Answer Relevance & Completeness (1-10): Did they address what was asked? Covered all key aspects?
 2. Communication Clarity (1-10): Clear expression, logical structure, conciseness
-3. Professionalism (1-10): Appropriate tone, formality level, workplace etiquette
-4. Contextual Appropriateness (1-10): Response fits the scenario, addresses all aspects
-5. Confidence and Fluency (1-10): Natural flow, minimal hesitation, assertiveness
-6. Persuasion and Impact (1-10): Effectiveness of communication, ability to influence
+3. STAR Method / Structure (1-10): Situation→Task→Action→Result — concrete examples vs vague generalities
+4. Business English Proficiency (1-10): Grammar, vocabulary range, professional register
+5. Confidence and Fluency (1-10): Natural flow, minimal hesitation, assertive delivery
+6. Job Fit Demonstration (1-10): Did their response show they are right for this specific role?
 
 INSTRUCTIONS:
 1. Evaluate each criterion from 1 to 10

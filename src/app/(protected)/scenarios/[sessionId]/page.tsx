@@ -451,10 +451,10 @@ export default function ScenarioSessionPage() {
             <div className="p-6 md:p-8">
 
               {currentResponse.status === "ANALYZING" ? (
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="mt-4 p-4 bg-muted/40 rounded-xl border border-border/60">
                   <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                    <span className="text-sm text-blue-700 dark:text-blue-400">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm text-foreground">
                       {t("scenarios.analyzingAudio") || "Analyzing your response..."}
                     </span>
                   </div>
@@ -722,7 +722,7 @@ export default function ScenarioSessionPage() {
                           Evaluation Criteria
                         </h4>
                         {criteriaList.map((c, i) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border/50">
+                          <div key={i} className={cn("flex items-center justify-between p-3 bg-card rounded-lg border border-border/50 border-l-4", c.score >= 8 ? "border-l-emerald-500" : c.score >= 6 ? "border-l-amber-500" : "border-l-red-500")}>
                             <div>
                               <span className="text-sm font-medium">{c.name}</span>
                               <p className="text-xs text-muted-foreground mt-0.5">{c.justification}</p>
@@ -735,15 +735,15 @@ export default function ScenarioSessionPage() {
                       {strengthsList.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
-                            <Star className="h-4 w-4 text-yellow-500" />
+                            <Star className="h-4 w-4 text-primary" />
                             Strengths
                           </h4>
                           {strengthsList.map((p, i) => (
-                            <div key={i} className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800 mb-2">
-                              <p className="text-sm font-medium text-green-800 dark:text-green-300">{p.title}</p>
-                              <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">{p.description}</p>
-                              {p.quote && <p className="text-xs italic text-green-600 dark:text-green-500 mt-1">&ldquo;{p.quote}&rdquo;</p>}
-                            </div>
+                              <div key={i} className="p-3 bg-card rounded-lg border border-border/50 border-l-4 border-l-emerald-500 mb-2 shadow-sm">
+                                <p className="text-sm font-medium text-foreground">{p.title}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
+                                {p.quote && <p className="text-xs italic text-muted-foreground mt-1">&ldquo;{p.quote}&rdquo;</p>}
+                              </div>
                           ))}
                         </div>
                       )}
@@ -751,42 +751,48 @@ export default function ScenarioSessionPage() {
                       {improvementsList.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-orange-500" />
+                            <TrendingUp className="h-4 w-4 text-primary" />
                             Improvements
                           </h4>
-                          {improvementsList.map((p, i) => (
-                            <div key={i} className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-2">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="text-[10px] h-5">{p.priority}</Badge>
-                                <p className="text-sm font-medium text-orange-800 dark:text-orange-300">{p.issue}</p>
+                          {improvementsList.map((p, i) => {
+                            const pLower = p.priority.toLowerCase();
+                            const isCritical = pLower.includes("critical") || pLower.includes("high") || pLower.includes("crítica") || pLower.includes("alta");
+                            const badgeColor = isCritical ? "bg-red-500 text-white hover:bg-red-600 border-transparent" : "bg-amber-500 text-white hover:bg-amber-600 border-transparent";
+                            const borderColor = isCritical ? "border-l-red-500" : "border-l-amber-500";
+                            return (
+                              <div key={i} className={cn("p-3 bg-card rounded-lg border border-border/50 border-l-4 mb-2 shadow-sm", borderColor)}>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className={cn("text-[10px] h-5", badgeColor)}>{p.priority}</Badge>
+                                  <p className="text-sm font-medium text-foreground">{p.issue}</p>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{p.recommendation}</p>
+                                {p.expected_impact && <p className="text-xs text-muted-foreground mt-1">Impact: {p.expected_impact}</p>}
                               </div>
-                              <p className="text-xs text-orange-700 dark:text-orange-400">{p.recommendation}</p>
-                              {p.expected_impact && <p className="text-xs text-orange-600 dark:text-orange-500 mt-1">Impact: {p.expected_impact}</p>}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
                       {modelResponse && (
-                        <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                          <h4 className="font-medium mb-2 flex items-center gap-2 text-blue-800 dark:text-blue-300">
-                            <Lightbulb className="h-4 w-4" />
+                        <div className="p-4 bg-card rounded-xl border border-border/50 border-l-4 border-l-blue-500 shadow-sm">
+                          <h4 className="font-medium mb-2 flex items-center gap-2 text-foreground">
+                            <Lightbulb className="h-4 w-4 text-blue-500" />
                             Model Response
                           </h4>
-                          <p className="text-sm text-blue-700 dark:text-blue-400 whitespace-pre-wrap">{modelResponse}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{modelResponse}</p>
                         </div>
                       )}
 
                       {tips.length > 0 && (
-                        <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
-                          <h4 className="font-medium mb-2 flex items-center gap-2 text-purple-800 dark:text-purple-300">
-                            <MessageSquare className="h-4 w-4" />
+                        <div className="p-4 bg-card rounded-xl border border-border/50 border-l-4 border-l-purple-500 shadow-sm">
+                          <h4 className="font-medium mb-2 flex items-center gap-2 text-foreground">
+                            <MessageSquare className="h-4 w-4 text-purple-500" />
                             Communication Tips
                           </h4>
                           <ul className="space-y-1">
                             {tips.map((tip, i) => (
-                              <li key={i} className="text-sm text-purple-700 dark:text-purple-400 flex items-start gap-2">
-                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-400 shrink-0" />
+                              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-500 shrink-0" />
                                 {tip}
                               </li>
                             ))}

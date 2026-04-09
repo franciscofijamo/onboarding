@@ -38,50 +38,50 @@ const ANNOTATION_CONFIG: Record<
 > = {
   grammar_error: {
     label: "Grammar",
-    bgClass: "bg-red-100/70 dark:bg-red-950/40",
-    borderClass: "border-red-300 dark:border-red-800",
-    textClass: "text-red-700 dark:text-red-300",
-    dotClass: "bg-red-400",
+    bgClass: "bg-orange-500",
+    borderClass: "border-orange-600",
+    textClass: "text-white",
+    dotClass: "bg-white",
     icon: <PenLine className="h-3.5 w-3.5" />,
   },
   vocabulary: {
     label: "Vocabulary",
-    bgClass: "bg-amber-100/70 dark:bg-amber-950/40",
-    borderClass: "border-amber-300 dark:border-amber-800",
-    textClass: "text-amber-700 dark:text-amber-300",
-    dotClass: "bg-amber-400",
+    bgClass: "bg-blue-500",
+    borderClass: "border-blue-600",
+    textClass: "text-white",
+    dotClass: "bg-white",
     icon: <BookOpen className="h-3.5 w-3.5" />,
   },
   good_usage: {
     label: "Good Usage",
-    bgClass: "bg-emerald-100/70 dark:bg-emerald-950/40",
-    borderClass: "border-emerald-300 dark:border-emerald-800",
-    textClass: "text-emerald-700 dark:text-emerald-300",
-    dotClass: "bg-emerald-400",
+    bgClass: "bg-emerald-500",
+    borderClass: "border-emerald-600",
+    textClass: "text-white",
+    dotClass: "bg-white",
     icon: <CheckCircle2 className="h-3.5 w-3.5" />,
   },
   filler: {
     label: "Filler",
-    bgClass: "bg-slate-200/70 dark:bg-slate-800/40",
-    borderClass: "border-slate-300 dark:border-slate-700",
-    textClass: "text-slate-600 dark:text-slate-400",
-    dotClass: "bg-slate-400",
+    bgClass: "bg-slate-500",
+    borderClass: "border-slate-600",
+    textClass: "text-white",
+    dotClass: "bg-white",
     icon: <MessageCircle className="h-3.5 w-3.5" />,
   },
   structure: {
     label: "Structure",
-    bgClass: "bg-violet-100/70 dark:bg-violet-950/40",
-    borderClass: "border-violet-300 dark:border-violet-800",
-    textClass: "text-violet-700 dark:text-violet-300",
-    dotClass: "bg-violet-400",
+    bgClass: "bg-orange-500",
+    borderClass: "border-orange-600",
+    textClass: "text-white",
+    dotClass: "bg-white",
     icon: <AlertTriangle className="h-3.5 w-3.5" />,
   },
   pronunciation_hint: {
     label: "Pronunciation",
-    bgClass: "bg-sky-100/70 dark:bg-sky-950/40",
-    borderClass: "border-sky-300 dark:border-sky-800",
-    textClass: "text-sky-700 dark:text-sky-300",
-    dotClass: "bg-sky-400",
+    bgClass: "bg-primary",
+    borderClass: "border-primary/80",
+    textClass: "text-primary-foreground",
+    dotClass: "bg-primary-foreground",
     icon: <Volume2 className="h-3.5 w-3.5" />,
   },
 };
@@ -244,18 +244,10 @@ export function AnnotatedTranscript({ transcript, annotations }: AnnotatedTransc
                 key={i}
                 onClick={() => setActiveAnnotation(isActive ? null : seg.annotationIndex!)}
                 className={cn(
-                  "relative cursor-pointer rounded-[3px] px-[2px] -mx-[2px] transition-all duration-150",
+                  "relative cursor-pointer rounded-[4px] px-[4px] mx-[1px] transition-all duration-150 font-medium whitespace-pre-wrap",
                   config.bgClass,
-                  isActive && `ring-2 ${config.borderClass} shadow-sm`,
-                  seg.annotation.type === "grammar_error" &&
-                    "underline decoration-wavy decoration-red-400/60 underline-offset-4 decoration-[1.5px]",
-                  seg.annotation.type === "structure" &&
-                    "underline decoration-wavy decoration-violet-400/60 underline-offset-4 decoration-[1.5px]",
-                  seg.annotation.type === "vocabulary" &&
-                    "underline decoration-dashed decoration-amber-400/60 underline-offset-4 decoration-[1.5px]",
-                  seg.annotation.type === "filler" && "opacity-60",
-                  seg.annotation.type === "good_usage" &&
-                    "decoration-emerald-400/60"
+                  config.textClass,
+                  isActive && `ring-2 ring-offset-2 ring-offset-background ${config.borderClass} shadow-md`,
                 )}
               >
                 {seg.text}
@@ -298,12 +290,12 @@ export function AnnotatedTranscript({ transcript, annotations }: AnnotatedTransc
                 &ldquo;{activeAnno.text}&rdquo;
               </p>
 
-              <p className="text-sm text-foreground/80">{activeAnno.comment}</p>
+              <p className={cn("text-sm", activeConfig.textClass === "text-white" ? "text-white/90" : "text-foreground/80")}>{activeAnno.comment}</p>
 
               {activeAnno.suggestion && (
                 <div className="flex items-start gap-2 pt-1">
-                  <span className="text-xs font-medium text-muted-foreground mt-0.5 shrink-0">Suggestion:</span>
-                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                  <span className={cn("text-xs font-medium mt-0.5 shrink-0", activeConfig.textClass === "text-white" ? "text-white/80" : "text-muted-foreground")}>Suggestion:</span>
+                  <span className={cn("text-sm font-medium", activeConfig.textClass === "text-white" ? "text-white" : "text-emerald-600 dark:text-emerald-400")}>
                     {activeAnno.suggestion}
                   </span>
                 </div>

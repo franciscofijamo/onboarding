@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
@@ -35,6 +35,8 @@ import {
   CircleDot,
   AlertCircle,
   Briefcase,
+  ArrowLeft,
+  Building2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface ResponseData {
   id: string;
@@ -53,10 +56,18 @@ interface ResponseData {
   duration: number | null;
 }
 
+interface JobApplicationInfo {
+  id: string;
+  jobTitle: string | null;
+  companyName: string | null;
+  status: string;
+}
+
 interface SessionData {
   id: string;
   name: string;
-  scenarioType: string | null;
+  jobApplicationId: string | null;
+  jobApplication: JobApplicationInfo | null;
   totalQuestions: number;
   answeredCount: number;
   analyzedCount: number;
@@ -72,32 +83,36 @@ interface SessionsResponse {
     totalAnalyzed: number;
     averageScore: number | null;
   };
-  canGenerate: boolean;
 }
 
-const SCENARIO_TYPE_LABELS: Record<string, string> = {
-  TEAM_MEETING: "Team Meeting",
-  CLIENT_CALL: "Client Call",
-  PRESENTATION: "Presentation",
-  EMAIL_DICTATION: "Email Dictation",
-  CONFLICT_RESOLUTION: "Conflict Resolution",
-  PERFORMANCE_REVIEW: "Performance Review",
-  NEGOTIATION: "Negotiation",
-};
+interface JobApplicationDetail {
+  id: string;
+  jobTitle: string | null;
+  companyName: string | null;
+  status: string;
+  jobDescription: string;
+}
+
+interface JobApplicationResponse {
+  jobApplication: JobApplicationDetail;
+}
 
 const GENERATION_STEPS = [
-  "Analyzing your profile...",
-  "Selecting scenario types...",
-  "Generating workplace situations...",
-  "Personalizing for your industry...",
-  "Finalizing session...",
+  "Analysing job description...",
+  "Reviewing your CV and profile...",
+  "Crafting behavioural questions...",
+  "Generating situational scenarios...",
+  "Finalising interview session...",
 ];
 
-export default function ScenariosPage() {
+function ScenariosContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { t, locale } = useLanguage();
   const { credits, isLoading: creditsLoading } = useCredits();
+
+  const jobApplicationId = searchParams.get("jobApplicationId");
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -105,35 +120,51 @@ export default function ScenariosPage() {
   const [deleteOpen, setDeleteOpen] = useState<string | null>(null);
 
   useSetPageMetadata({
-    title: t("scenarios.title") || "Workplace Scenarios",
-    description: t("scenarios.description") || "Practice real workplace situations through audio",
+    title: "Interview Practice",
+    description: "Practice interview questions tailored to your job applications",
     breadcrumbs: [
-      { label: t("scenarios.title") || "Scenarios" },
+      { label: "Interview Practice" },
     ],
   });
 
   const { data, isLoading } = useQuery<SessionsResponse>({
-    queryKey: ["scenario-sessions"],
-    queryFn: () => api.get("/api/scenarios/sessions"),
+    queryKey: ["scenario-sessions", jobApplicationId],
+    queryFn: () => {
+      const url = jobApplicationId
+        ? `/api/scenarios/sessions?jobApplicationId=${jobApplicationId}`
+        : `/api/scenarios/sessions`;
+      return api.get(url);
+    },
   });
 
+  const { data: jobAppData, isLoading: jobAppLoading } = useQuery<JobApplicationResponse>({
+    queryKey: ["job-application", jobApplicationId],
+    queryFn: () => api.get(`/api/job-application/${jobApplicationId}`),
+    enabled: Boolean(jobApplicationId),
+  });
+
+  const jobApp = jobAppData?.jobApplication;
+
   const generateMutation = useMutation({
-    mutationFn: () => api.post("/api/scenarios/sessions", { language: locale }),
+    mutationFn: () => api.post("/api/scenarios/sessions", {
+      language: locale,
+      jobApplicationId,
+    }),
     onSuccess: (data: { session: SessionData }) => {
       setGenerating(false);
       setConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["scenario-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       toast({
-        title: t("scenarios.sessionCreated") || "Session created!",
-        description: t("scenarios.sessionCreatedDesc") || "5 workplace scenarios ready for you to practice.",
+        title: "Interview session created!",
+        description: "5 personalised interview questions are ready for you to practise.",
       });
       router.push(`/scenarios/${data.session.id}`);
     },
     onError: (error: Error) => {
       setGenerating(false);
       toast({
-        title: t("scenarios.errorGenerating") || "Error generating scenarios",
+        title: "Error generating interview questions",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -145,7 +176,7 @@ export default function ScenariosPage() {
     onSuccess: () => {
       setDeleteOpen(null);
       queryClient.invalidateQueries({ queryKey: ["scenario-sessions"] });
-      toast({ title: t("scenarios.sessionDeleted") || "Session removed" });
+      toast({ title: "Session removed" });
     },
   });
 
@@ -166,10 +197,32 @@ export default function ScenariosPage() {
     });
   };
 
-  const canGenerate = data?.canGenerate ?? false;
   const hasCredits = (credits?.creditsRemaining ?? 0) >= 15;
 
-  if (isLoading) {
+  if (!jobApplicationId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center px-4">
+        <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+          <Briefcase className="h-10 w-10 text-primary/60" />
+        </div>
+        <h2 className="text-2xl font-semibold mb-3">Select a Job to Practice For</h2>
+        <p className="text-muted-foreground max-w-md mb-2">
+          Interview practice sessions are tailored to a specific job application. The AI uses the job description and your CV to generate relevant interview questions.
+        </p>
+        <p className="text-sm text-muted-foreground max-w-md mb-8">
+          Go to your Applications, open a job card, and click <strong>Practice Interview</strong>.
+        </p>
+        <Button asChild size="lg" className="rounded-2xl">
+          <Link href="/applications">
+            <Briefcase className="h-4 w-4 mr-2" />
+            Go to Applications
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (isLoading || jobAppLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
@@ -207,9 +260,7 @@ export default function ScenariosPage() {
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {t("scenarios.generatingWait") || "This may take up to 60 seconds..."}
-        </p>
+        <p className="text-xs text-muted-foreground">This may take up to 60 seconds...</p>
       </div>
     );
   }
@@ -219,23 +270,50 @@ export default function ScenariosPage() {
 
   function getStatusBadge(session: SessionData) {
     if (session.analyzedCount === session.totalQuestions) {
-      return <Badge className="bg-green-100 text-green-700 border-green-200">{t("scenarios.completed") || "Completed"}</Badge>;
+      return <Badge className="bg-green-100 text-green-700 border-green-200">Completed</Badge>;
     }
     if (session.answeredCount > 0) {
-      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">{t("scenarios.inProgress") || "In Progress"}</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">In Progress</Badge>;
     }
-    return <Badge className="bg-blue-100 text-blue-700 border-blue-200">{t("scenarios.new") || "New"}</Badge>;
+    return <Badge className="bg-blue-100 text-blue-700 border-blue-200">New</Badge>;
   }
 
   return (
     <div className="space-y-6">
+      {jobApp && (
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 rounded-xl border-border/60 shrink-0"
+            onClick={() => router.push("/applications")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="bg-card rounded-2xl border border-border px-4 py-3 flex items-center gap-3 flex-1">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Briefcase className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold leading-tight truncate">
+                {jobApp.jobTitle || "Untitled Role"}
+              </p>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Building2 className="h-3 w-3 shrink-0" />
+                <span className="truncate">{jobApp.companyName || "Company not defined"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-3 grid-cols-1 md:grid-cols-3">
         <div className="bg-card rounded-2xl border border-border p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center">
               <Briefcase className="h-4 w-4 text-purple-700" />
             </div>
-            <span className="text-sm text-muted-foreground">{t("scenarios.sessions") || "Sessions"}</span>
+            <span className="text-sm text-muted-foreground">Sessions</span>
           </div>
           <p className="text-2xl font-bold">{stats?.totalSessions ?? 0}</p>
         </div>
@@ -245,7 +323,7 @@ export default function ScenariosPage() {
             <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center">
               <Target className="h-4 w-4 text-emerald-700" />
             </div>
-            <span className="text-sm text-muted-foreground">{t("scenarios.analyzed") || "Responses Analyzed"}</span>
+            <span className="text-sm text-muted-foreground">Questions Analysed</span>
           </div>
           <p className="text-2xl font-bold">{stats?.totalAnalyzed ?? 0}</p>
         </div>
@@ -255,7 +333,7 @@ export default function ScenariosPage() {
             <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center">
               <TrendingUp className="h-4 w-4 text-blue-700" />
             </div>
-            <span className="text-sm text-muted-foreground">{t("scenarios.avgScore") || "Average Score"}</span>
+            <span className="text-sm text-muted-foreground">Average Score</span>
           </div>
           <p className="text-2xl font-bold">
             {stats?.averageScore != null ? `${stats.averageScore}/10` : "—"}
@@ -264,71 +342,71 @@ export default function ScenariosPage() {
       </div>
 
       <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-2xl border border-primary/20 p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-lg mb-1">
-              {t("scenarios.generateTitle") || "Generate Workplace Scenarios"}
-            </h3>
+            <h3 className="font-semibold text-lg mb-1">Generate Interview Questions</h3>
             <p className="text-sm text-muted-foreground">
-              {t("scenarios.generateDesc") || "5 personalized scenarios based on your industry and role"}
+              5 AI-generated questions based on the job description and your CV
             </p>
           </div>
           <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <DialogTrigger asChild>
-              <Button disabled={!canGenerate || !hasCredits}>
+              <Button disabled={!jobApplicationId || !hasCredits || creditsLoading}>
                 <Sparkles className="h-4 w-4" />
-                {t("scenarios.generateBtn") || "Generate Scenarios (15 credits)"}
+                Generate (15 credits)
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t("scenarios.confirmTitle") || "Confirm Generation"}</DialogTitle>
+                <DialogTitle>Confirm Interview Session</DialogTitle>
                 <DialogDescription>
-                  {t("scenarios.confirmDesc") || "15 credits will be deducted to generate 5 new workplace scenarios."}
+                  15 credits will be deducted to generate 5 interview questions tailored to this job application.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3 py-4">
+                {jobApp && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Job:</span>
+                    <span className="text-sm font-medium">
+                      {jobApp.jobTitle || "Untitled"} @ {jobApp.companyName || "Company"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">{t("common.cost") || "Cost"}:</span>
-                  <Badge>15 {t("common.credits") || "credits"}</Badge>
+                  <span className="text-sm">Cost:</span>
+                  <Badge>15 credits</Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">{t("common.currentBalance") || "Current balance"}:</span>
+                  <span className="text-sm">Current balance:</span>
                   <span className="flex items-center gap-1 font-medium">
                     <Coins className="h-4 w-4 text-yellow-500" />
-                    {credits?.creditsRemaining ?? 0} {t("common.credits") || "credits"}
+                    {credits?.creditsRemaining ?? 0} credits
                   </span>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-                  {t("common.cancel") || "Cancel"}
+                  Cancel
                 </Button>
                 <Button onClick={handleGenerate}>
                   <Sparkles className="h-4 w-4" />
-                  {t("common.confirm") || "Confirm"}
+                  Confirm
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
-        {!canGenerate && (
+        {!hasCredits && !creditsLoading && (
           <p className="text-sm text-red-500 mt-3 flex items-center gap-1">
             <AlertCircle className="h-4 w-4" />
-            {t("scenarios.needProfile") || "Complete your profile with career information to unlock scenario generation."}
-          </p>
-        )}
-        {canGenerate && !hasCredits && (
-          <p className="text-sm text-red-500 mt-3 flex items-center gap-1">
-            <AlertCircle className="h-4 w-4" />
-            {t("scenarios.noCredits") || "Insufficient credits."}
+            Insufficient credits. Purchase more to generate interview sessions.
           </p>
         )}
       </div>
 
       {sessions.length > 0 ? (
         <div className="space-y-3">
-          <h3 className="font-semibold">{t("scenarios.yourSessions") || "Your Sessions"}</h3>
+          <h3 className="font-semibold">Your Practice Sessions</h3>
           {sessions.map((session) => (
             <div
               key={session.id}
@@ -339,14 +417,9 @@ export default function ScenariosPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="font-semibold">{session.name}</h4>
                   {getStatusBadge(session)}
-                  {session.scenarioType && (
-                    <Badge variant="outline" className="text-xs">
-                      {SCENARIO_TYPE_LABELS[session.scenarioType] || session.scenarioType}
-                    </Badge>
-                  )}
                   {session.averageScore != null && (
                     <Badge variant="outline" className="text-xs">
                       {session.averageScore}/10
@@ -356,11 +429,11 @@ export default function ScenariosPage() {
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <CircleDot className="h-3 w-3" />
-                    {session.answeredCount}/{session.totalQuestions} {t("scenarios.answered") || "answered"}
+                    {session.answeredCount}/{session.totalQuestions} answered
                   </span>
                   <span className="flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" />
-                    {session.analyzedCount}/{session.totalQuestions} {t("scenarios.analyzedLabel") || "analyzed"}
+                    {session.analyzedCount}/{session.totalQuestions} analysed
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -375,9 +448,7 @@ export default function ScenariosPage() {
                   onClick={() => router.push(`/scenarios/${session.id}`)}
                 >
                   <Play className="h-4 w-4" />
-                  {session.analyzedCount === session.totalQuestions
-                    ? (t("scenarios.viewResults") || "View Results")
-                    : (t("scenarios.continue") || "Continue")}
+                  {session.analyzedCount === session.totalQuestions ? "View Results" : "Continue"}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -391,7 +462,7 @@ export default function ScenariosPage() {
                       onClick={() => setDeleteOpen(session.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {t("common.remove") || "Remove"}
+                      Remove
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -401,34 +472,50 @@ export default function ScenariosPage() {
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
-          <Briefcase className="h-12 w-12 mx-auto mb-4 opacity-30" />
-          <p>{t("scenarios.noSessions") || "No sessions created yet."}</p>
-          <p className="text-sm">{t("scenarios.noSessionsDesc") || "Generate your first scenarios to start practicing workplace communication."}</p>
+          <Mic className="h-12 w-12 mx-auto mb-4 opacity-30" />
+          <p className="font-medium">No practice sessions yet</p>
+          <p className="text-sm mt-1">Generate your first interview session to start practising.</p>
         </div>
       )}
 
       <Dialog open={!!deleteOpen} onOpenChange={() => setDeleteOpen(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t("scenarios.deleteTitle") || "Remove Session"}</DialogTitle>
+            <DialogTitle>Remove Session</DialogTitle>
             <DialogDescription>
-              {t("scenarios.deleteDesc") || "This action cannot be undone. Credits will not be refunded."}
+              This action cannot be undone. Credits will not be refunded.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setDeleteOpen(null)}>
-              {t("common.cancel") || "Cancel"}
+              Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => deleteOpen && deleteMutation.mutate(deleteOpen)}
               disabled={deleteMutation.isPending}
             >
-              {t("common.remove") || "Remove"}
+              Remove
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ScenariosPage() {
+  return (
+    <Suspense fallback={
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-3 grid-cols-3">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+        </div>
+        <Skeleton className="h-48 rounded-2xl" />
+      </div>
+    }>
+      <ScenariosContent />
+    </Suspense>
   );
 }

@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building2,
   Clock3,
+  Mic,
   Plus,
   Sparkles,
   Trash2,
@@ -526,6 +527,12 @@ export default function ApplicationsPage() {
                                     <Link href={`/onboarding?applicationId=${application.id}`}>
                                       {t("applicationsPage.actions.continue")}
                                       <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                  </Button>
+                                  <Button asChild variant="outline" size="sm" className="rounded-xl">
+                                    <Link href={`/scenarios?jobApplicationId=${application.id}`}>
+                                      <Mic className="h-4 w-4" />
+                                      Practice Interview
                                     </Link>
                                   </Button>
                                   <Button
