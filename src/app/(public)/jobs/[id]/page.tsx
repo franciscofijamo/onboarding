@@ -44,6 +44,7 @@ type PostingDetail = {
     location: string;
     website: string | null;
     description: string;
+    logoUrl?: string | null;
   };
 };
 
@@ -118,17 +119,29 @@ export default function JobDetailPage() {
         <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6">
           <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl leading-snug">
-                  {posting.title}
-                </h1>
-                <div className="flex items-center gap-1.5 text-base text-muted-foreground">
-                  <Building2 className="h-4 w-4 shrink-0" />
-                  <span className="font-medium text-foreground">{posting.company.name}</span>
+              <div className="flex items-start gap-4">
+                <div className="h-14 w-14 rounded-2xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+                  {posting.company.logoUrl ? (
+                    <img
+                      src={posting.company.logoUrl}
+                      alt={posting.company.name}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Building2 className="h-7 w-7 text-muted-foreground" />
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 shrink-0" />
-                  <span>{posting.company.location}</span>
+                <div className="space-y-1.5 min-w-0">
+                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl leading-snug">
+                    {posting.title}
+                  </h1>
+                  <div className="flex items-center gap-1.5 text-base text-muted-foreground">
+                    <span className="font-medium text-foreground">{posting.company.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span>{posting.company.location}</span>
+                  </div>
                 </div>
               </div>
 
@@ -171,9 +184,17 @@ export default function JobDetailPage() {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Sobre a Empresa</h2>
             <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Building2 className="h-5 w-5" />
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+                  {posting.company.logoUrl ? (
+                    <img
+                      src={posting.company.logoUrl}
+                      alt={posting.company.name}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold">{posting.company.name}</p>

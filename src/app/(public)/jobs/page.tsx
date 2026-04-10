@@ -46,7 +46,7 @@ type PublicPosting = {
   jobType: JobType;
   salaryRange: SalaryRange;
   createdAt: string;
-  company: { name: string; location: string };
+  company: { name: string; location: string; logoUrl?: string | null };
 };
 
 type JobsResponse = {
@@ -320,17 +320,29 @@ function JobCard({ posting }: { posting: PublicPosting }) {
       href={`/jobs/${posting.id}`}
       className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 transition-all hover:shadow-md hover:border-border/80 group"
     >
-      <div className="space-y-1.5">
-        <h2 className="text-base font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {posting.title}
-        </h2>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Building2 className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{posting.company.name}</span>
+      <div className="flex items-start gap-3">
+        <div className="h-11 w-11 rounded-xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
+          {posting.company.logoUrl ? (
+            <img
+              src={posting.company.logoUrl}
+              alt={posting.company.name}
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <Building2 className="h-5 w-5 text-muted-foreground" />
+          )}
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{posting.company.location}</span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <h2 className="text-base font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+            {posting.title}
+          </h2>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="truncate font-medium text-foreground/80">{posting.company.name}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{posting.company.location}</span>
+          </div>
         </div>
       </div>
 

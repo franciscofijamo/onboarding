@@ -85,6 +85,8 @@ model Company {
   location    String
   website     String?
   email       String
+  logoUrl     String?
+  logoPath    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

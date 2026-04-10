@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       },
       include: {
         company: {
-          select: { name: true, location: true },
+          select: { name: true, location: true, logoUrl: true },
         },
       },
       orderBy: { createdAt: 'desc' },
