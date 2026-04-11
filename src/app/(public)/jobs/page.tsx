@@ -4,9 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
   Briefcase,
   Building2,
+  CalendarDays,
   ChevronDown,
+  CircleDollarSign,
   Loader2,
   MapPin,
   Search,
@@ -42,9 +45,11 @@ const NONE = "ALL";
 type PublicPosting = {
   id: string;
   title: string;
+  description: string;
   category: JobPostingCategory;
   jobType: JobType;
   salaryRange: SalaryRange;
+  applicationCount?: number;
   createdAt: string;
   company: { name: string; location: string; logoUrl?: string | null };
 };
@@ -142,225 +147,324 @@ export default function JobBoardPage() {
 
   return (
     <div className="min-h-dvh bg-background pt-20 pb-16">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-12">
-        <div className="py-10 space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Bolsa de Vagas
-          </h1>
-          <p className="text-muted-foreground text-base">
-            Explore as oportunidades publicadas pelas empresas na plataforma.
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+        <div className="py-10">
+          <div className="max-w-3xl space-y-3">
+            <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
+              Vagas publicadas por empresas na plataforma
+            </Badge>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Oportunidades
+            </h1>
+            <p className="text-base text-muted-foreground sm:text-lg">
+              Descubra vagas activas, compare perfis e encontre a oportunidade certa com uma navegação mais clara e filtros completos.
+            </p>
+          </div>
         </div>
 
-        <div className="mb-8 space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder="Pesquisar por título ou empresa..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 rounded-xl h-11"
-              />
-              {search && (
-                <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSearch("")}
-                  aria-label="Limpar pesquisa"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              className="rounded-xl h-11 gap-2 shrink-0"
-              onClick={() => setShowFilters((v) => !v)}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">Filtros</span>
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="rounded-full px-1.5 py-0 text-[10px]">
-                  {activeFilterCount}
-                </Badge>
-              )}
-            </Button>
-          </div>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="min-w-0">
+            <div className="mb-6 rounded-xl border border-border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {allPostings.length} vaga{allPostings.length !== 1 ? "s" : ""} encontrada{allPostings.length !== 1 ? "s" : ""}
+                    {hasNextPage ? "+" : ""}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Refine a pesquisa por categoria, formato de trabalho e faixa salarial.
+                  </p>
+                </div>
 
-          {showFilters && (
-            <div className="flex flex-wrap gap-3 rounded-2xl border border-border bg-card p-4">
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full sm:w-52 rounded-xl">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Todas as categorias</SelectItem>
-                  {JOB_POSTING_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {CATEGORY_LABELS[c]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={jobType} onValueChange={setJobType}>
-                <SelectTrigger className="w-full sm:w-44 rounded-xl">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Todos os tipos</SelectItem>
-                  {JOB_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {JOB_TYPE_LABELS[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={salaryRange} onValueChange={setSalaryRange}>
-                <SelectTrigger className="w-full sm:w-52 rounded-xl">
-                  <SelectValue placeholder="Salário" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Todos os salários</SelectItem>
-                  {SALARY_RANGES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {SALARY_RANGE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {activeFilterCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-xl text-muted-foreground"
-                  onClick={clearFilters}
-                >
-                  <X className="h-3.5 w-3.5 mr-1.5" />
-                  Limpar filtros
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-52 rounded-3xl" />
-            ))}
-          </div>
-        ) : allPostings.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-border bg-card p-16 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Briefcase className="h-8 w-8" />
-            </div>
-            <h2 className="text-xl font-semibold">Sem vagas disponíveis</h2>
-            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              {activeFilterCount > 0 || debouncedSearch
-                ? "Nenhuma vaga encontrada com os filtros actuais."
-                : "Ainda não há vagas publicadas na plataforma. Volte em breve."}
-            </p>
-            {(activeFilterCount > 0 || debouncedSearch) && (
-              <Button
-                variant="outline"
-                className="mt-4 rounded-2xl"
-                onClick={clearFilters}
-              >
-                Limpar filtros
-              </Button>
-            )}
-          </div>
-        ) : (
-          <>
-            <p className="mb-4 text-sm text-muted-foreground">
-              {allPostings.length} vaga{allPostings.length !== 1 ? "s" : ""} encontrada{allPostings.length !== 1 ? "s" : ""}
-              {hasNextPage ? "+" : ""}
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {allPostings.map((posting) => (
-                <JobCard key={posting.id} posting={posting} />
-              ))}
-            </div>
-
-            {hasNextPage && (
-              <div className="mt-8 flex justify-center">
                 <Button
                   variant="outline"
-                  className="rounded-2xl gap-2"
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
+                  className="h-11 shrink-0 gap-2 rounded-lg lg:hidden"
+                  onClick={() => setShowFilters((v) => !v)}
                 >
-                  {isFetchingNextPage ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      A carregar...
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4" />
-                      Carregar mais vagas
-                    </>
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span>Filtros</span>
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px]">
+                      {activeFilterCount}
+                    </Badge>
                   )}
                 </Button>
               </div>
-            )}
-          </>
-        )}
+            </div>
+
+            <div className="space-y-5">
+              {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-72 rounded-xl" />
+                ))
+              ) : allPostings.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-card p-16 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Briefcase className="h-8 w-8" />
+                  </div>
+                  <h2 className="text-xl font-semibold">Sem vagas disponíveis</h2>
+                  <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                    {activeFilterCount > 0 || debouncedSearch
+                      ? "Nenhuma vaga encontrada com os filtros actuais."
+                      : "Ainda não há vagas publicadas na plataforma. Volte em breve."}
+                  </p>
+                  {(activeFilterCount > 0 || debouncedSearch) && (
+                    <Button
+                      variant="outline"
+                      className="mt-4 rounded-lg"
+                      onClick={clearFilters}
+                    >
+                      Limpar filtros
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {allPostings.map((posting) => (
+                    <JobCard key={posting.id} posting={posting} />
+                  ))}
+
+                  {hasNextPage && (
+                    <div className="flex justify-center pt-2">
+                      <Button
+                        variant="outline"
+                        className="gap-2 rounded-lg"
+                        onClick={() => fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                      >
+                        {isFetchingNextPage ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            A carregar...
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4" />
+                            Carregar mais vagas
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+
+          <aside className={`${showFilters ? "block" : "hidden"} lg:block relative`}>
+            <div className="lg:sticky lg:top-24">
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="mb-5 flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight">
+                      Filtrar oportunidades
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Pesquise e afine os resultados sem sair da lista.
+                    </p>
+                  </div>
+                  {(activeFilterCount > 0 || search) && (
+                    <button
+                      className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={clearFilters}
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Pesquisar</label>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Título, empresa ou palavra-chave..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="h-12 rounded-lg border-border/70 pl-10 pr-10"
+                      />
+                      {search && (
+                        <button
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          onClick={() => setSearch("")}
+                          aria-label="Limpar pesquisa"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Categoria</label>
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger className="h-12 rounded-lg border-border/70">
+                        <SelectValue placeholder="Todas as categorias" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Todas as categorias</SelectItem>
+                        {JOB_POSTING_CATEGORIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {CATEGORY_LABELS[c]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Tipo de vaga</label>
+                    <Select value={jobType} onValueChange={setJobType}>
+                      <SelectTrigger className="h-12 rounded-lg border-border/70">
+                        <SelectValue placeholder="Todos os tipos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Todos os tipos</SelectItem>
+                        {JOB_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {JOB_TYPE_LABELS[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Faixa salarial</label>
+                    <Select value={salaryRange} onValueChange={setSalaryRange}>
+                      <SelectTrigger className="h-12 rounded-lg border-border/70">
+                        <SelectValue placeholder="Todos os salários" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Todos os salários</SelectItem>
+                        {SALARY_RANGES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {SALARY_RANGE_LABELS[s]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground">Resumo dos filtros</p>
+                    <p className="mt-1">
+                      {activeFilterCount > 0 || debouncedSearch
+                        ? `${activeFilterCount} filtro${activeFilterCount !== 1 ? "s" : ""} activo${activeFilterCount !== 1 ? "s" : ""}${debouncedSearch ? " e pesquisa por texto aplicada" : ""}.`
+                        : "Sem filtros activos no momento."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   );
 }
 
 function JobCard({ posting }: { posting: PublicPosting }) {
+  const descriptionPreview = posting.description.replace(/<[^>]*>?/gm, '');
+
   return (
     <Link
       href={`/jobs/${posting.id}`}
-      className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 transition-all hover:shadow-md hover:border-border/80 group"
+      className="group block rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md hover:shadow-black/5 sm:p-5"
     >
-      <div className="flex items-start gap-3">
-        <div className="h-11 w-11 rounded-xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-          {posting.company.logoUrl ? (
-            <img
-              src={posting.company.logoUrl}
-              alt={posting.company.name}
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <Building2 className="h-5 w-5 text-muted-foreground" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1 space-y-1">
-          <h2 className="text-base font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-            {posting.title}
-          </h2>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span className="truncate font-medium text-foreground/80">{posting.company.name}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{posting.company.location}</span>
-          </div>
-        </div>
-      </div>
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white shadow-sm">
+              {posting.company.logoUrl ? (
+                <img
+                  src={posting.company.logoUrl}
+                  alt={posting.company.name}
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <Building2 className="h-5 w-5 text-muted-foreground/60" />
+              )}
+            </div>
 
-      <div className="flex flex-wrap gap-1.5">
-        <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] text-muted-foreground">
-          {CATEGORY_LABELS[posting.category]}
-        </span>
-        <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2.5 py-0.5 text-[11px] text-muted-foreground">
-          {JOB_TYPE_LABELS[posting.jobType]}
-        </span>
-        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] text-emerald-700 font-medium">
-          {SALARY_RANGE_LABELS[posting.salaryRange]}
-        </span>
-      </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-[11px] font-medium hover:bg-secondary">
+                    {CATEGORY_LABELS[posting.category]}
+                  </Badge>
+                  {(posting.applicationCount ?? 0) > 0 && (
+                    <Badge variant="outline" className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      {(posting.applicationCount ?? 0)} candidatura{(posting.applicationCount ?? 0) !== 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                </div>
 
-      <div className="mt-auto flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">{formatDate(posting.createdAt)}</span>
-        <span className="text-xs font-medium text-primary group-hover:underline">Ver detalhes →</span>
+                <h2 className="text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary sm:text-xl">
+                  {posting.title}
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground/90">
+                  {posting.company.name}
+                </span>
+                <span className="flex items-center gap-1.5 pt-0.5">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {posting.company.location}
+                </span>
+                <span className="flex items-center gap-1.5 pt-0.5">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {formatDate(posting.createdAt)}
+                </span>
+              </div>
+
+              <p className="max-w-3xl line-clamp-2 text-sm leading-snug text-muted-foreground pt-0.5">
+                {descriptionPreview}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="xl:w-56 xl:shrink-0">
+          <div className="flex h-full flex-col justify-between rounded-lg border border-border bg-muted/20 p-3.5">
+            <div className="space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <CircleDollarSign className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground leading-none mt-1">
+                    Remuneração
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground leading-none">
+                    {SALARY_RANGE_LABELS[posting.salaryRange]}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Briefcase className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground leading-none mt-1">
+                    Modelo
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground leading-none">
+                    {JOB_TYPE_LABELS[posting.jobType]}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-sm font-semibold text-primary">
+              <span>Ver vaga</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </div>
+          </div>
+        </div>
       </div>
     </Link>
   );

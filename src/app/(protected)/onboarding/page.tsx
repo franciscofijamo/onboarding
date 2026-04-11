@@ -32,6 +32,10 @@ import {
   RefreshCw,
   Link,
   Building2,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Edit2,
 } from "lucide-react";
 import { RichTextViewer } from "@/components/editor/rich-text-editor";
 import {
@@ -161,7 +165,7 @@ function StepIndicator({
                 icons[step.key]
               )}
               <span className="hidden sm:inline">{labels[step.key]}</span>
-              {!step.required && (
+              {!step.required && step.key !== "analysis" && (
                 <span className="text-xs opacity-60">(optional)</span>
               )}
             </button>
@@ -246,9 +250,10 @@ export default function OnboardingPage() {
   const { credits, refresh: refreshCredits } = useCredits();
 
   useSetPageMetadata({
-    title: "Job Application Onboarding",
-    description:
-      "Upload your CV, add a job description, and get AI-powered analysis",
+    title: Boolean(jobPostingId) ? "Candidatura" : "Processo de Candidatura",
+    description: Boolean(jobPostingId)
+      ? "Envie a sua candidatura para a vaga seleccionada"
+      : "Faça a gestão da sua candidatura com análise IA",
     showBreadcrumbs: true,
   });
 
@@ -284,6 +289,8 @@ export default function OnboardingPage() {
   const [isSubmittingPlatformApp, setIsSubmittingPlatformApp] = React.useState(false);
   const [platformAppSubmitted, setPlatformAppSubmitted] = React.useState(false);
   const [platformAppError, setPlatformAppError] = React.useState<string | null>(null);
+  const [expandedVaga, setExpandedVaga] = React.useState(false);
+  const [expandedCV, setExpandedCV] = React.useState(false);
 
   const isPublicApplication = Boolean(jobPostingId);
 
@@ -495,6 +502,21 @@ export default function OnboardingPage() {
     ]
   );
 
+  const deleteResumeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return api.delete("/api/resume?id=" + id);
+    },
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      showSaveStatus("CV apagado!");
+      if (savedResumeId === deletedId) {
+        setSavedResumeId(null);
+        setResumeTitle("");
+        setResumeText("");
+      }
+    },
+  });
+
   const resumeSaveMutation = useMutation({
     mutationFn: async (data: { title: string; content: string }) => {
       if (savedResumeId) {
@@ -582,7 +604,10 @@ export default function OnboardingPage() {
   });
 
   const handleSaveResume = async () => {
-    if (!resumeText.trim()) return;
+    if (!resumeText.trim()) {
+      window.alert("Por favor, carregue ou escreva um CV antes de salvar.");
+      return;
+    }
     setIsSavingDraft(true);
     try {
       const saved = await resumeSaveMutation.mutateAsync({
@@ -601,7 +626,10 @@ export default function OnboardingPage() {
   };
 
   const handleSaveResumeAndContinue = async () => {
-    if (!resumeText.trim()) return;
+    if (!resumeText.trim()) {
+      window.alert("Por favor, carregue ou escreva um CV antes de avançar.");
+      return;
+    }
     setIsSavingDraft(true);
     try {
       const saved = await resumeSaveMutation.mutateAsync({
@@ -614,7 +642,7 @@ export default function OnboardingPage() {
         setSavedResumeId(saved.resume.id);
       }
       showSaveStatus("Resume draft saved!");
-      setCurrentStep("cover-letter");
+      setCurrentStep("job-description");
     } finally {
       setIsSavingDraft(false);
     }
@@ -874,7 +902,7 @@ export default function OnboardingPage() {
       )}
 
       <StepIndicator
-        steps={STEPS}
+        steps={STEPS.filter(s => s.key !== "cover-letter")}
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={setCurrentStep}
@@ -965,20 +993,33 @@ export default function OnboardingPage() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {existingResumes.resumes.map((resume) => (
-                      <Button
-                        key={resume.id}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleLoadExistingResume(resume)}
-                        className={
-                          savedResumeId === resume.id
-                            ? "border-primary bg-primary/5"
-                            : ""
-                        }
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        {resume.title}
-                      </Button>
+                      <div key={resume.id} className="relative inline-flex group m-1 shadow-sm rounded-md">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoadExistingResume(resume)}
+                          className={
+                            savedResumeId === resume.id
+                              ? "border-primary bg-primary/5 pr-8"
+                              : "pr-8"
+                          }
+                        >
+                          <FileText className="h-3 w-3 mr-1" />
+                          {resume.title}
+                        </Button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm("Apagar CV?")) {
+                              deleteResumeMutation.mutate(resume.id);
+                            }
+                          }}
+                          title="Apagar CV"
+                          className="absolute -top-2 -left-2 p-0.5 bg-background border border-border shadow-sm rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -1171,7 +1212,7 @@ export default function OnboardingPage() {
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   {isPublicApplication
-                    ? "Vaga seleccionada da bolsa pública. A descrição é carregada automaticamente."
+                    ? "Esta é a descrição da vaga para a qual está a candidatar-se."
                     : "Paste the job posting you want to apply for. The AI will compare it against your resume."}
                 </p>
               </div>
@@ -1204,10 +1245,6 @@ export default function OnboardingPage() {
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                   <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Descrição</p>
                   <RichTextViewer content={jobPosting.description} className="text-sm leading-relaxed" />
-                </div>
-                <div className="flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  A descrição foi carregada directamente da vaga e não pode ser editada.
                 </div>
               </div>
             ) : (
@@ -1339,7 +1376,7 @@ export default function OnboardingPage() {
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={() => setCurrentStep("cover-letter")}
+              onClick={() => setCurrentStep("resume")}
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -1438,35 +1475,55 @@ export default function OnboardingPage() {
                 </div>
                 <div className="space-y-3">
                   {jobPosting && (
-                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
-                      <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Vaga</p>
-                        <p className="font-medium">{jobPosting.title}</p>
-                        <p className="text-sm text-muted-foreground">{jobPosting.company.name}</p>
+                    <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                      <div 
+                        className="flex items-start gap-3 cursor-pointer select-none"
+                        onClick={() => setExpandedVaga(!expandedVaga)}
+                      >
+                        <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Vaga</p>
+                            {expandedVaga ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                          </div>
+                          <p className="font-medium">{jobPosting.title}</p>
+                          <p className="text-sm text-muted-foreground">{jobPosting.company.name}</p>
+                        </div>
                       </div>
+                      {expandedVaga && (
+                        <div className="mt-2 text-sm text-muted-foreground border-t border-border/50 pt-3">
+                          <RichTextViewer content={jobPosting.description} />
+                        </div>
+                      )}
                     </div>
                   )}
                   {savedResumeId && (
-                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
-                      <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">CV / Resume</p>
-                        <p className="font-medium">
-                          {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.title ?? "CV seleccionado"}
-                        </p>
+                    <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="flex items-center justify-between">
+                        <div 
+                          className="flex items-start gap-3 cursor-pointer select-none flex-1"
+                          onClick={() => setExpandedCV(!expandedCV)}
+                        >
+                          <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">CV / Resume</p>
+                              {expandedCV ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                            </div>
+                            <p className="font-medium">
+                              {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.title ?? "CV seleccionado"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => setCurrentStep("resume")} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground border border-input shadow-sm">
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </div>
-                  )}
-                  {savedCoverLetterId && (
-                    <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
-                      <Copy className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-0.5">Cover Letter</p>
-                        <p className="font-medium">
-                          {existingCoverLetters?.coverLetters?.find((c) => c.id === savedCoverLetterId)?.title ?? "Cover letter seleccionada"}
-                        </p>
-                      </div>
+                      {expandedCV && (
+                         <div className="mt-2 text-sm text-muted-foreground border-t border-border/50 pt-3 whitespace-pre-wrap">
+                          {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.content ?? ""}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
