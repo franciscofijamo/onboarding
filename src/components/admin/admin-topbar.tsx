@@ -1,7 +1,7 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
- import { SidebarTrigger } from "@/components/ui/sidebar";
+import { UserButton, SignedIn } from "@clerk/nextjs";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function AdminTopbar() {
   return (
@@ -17,7 +17,9 @@ export function AdminTopbar() {
             <p className="text-sm font-medium text-foreground">Admin</p>
             <p className="text-xs text-muted-foreground">Super Administrator</p>
           </div>
-          <UserButton />
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
         </div>
       </div>
     </div>
