@@ -198,17 +198,20 @@ export default function DashboardPage() {
                 <Link href="/billing"><ArrowRight className="h-4 w-4" /></Link>
               </Button>
             </div>
-            <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100">
-                  <BarChart3 className="h-5 w-5 text-violet-600" />
+            <Link href="/scenarios" className="block w-full h-full">
+              <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between h-full group hover:border-primary/50 transition-colors cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 group-hover:bg-purple-200 transition-colors">
+                    <Mic className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t("dashboard.scenariosTitle")}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.scenariosSummary")}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.analysesPerformed")}</p>
-                  <p className="text-xl font-bold text-foreground">—</p>
-                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -224,12 +227,6 @@ export default function DashboardPage() {
               icon: MessageSquare,
               color: "amber",
               desc: t("dashboard.interviewSummary"),
-            },
-            {
-              title: t("dashboard.scenariosTitle"),
-              icon: Mic,
-              color: "purple",
-              desc: t("dashboard.scenariosSummary"),
             },
             {
               title: t("dashboard.aiCoachTitle"),

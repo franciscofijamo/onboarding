@@ -66,18 +66,40 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                   const ptHint = item.hintKey ? hint(item.hintKey) : undefined;
                   return (
                     <SheetClose asChild key={item.nameKey}>
-                      <Link
-                        href={item.href}
-                        className={"flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <div className="flex flex-col">
-                          <span>{t(item.nameKey)}</span>
-                          {ptHint && (
-                            <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
-                          )}
+                      {item.disabled ? (
+                        <div
+                          aria-disabled="true"
+                          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium opacity-60 cursor-not-allowed"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-4 w-4" />
+                            <div className="flex flex-col">
+                              <span>{t(item.nameKey)}</span>
+                              {ptHint && (
+                                <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                            Soon
+                          </span>
                         </div>
-                      </Link>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-4 w-4" />
+                            <div className="flex flex-col">
+                              <span>{t(item.nameKey)}</span>
+                              {ptHint && (
+                                <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      )}
                     </SheetClose>
                   );
                 })}

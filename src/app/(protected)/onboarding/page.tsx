@@ -902,7 +902,7 @@ export default function OnboardingPage() {
       )}
 
       <StepIndicator
-        steps={STEPS.filter(s => s.key !== "cover-letter")}
+        steps={STEPS.filter(s => !(isPublicApplication && s.key === "cover-letter"))}
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={setCurrentStep}

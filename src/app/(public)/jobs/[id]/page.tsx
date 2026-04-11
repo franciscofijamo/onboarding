@@ -322,7 +322,7 @@ function ApplyButton({
       size={size}
       className="rounded-lg shrink-0 w-full sm:w-auto"
       onClick={() => {
-        router.push(`/applications/new?postingId=${jobId}`);
+        router.push(`/onboarding?new=1&jobPostingId=${jobId}`);
       }}
     >
       Candidatar-se

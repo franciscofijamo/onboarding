@@ -19,6 +19,9 @@ This folder is the project context pack for the `standout` app. It is meant to g
 - `job-applications-kanban-plan.md` captures the implementation plan for the candidate applications Kanban hub.
 - `brand-config.md` documents the branding source of truth.
 - `asaas-webhooks.md` documents subscription/payment webhook flow.
+- `candidate-application-onboarding.md` documents the multi-step candidate onboarding wizard (resume, cover letter, job description, analysis/apply) including platform vs. private application modes and April 2026 UX refinements.
+- `ui-ux-audit.md` full UI/UX inconsistency audit for both candidate and recruiter flows — language mixing, navigation gaps, feedback problems, visual inconsistencies, accessibility issues, and missing features with severity ratings.
+- `ui-ux-remediation-plan.md` outlines the 4-phase execution roadmap to systematically fix all problems identified in the UI/UX audit.
 
 ## Maintenance Rule
 - When README links, onboarding copy, or environment checks point at a `.context/docs/*` file, keep that file updated in the same change.
