@@ -27,6 +27,7 @@ import {
   ChevronUp,
   Trash2,
   GripVertical,
+  ExternalLink,
 } from "lucide-react";
 import {
   DndContext,
@@ -55,18 +56,36 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
+import { type PipelineStage } from "@/lib/recruiter/pipeline";
 import { toast } from "@/hooks/use-toast";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type PipelineStage = "RECEIVED" | "REVIEWING" | "INTERVIEW" | "OFFER" | "REJECTED" | "ACCEPTED";
+
 
 type AnalysisData = {
   id: string;
@@ -159,6 +178,7 @@ type InterviewStage = {
 type StageConfigItem = { stage: string; label: string; isInterviewStage?: boolean; stageId?: string | null };
 
 type PipelineResponse = {
+  posting: { id: string; title: string };
   stages: StageGroupConfig[];
   pipeline: PipelineEntry[];
   stageConfig: StageConfigItem[];
@@ -246,13 +266,7 @@ function toStringArray(value: unknown): string[] {
   return [];
 }
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("pt-MZ", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(iso));
-}
+
 
 function getFitScoreColor(score: number | null) {
   if (score === null) return "text-muted-foreground";
@@ -321,7 +335,7 @@ function AnalysisModal({
                     <span className="text-xs text-muted-foreground truncate">{candidate.currentRole}</span>
                   )}
                   {candidate.province && (
-                    <Badge variant="outline" className="rounded-full text-[10px] px-1.5 py-0">{candidate.province}</Badge>
+                    <Badge variant="outline" className="rounded-full text-xs px-1.5 py-0">{candidate.province}</Badge>
                   )}
                   {fullEntry.jobApplication.resume?.fileUrl && (
                     <a
@@ -432,7 +446,7 @@ function AnalysisModal({
                     <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
-                          <span className="text-white text-[10px] font-bold">✓</span>
+                          <span className="text-white text-xs font-bold">✓</span>
                         </div>
                         <h4 className="text-sm font-semibold text-emerald-800">Skills Compatíveis</h4>
                       </div>
@@ -449,7 +463,7 @@ function AnalysisModal({
                     <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="h-5 w-5 rounded-full bg-orange-400 flex items-center justify-center">
-                          <span className="text-white text-[10px] font-bold">!</span>
+                          <span className="text-white text-xs font-bold">!</span>
                         </div>
                         <h4 className="text-sm font-semibold text-orange-800">Gaps Identificados</h4>
                       </div>
@@ -471,7 +485,7 @@ function AnalysisModal({
                   {strengths.length > 0 && (
                     <div className="rounded-2xl border border-border bg-card p-4">
                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">✓</span>
+                        <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
                         Pontos Fortes
                       </h4>
                       <ul className="space-y-2">
@@ -487,7 +501,7 @@ function AnalysisModal({
                   {improvements.length > 0 && (
                     <div className="rounded-2xl border border-border bg-card p-4">
                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-bold">!</span>
+                        <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
                         Áreas de Melhoria
                       </h4>
                       <ul className="space-y-2">
@@ -512,7 +526,7 @@ function AnalysisModal({
                   <ol className="space-y-2">
                     {recommendations.map((s, i) => (
                       <li key={i} className="flex gap-3 text-sm text-blue-900/80 leading-snug">
-                        <span className="shrink-0 h-5 w-5 rounded-full bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center text-[10px] font-bold">
+                        <span className="shrink-0 h-5 w-5 rounded-full bg-blue-100 border border-blue-200 text-blue-700 flex items-center justify-center text-xs font-bold">
                           {i + 1}
                         </span>
                         {s}
@@ -1123,6 +1137,7 @@ function EditableQuestion({
   const [value, setValue] = React.useState(question.prompt);
   const [saving, setSaving] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   async function handleSave() {
     if (value.trim() === question.prompt) { setEditing(false); return; }
@@ -1145,7 +1160,32 @@ function EditableQuestion({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
+    <>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar pergunta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove a pergunta desta fase de entrevista.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={async () => {
+                setConfirmOpen(false);
+                await handleDelete();
+              }}
+            >
+              {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Eliminar"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="h-6 w-6 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center shrink-0">
@@ -1200,7 +1240,7 @@ function EditableQuestion({
                 variant="ghost"
                 size="sm"
                 className="rounded-xl h-7 w-7 p-0 text-destructive hover:text-destructive"
-                onClick={handleDelete}
+                onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
                 title="Eliminar"
               >
@@ -1238,6 +1278,7 @@ function EditableQuestion({
         <p className="text-sm text-foreground leading-relaxed">{question.prompt}</p>
       )}
     </div>
+    </>
   );
 }
 
@@ -1315,7 +1356,7 @@ function CandidateCard({
           {fitScore !== null ? (
             <div className={cn("shrink-0 text-right", getFitScoreColor(fitScore))}>
               <span className="text-lg font-bold leading-none">{Math.round(fitScore)}</span>
-              <span className="text-[10px] text-muted-foreground">/100</span>
+              <span className="text-xs text-muted-foreground">/100</span>
             </div>
           ) : (
             <span className="text-xs text-muted-foreground shrink-0">—</span>
@@ -1364,7 +1405,7 @@ function CandidateCard({
       {/* Actions */}
       <div className="space-y-2 pt-1 border-t border-border/40">
         {/* Secondary view actions */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap items-center">
           <Button
             variant="outline"
             size="sm"
@@ -1385,6 +1426,45 @@ function CandidateCard({
               Respostas
             </Button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-xl h-7 px-2.5 text-xs gap-1"
+              >
+                Ações
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[200px]">
+              <DropdownMenuLabel>Transferir para</DropdownMenuLabel>
+              {(["RECEIVED", "REVIEWING", "INTERVIEW", "OFFER", "REJECTED", "ACCEPTED"] as const).map((stage) => (
+                <DropdownMenuItem
+                  key={stage}
+                  onClick={() => onMove(entry.id, stage)}
+                  disabled={(entry.currentStage === stage && stage !== "INTERVIEW") || isMoving}
+                >
+                  {STAGE_LABELS[stage]}
+                </DropdownMenuItem>
+              ))}
+              {publishedInterviewStages.length > 0 && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Fases de entrevista</DropdownMenuLabel>
+                  {publishedInterviewStages.map((stage) => (
+                    <DropdownMenuItem
+                      key={stage.id}
+                      onClick={() => onMoveToInterviewStage(entry.id, stage.id)}
+                      disabled={isMoving}
+                    >
+                      {stage.name}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Navigation actions */}
@@ -1512,11 +1592,6 @@ export default function RecruiterCandidatesPage() {
   const { id: postingId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
 
-  useSetPageMetadata({
-    title: "Pipeline de Candidatos",
-    description: "Gerencie os candidatos à sua vaga",
-    showBreadcrumbs: true,
-  });
 
   const [selectedEntry, setSelectedEntry] = React.useState<PipelineEntry | null>(null);
   const [sessionEntry, setSessionEntry] = React.useState<PipelineEntry | null>(null);
@@ -1529,6 +1604,22 @@ export default function RecruiterCandidatesPage() {
     queryKey: ["recruiterPipeline", postingId],
     queryFn: () => api.get(`/api/recruiter/postings/${postingId}/pipeline`),
     enabled: Boolean(postingId),
+  });
+
+
+  const postingTitle = data?.posting?.title ?? "Vaga";
+
+  useSetPageMetadata({
+    title: "Pipeline de Candidatos",
+    description: "Gerencie os candidatos à sua vaga",
+    breadcrumbs: [
+      { label: "Home", href: "/dashboard" },
+      { label: "Recruiter", href: "/recruiter/postings" },
+      { label: "Publicações", href: "/recruiter/postings" },
+      { label: postingTitle },
+      { label: "Pipeline de Candidatos" },
+    ],
+    showBreadcrumbs: true,
   });
 
   const moveMutation = useMutation({
@@ -1644,6 +1735,17 @@ export default function RecruiterCandidatesPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl gap-2"
+                >
+                  <Link href={`/jobs/${postingId}`} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    Ver vaga pública
+                  </Link>
+                </Button>
                 <div className="flex gap-3 text-sm">
                   <div className="rounded-2xl border border-border bg-background px-4 py-2 text-center">
                     <div className="text-xl font-bold">{totalCount}</div>

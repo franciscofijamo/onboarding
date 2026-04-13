@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { cn, formatDate } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
@@ -14,6 +15,7 @@ import {
   Globe,
   Loader2,
   MapPin,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,13 +50,6 @@ type PostingDetail = {
   };
 };
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("pt-MZ", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(iso));
-}
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -64,7 +59,7 @@ export default function JobDetailPage() {
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const { role, isLoading: profileLoading } = useProfile({ enabled: !!isSignedIn && authLoaded });
 
-  const { data, isLoading, isError } = useQuery<{ posting: PostingDetail }>({
+  const { data, isLoading, isError } = useQuery<{ posting: PostingDetail; userHasApplied?: boolean }>({
     queryKey: ["publicJob", id],
     queryFn: () => fetch(`/api/jobs/${id}`).then((r) => r.json()),
     staleTime: 60_000,
@@ -103,7 +98,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const { posting } = data;
+  const { posting, userHasApplied } = data;
 
   return (
     <div className="min-h-dvh bg-background pt-20 pb-16">
@@ -153,6 +148,7 @@ export default function JobDetailPage() {
                     authLoaded={authLoaded}
                     role={role}
                     profileLoading={profileLoading}
+                    hasApplied={userHasApplied}
                   />
                 </div>
               </div>
@@ -171,7 +167,7 @@ export default function JobDetailPage() {
 
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>Publicada a {formatDate(posting.createdAt)}</span>
+                <span>Publicada a {formatDate(posting.createdAt, { month: "long" })}</span>
               </div>
             </div>
 
@@ -234,6 +230,7 @@ export default function JobDetailPage() {
                   authLoaded={authLoaded}
                   role={role}
                   profileLoading={profileLoading}
+                  hasApplied={userHasApplied}
                   size="lg"
                 />
               </div>
@@ -251,6 +248,7 @@ function ApplyButton({
   authLoaded,
   role,
   profileLoading,
+  hasApplied,
   size = "default",
 }: {
   jobId: string;
@@ -258,6 +256,7 @@ function ApplyButton({
   authLoaded: boolean;
   role: string | null;
   profileLoading: boolean;
+  hasApplied?: boolean;
   size?: "default" | "lg";
 }) {
   const router = useRouter();
@@ -312,6 +311,23 @@ function ApplyButton({
         </Button>
         <p className="text-xs text-muted-foreground text-center">
           Complete o seu perfil primeiro
+        </p>
+      </div>
+    );
+  }
+
+  if (hasApplied) {
+    return (
+      <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
+        <Button size={size} disabled className="rounded-lg shrink-0 opacity-60 w-full bg-emerald-50 text-emerald-700 border-emerald-200 cursor-not-allowed hidden sm:flex hover:bg-emerald-50">
+          <CheckCircle2 className="h-4 w-4 mr-2" />
+          Já Se Candidatou
+        </Button>
+        <Button size={size} disabled className="rounded-lg shrink-0 opacity-60 w-full sm:hidden text-white cursor-not-allowed">
+          Já Se Candidatou
+        </Button>
+        <p className="text-xs text-muted-foreground text-center hidden sm:block">
+          A sua candidatura está submetida
         </p>
       </div>
     );

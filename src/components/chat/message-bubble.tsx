@@ -120,7 +120,7 @@ function MessageBubbleComponent({ message, className, onRetry, retryIndex, disab
         )}
       >
         {/* Role label subtle */}
-        <div className={cn('mb-1 text-[10px] uppercase tracking-wide opacity-60', isUser ? 'text-primary-foreground' : 'text-foreground')}>
+        <div className={cn('mb-1 text-xs uppercase tracking-wide opacity-60', isUser ? 'text-primary-foreground' : 'text-foreground')}>
           {isUser ? 'You' : 'AI'}
         </div>
 

@@ -68,7 +68,18 @@ function validateStep1(form: FormValues): FormErrors {
 }
 
 export default function NewPostingPage() {
-  useSetPageMetadata({ title: "Nova Vaga", showBreadcrumbs: true });
+  useSetPageMetadata({
+    title: "Nova Vaga",
+    showBreadcrumbs: true,
+    breadcrumbs: [
+      { label: "Home", href: "/dashboard" },
+      { label: "Recruiter", href: "/recruiter/postings" },
+      { label: "Publicações", href: "/recruiter/postings" },
+      { label: "Nova Vaga" },
+    ],
+  });
+
+  const draftKey = "recruiter:newPostingDraft";
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -84,6 +95,29 @@ export default function NewPostingPage() {
     jobType: "",
     description: "",
   });
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = sessionStorage.getItem(draftKey);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.form) {
+        setForm((prev) => ({ ...prev, ...parsed.form }));
+      }
+      if (parsed?.step === 1 || parsed?.step === 2) {
+        setStep(parsed.step);
+      }
+    } catch {
+      // ignore invalid draft
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const payload = JSON.stringify({ form, step });
+    sessionStorage.setItem(draftKey, payload);
+  }, [form, step]);
 
   const set = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -112,6 +146,9 @@ export default function NewPostingPage() {
         status,
       });
       await queryClient.invalidateQueries({ queryKey: ["recruiterPostings"] });
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(draftKey);
+      }
       setDone(true);
       setTimeout(() => router.replace("/recruiter/postings"), 1500);
     } catch {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { JOB_POSTING_CATEGORIES, SALARY_RANGES, JOB_TYPES, type JobPostingCategory, type SalaryRange, type JobType } from '@/lib/recruiter/postings';
 
@@ -53,12 +54,42 @@ export async function GET(request: NextRequest) {
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
+    const { userId: clerkId } = await auth();
+    const appliedPostingIds = new Set<string>();
+
+    if (clerkId && postings.length > 0) {
+      const user = await db.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+
+      if (user) {
+        const applications = await db.jobApplication.findMany({
+          where: {
+            userId: user.id,
+            jobPostingId: { in: postings.map((posting) => posting.id) },
+          },
+          select: { jobPostingId: true },
+        });
+
+        applications.forEach((application) => {
+          if (application.jobPostingId) {
+            appliedPostingIds.add(application.jobPostingId);
+          }
+        });
+      }
+    }
+
     const hasMore = postings.length > limit;
     const results = hasMore ? postings.slice(0, limit) : postings;
     const nextCursor = hasMore ? results[results.length - 1]?.id : null;
 
     return NextResponse.json({
-      postings: results.map((p) => ({ ...p, applicationCount: 0 })),
+      postings: results.map((p) => ({
+        ...p,
+        applicationCount: 0,
+        userHasApplied: appliedPostingIds.has(p.id),
+      })),
       nextCursor,
       hasMore,
     });

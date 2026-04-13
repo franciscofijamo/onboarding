@@ -280,7 +280,7 @@ export function AnnotatedTranscript({ transcript, annotations }: AnnotatedTransc
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className={cn("text-[10px] h-5", activeConfig.textClass, activeConfig.borderClass)}
+                  className={cn("text-xs h-5", activeConfig.textClass, activeConfig.borderClass)}
                 >
                   {activeConfig.label}
                 </Badge>

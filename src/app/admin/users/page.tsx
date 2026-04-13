@@ -3,6 +3,7 @@
 import React from "react";
 
 import { useState } from "react";
+import { cn, formatDate } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -342,7 +343,7 @@ export default function UsersPage() {
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">
-                        {new Date(user.createdAt).toLocaleDateString()}
+                        {formatDate(user.createdAt)}
                       </span>
                     </div>
                   );

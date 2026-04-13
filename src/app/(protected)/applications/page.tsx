@@ -24,6 +24,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -39,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import {
   getStatusFromKanbanStage,
   KANBAN_STAGES,
@@ -47,6 +55,7 @@ import {
   type KanbanStage,
   type JobApplicationStatus,
 } from "@/lib/job-application/kanban";
+import { type PipelineStage } from "@/lib/recruiter/pipeline";
 
 type AnalysisSummary = {
   id: string;
@@ -55,7 +64,7 @@ type AnalysisSummary = {
   createdAt?: string;
 };
 
-type PipelineStage = "RECEIVED" | "REVIEWING" | "INTERVIEW" | "OFFER" | "REJECTED" | "ACCEPTED";
+
 
 type JobApplication = {
   id: string;
@@ -109,13 +118,7 @@ function getColumnMeta(t: TranslateFn): Record<
   };
 }
 
-function formatDate(value: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
+
 
 function getAverageFitScore(apps: JobApplication[]) {
   const scores = apps
@@ -196,6 +199,8 @@ export default function ApplicationsPage() {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = React.useState<JobApplication | null>(null);
   const [deleteError, setDeleteError] = React.useState<string | null>(null);
+  const [selectedPlatformApplication, setSelectedPlatformApplication] =
+    React.useState<JobApplication | null>(null);
   const [search, setSearch] = React.useState("");
   const router = useRouter();
 
@@ -238,6 +243,18 @@ export default function ApplicationsPage() {
   const averageFitScore = React.useMemo(
     () => getAverageFitScore(applications),
     [applications]
+  );
+
+  const openApplicationCard = React.useCallback(
+    (application: JobApplication) => {
+      if (application.isPublicApplication && application.jobPosting) {
+        setSelectedPlatformApplication(application);
+        return;
+      }
+
+      router.push(`/onboarding?applicationId=${application.id}`);
+    },
+    [router]
   );
 
   const updateStatusMutation = useMutation({
@@ -372,6 +389,110 @@ export default function ApplicationsPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <Sheet
+        open={Boolean(selectedPlatformApplication)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPlatformApplication(null);
+          }
+        }}
+      >
+        <SheetContent className="w-full sm:max-w-lg">
+          {selectedPlatformApplication && (
+            <>
+              <SheetHeader className="space-y-3 border-b border-border pb-6">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "w-fit rounded-full",
+                    selectedPlatformApplication.pipelineEntry
+                      ? getPipelineStageBadgeClass(selectedPlatformApplication.pipelineEntry.currentStage)
+                      : ""
+                  )}
+                >
+                  {selectedPlatformApplication.pipelineEntry
+                    ? getPipelineStageLabel(selectedPlatformApplication.pipelineEntry.currentStage)
+                    : getLocalizedStatusLabel(selectedPlatformApplication.status, t)}
+                </Badge>
+                <div className="space-y-1">
+                  <SheetTitle className="text-xl">
+                    {selectedPlatformApplication.jobPosting?.title ??
+                      selectedPlatformApplication.jobTitle ??
+                      t("applicationsPage.defaults.untitledRole")}
+                  </SheetTitle>
+                  <SheetDescription>
+                    {selectedPlatformApplication.jobPosting?.company?.name ??
+                      selectedPlatformApplication.companyName ??
+                      t("applicationsPage.defaults.companyNotDefined")}
+                  </SheetDescription>
+                </div>
+              </SheetHeader>
+
+              <div className="flex-1 space-y-6 overflow-y-auto px-4 pb-4">
+                <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("applicationsPage.platformApplication.statusTitle")}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {t("applicationsPage.platformApplication.statusDescription")}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t("applicationsPage.platformApplication.submittedAt")}
+                    </p>
+                    <p className="mt-2 font-semibold text-foreground">
+                      {selectedPlatformApplication.createdAt
+                        ? formatDate(selectedPlatformApplication.createdAt, undefined, locale)
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t("applicationsPage.platformApplication.lastUpdate")}
+                    </p>
+                    <p className="mt-2 font-semibold text-foreground">
+                      {selectedPlatformApplication.updatedAt
+                        ? formatDate(selectedPlatformApplication.updatedAt, undefined, locale)
+                        : t("applicationsPage.recentlyUpdated")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-card p-4">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("applicationsPage.platformApplication.nextStepTitle")}
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {selectedPlatformApplication.pipelineEntry?.currentStage === "INTERVIEW"
+                      ? t("applicationsPage.platformApplication.nextStepInterview")
+                      : t("applicationsPage.platformApplication.nextStepGeneral")}
+                  </p>
+                </div>
+              </div>
+
+              <SheetFooter className="border-t border-border pt-4">
+                <Button asChild variant="outline" className="rounded-xl">
+                  <Link href={`/jobs/${selectedPlatformApplication.jobPosting?.id}`}>
+                    {t("applicationsPage.actions.viewPosting")}
+                  </Link>
+                </Button>
+                {selectedPlatformApplication.pipelineEntry?.currentStage === "INTERVIEW" && (
+                  <Button asChild className="rounded-xl">
+                    <Link href={`/scenarios?jobApplicationId=${selectedPlatformApplication.id}`}>
+                      <Mic className="h-4 w-4" />
+                      {t("applicationsPage.actions.practiceInterview")}
+                    </Link>
+                  </Button>
+                )}
+              </SheetFooter>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
       <div className="space-y-6">
         <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_35%)]" />
@@ -446,7 +567,7 @@ export default function ApplicationsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by job title or company..."
+                placeholder={t("applicationsPage.search.placeholder")}
                 className="pl-9 pr-9 rounded-2xl"
               />
               {search && (
@@ -462,9 +583,11 @@ export default function ApplicationsPage() {
             {filteredApplications.length === 0 && search && (
               <div className="text-center py-12 text-muted-foreground">
                 <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="font-medium">No results for &ldquo;{search}&rdquo;</p>
+                <p className="font-medium">
+                  {t("applicationsPage.search.noResults", { search })}
+                </p>
                 <button onClick={() => setSearch("")} className="text-sm text-primary mt-2 hover:underline">
-                  Clear search
+                  {t("applicationsPage.search.clear")}
                 </button>
               </div>
             )}
@@ -511,7 +634,7 @@ export default function ApplicationsPage() {
                             deleteTarget?.id === application.id;
 
                           const updatedAtText = application.updatedAt
-                            ? t("applicationsPage.updatedAt", { date: formatDate(application.updatedAt, locale) })
+                            ? t("applicationsPage.updatedAt", { date: formatDate(application.updatedAt, undefined, locale) })
                             : t("applicationsPage.recentlyUpdated");
 
                           const isPlatformApp = Boolean(application.isPublicApplication && application.jobPosting);
@@ -527,18 +650,11 @@ export default function ApplicationsPage() {
                               key={application.id}
                               role="button"
                               tabIndex={0}
-                              onClick={() => isPlatformApp
-                                ? router.push(`/jobs/${application.jobPosting?.id}`)
-                                : router.push(`/onboarding?applicationId=${application.id}`)
-                              }
+                              onClick={() => openApplicationCard(application)}
                               onKeyDown={(event) => {
                                 if (event.key === "Enter" || event.key === " ") {
                                   event.preventDefault();
-                                  if (isPlatformApp) {
-                                    router.push(`/jobs/${application.jobPosting?.id}`);
-                                  } else {
-                                    router.push(`/onboarding?applicationId=${application.id}`);
-                                  }
+                                  openApplicationCard(application);
                                 }
                               }}
                               className="cursor-pointer rounded-2xl border border-border bg-background p-4 transition-all hover:border-primary/40 hover:bg-muted/30"
@@ -620,19 +736,29 @@ export default function ApplicationsPage() {
 
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    {!isPlatformApp && (
+                                    {isPlatformApp ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="rounded-xl"
+                                        onClick={() => setSelectedPlatformApplication(application)}
+                                      >
+                                        {t("applicationsPage.actions.viewApplication")}
+                                        <ArrowRight className="h-4 w-4" />
+                                      </Button>
+                                    ) : (
                                       <Button asChild variant="outline" size="sm" className="rounded-xl">
                                         <Link href={`/onboarding?applicationId=${application.id}`}>
-                                          Editar
+                                          {t("applicationsPage.actions.edit")}
                                           <ArrowRight className="h-4 w-4" />
                                         </Link>
                                       </Button>
                                     )}
-                                    {!isPlatformApp && (
+                                    {(!isPlatformApp || application.pipelineEntry?.currentStage === "INTERVIEW") && (
                                     <Button asChild variant="outline" size="sm" className="rounded-xl border-green-200 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800 hover:border-green-300">
                                       <Link href={`/scenarios?jobApplicationId=${application.id}`}>
                                         <Mic className="h-4 w-4" />
-                                        Practice Interview
+                                        {t("applicationsPage.actions.practiceInterview")}
                                       </Link>
                                     </Button>
                                     )}

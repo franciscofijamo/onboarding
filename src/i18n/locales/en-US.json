@@ -565,9 +565,27 @@
       "newApplication": "New Application",
       "moveToStage": "Move to stage",
       "continue": "Continue",
+      "edit": "Edit",
+      "viewApplication": "View Application",
+      "viewPosting": "View Posting",
+      "practiceInterview": "Practice Interview",
       "delete": "Delete",
       "deleting": "Deleting...",
       "updatingStage": "Updating stage..."
+    },
+    "search": {
+      "placeholder": "Search by job title or company...",
+      "noResults": "No results for “{search}”",
+      "clear": "Clear search"
+    },
+    "platformApplication": {
+      "statusTitle": "Application status",
+      "statusDescription": "This application was submitted through a public posting and now follows the recruiter's pipeline.",
+      "submittedAt": "Submitted on",
+      "lastUpdate": "Last update",
+      "nextStepTitle": "Next step",
+      "nextStepInterview": "This application is already in interview. You can practice your answers before the next stage.",
+      "nextStepGeneral": "Track this application here. When it moves into interviews, we will show preparation actions in this panel."
     },
     "errors": {
       "deleteFailed": "Failed to delete application"

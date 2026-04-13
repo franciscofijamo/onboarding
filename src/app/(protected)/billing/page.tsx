@@ -8,6 +8,7 @@ import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { Coins, Check, Zap, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { MpesaModal } from "@/components/billing/mpesa-modal";
 import { toast } from "sonner";
@@ -17,6 +18,11 @@ export default function BillingPage() {
   const { user, isLoaded } = useUser();
   const { credits, isLoading } = useCredits();
   const { data: plansData, isLoading: isLoadingPlans } = usePublicPlans();
+  const { data: creditSettings } = useQuery<{ featureCosts?: Record<string, number> }>({
+    queryKey: ["credit-settings"],
+    queryFn: () => fetch("/api/credits/settings").then((r) => r.json()),
+    staleTime: 60_000,
+  });
   const { t } = useLanguage();
   const [mpesaModalOpen, setMpesaModalOpen] = useState(false);
   const [isLoadingPayment, setIsLoadingPayment] = useState(false);
@@ -204,6 +210,33 @@ export default function BillingPage() {
             <p className="text-muted-foreground">{t("billing.noPlanAvailable")}</p>
           </div>
         )}
+      </section>
+
+      <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Custos por ação</h2>
+            <p className="text-sm text-muted-foreground">Veja quantos créditos cada funcionalidade consome.</p>
+          </div>
+          <Badge variant="outline">Atualizado automaticamente</Badge>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          {([
+            { key: "cv_analysis", label: "Análise de CV" },
+            { key: "scenario_simulation", label: "Sessão de entrevista" },
+            { key: "interview_prep", label: "Preparação de entrevista" },
+            { key: "ai_text_chat", label: "Chat IA" },
+            { key: "ai_image_generation", label: "Geração de imagem" },
+          ] as const).map((item) => {
+            const cost = creditSettings?.featureCosts?.[item.key] ?? (item.key === "scenario_simulation" ? 15 : item.key === "cv_analysis" ? 10 : item.key === "interview_prep" ? 15 : item.key === "ai_text_chat" ? 1 : 5);
+            return (
+              <div key={item.key} className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
+                <span className="text-sm font-medium text-foreground">{item.label}</span>
+                <span className="text-sm text-muted-foreground">{cost} créditos</span>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <MpesaModal

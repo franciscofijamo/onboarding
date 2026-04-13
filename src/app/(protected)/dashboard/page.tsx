@@ -50,7 +50,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
-                <Link href="/recruiter/postings">
+                <Link href="/recruiter/postings/new">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Nova vaga
                 </Link>
@@ -242,7 +242,7 @@ export default function DashboardPage() {
                   <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-${item.color}-500/10 text-${item.color}-600`}>
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                  <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
                     {t("dashboard.soonBadge")}
                   </span>
                 </div>

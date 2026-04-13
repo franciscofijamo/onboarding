@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 
 export async function GET(
@@ -21,7 +22,28 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ posting: { ...posting, applicationCount: 0 } });
+    const { userId: clerkId } = await auth();
+    let userHasApplied = false;
+
+    if (clerkId) {
+      const user = await db.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+
+      if (user) {
+        const application = await db.jobApplication.findFirst({
+          where: {
+            userId: user.id,
+            jobPostingId: id,
+          },
+          select: { id: true },
+        });
+        userHasApplied = !!application;
+      }
+    }
+
+    return NextResponse.json({ posting, userHasApplied });
   } catch (error) {
     console.error('[Jobs Public API] GET [id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

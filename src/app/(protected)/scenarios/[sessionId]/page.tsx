@@ -303,6 +303,40 @@ export default function ScenarioSessionPage() {
     }
   }, [audioBlob, currentResponse, sessionId, recordingTime, locale, queryClient, activeQuestion, t]);
 
+  const submitRecorded = useCallback(async () => {
+    if (!currentResponse) return;
+
+    setAnalyzing(true);
+    try {
+      await apiClient(
+        `/api/scenarios/sessions/${sessionId}/responses/${currentResponse.questionIndex}/analyze`,
+        {
+          method: "POST",
+          body: JSON.stringify({ language: locale }),
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      setAnalyzing(false);
+      setReRecording(false);
+      queryClient.invalidateQueries({ queryKey: ["scenario-session", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["credits"] });
+      setExpandedFeedback(activeQuestion);
+
+      toast({
+        title: t("scenarios.analysisComplete") || "Analysis complete!",
+        description: t("scenarios.analysisCompleteDesc") || "View detailed feedback below.",
+      });
+    } catch (error) {
+      setAnalyzing(false);
+      toast({
+        title: t("scenarios.analysisError") || "Analysis error",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [currentResponse, sessionId, locale, queryClient, activeQuestion, t]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -373,9 +407,9 @@ export default function ScenarioSessionPage() {
 
           {session.averageScore != null && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
-              <span className="text-xs text-primary/80 font-medium">{t("scenarios.avgScore") || "Average"}</span>
+              <span className="text-xs text-primary/80 font-medium">{t("scenarios.avgScore") || "Nota Média"}</span>
               <div className="h-4 w-px bg-primary/20" />
-              <span className="text-sm font-bold text-primary">{session.averageScore}/10</span>
+              <span className="text-sm font-bold text-primary">{Math.round((session.averageScore || 0) * 10)}/100</span>
             </div>
           )}
         </div>
@@ -529,7 +563,7 @@ export default function ScenarioSessionPage() {
                         <AlertCircle className="h-4 w-4 text-yellow-500" />
                         <p className="text-sm font-medium">{t("scenarios.recordedButNotSent") || "Audio recorded but not submitted"}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center justify-center gap-3">
                         <Button size="lg" onClick={startRecording} className="gap-2">
                           <RotateCcw className="h-5 w-5" />
                           {t("scenarios.reRecord") || "Re-record"}
@@ -542,6 +576,24 @@ export default function ScenarioSessionPage() {
                         >
                           <Upload className="h-5 w-5" />
                           {t("scenarios.uploadFile") || "Upload File"}
+                        </Button>
+                        <Button
+                          size="lg"
+                          onClick={submitRecorded}
+                          disabled={analyzing}
+                          className="gap-2"
+                        >
+                          {analyzing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              {t("scenarios.analyzing") || "Analyzing..."}
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4" />
+                              {t("scenarios.submitAndAnalyze") || "Submit & Analyze"}
+                            </>
+                          )}
                         </Button>
                         <input
                           ref={fileInputRef}
@@ -679,11 +731,10 @@ export default function ScenarioSessionPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className={cn("text-2xl font-bold", getScoreColor(score))}>
-                        {score}/10
+                        {Math.round(score * 10)}/100
                       </div>
                       <div className="text-left">
-                        <p className="font-medium">{"Detailed Feedback"}</p>
-                        <p className="text-xs text-muted-foreground">{fb.status}</p>
+                        <p className="font-medium">{t("scenarios.detailedFeedback") || "Feedback Detalhado"}</p>
                       </div>
                     </div>
                     {expandedFeedback === activeQuestion ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
@@ -699,8 +750,8 @@ export default function ScenarioSessionPage() {
                               <MessageSquare className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-base">Your Response</h4>
-                              <p className="text-xs text-muted-foreground">Click highlighted words for detailed feedback</p>
+                              <h4 className="font-semibold text-base">{t("scenarios.yourResponse") || "A Sua Resposta"}</h4>
+                              <p className="text-xs text-muted-foreground">{t("scenarios.clickTermsForDetails") || "Clica nas expressões destacadas para ver detalhe"}</p>
                             </div>
                           </div>
                           {annotations.length > 0 ? (
@@ -719,7 +770,7 @@ export default function ScenarioSessionPage() {
                       <div className="grid gap-2">
                         <h4 className="font-medium flex items-center gap-2">
                           <Target className="h-4 w-4" />
-                          Evaluation Criteria
+                          {t("scenarios.evaluationCriteria") || "Critérios de Avaliação"}
                         </h4>
                         {criteriaList.map((c, i) => (
                           <div key={i} className={cn("flex items-center justify-between p-3 bg-card rounded-lg border border-border/50 border-l-4", c.score >= 8 ? "border-l-emerald-500" : c.score >= 6 ? "border-l-amber-500" : "border-l-red-500")}>
@@ -736,7 +787,7 @@ export default function ScenarioSessionPage() {
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
                             <Star className="h-4 w-4 text-primary" />
-                            Strengths
+                            {t("scenarios.strengths") || "Pontos Fortes"}
                           </h4>
                           {strengthsList.map((p, i) => (
                               <div key={i} className="p-3 bg-card rounded-lg border border-border/50 border-l-4 border-l-emerald-500 mb-2 shadow-sm">
@@ -752,7 +803,7 @@ export default function ScenarioSessionPage() {
                         <div>
                           <h4 className="font-medium mb-2 flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-primary" />
-                            Improvements
+                            {t("scenarios.improvements") || "Pontos de Melhoria"}
                           </h4>
                           {improvementsList.map((p, i) => {
                             const pLower = p.priority.toLowerCase();
@@ -762,7 +813,7 @@ export default function ScenarioSessionPage() {
                             return (
                               <div key={i} className={cn("p-3 bg-card rounded-lg border border-border/50 border-l-4 mb-2 shadow-sm", borderColor)}>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <Badge variant="outline" className={cn("text-[10px] h-5", badgeColor)}>{p.priority}</Badge>
+                                  <Badge variant="outline" className={cn("text-xs h-5", badgeColor)}>{p.priority}</Badge>
                                   <p className="text-sm font-medium text-foreground">{p.issue}</p>
                                 </div>
                                 <p className="text-xs text-muted-foreground">{p.recommendation}</p>
@@ -777,7 +828,7 @@ export default function ScenarioSessionPage() {
                         <div className="p-4 bg-card rounded-xl border border-border/50 border-l-4 border-l-blue-500 shadow-sm">
                           <h4 className="font-medium mb-2 flex items-center gap-2 text-foreground">
                             <Lightbulb className="h-4 w-4 text-blue-500" />
-                            Model Response
+                            {t("scenarios.modelResponse") || "Resposta Modelo (Exemplo)"}
                           </h4>
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{modelResponse}</p>
                         </div>
@@ -787,7 +838,7 @@ export default function ScenarioSessionPage() {
                         <div className="p-4 bg-card rounded-xl border border-border/50 border-l-4 border-l-purple-500 shadow-sm">
                           <h4 className="font-medium mb-2 flex items-center gap-2 text-foreground">
                             <MessageSquare className="h-4 w-4 text-purple-500" />
-                            Communication Tips
+                            {t("scenarios.communicationTips") || "Dicas de Comunicação"}
                           </h4>
                           <ul className="space-y-1">
                             {tips.map((tip, i) => (
@@ -802,14 +853,14 @@ export default function ScenarioSessionPage() {
 
                       {finalComment && (
                         <div className="p-4 bg-muted/30 rounded-xl border border-border/50">
-                          <h4 className="font-medium mb-2">Final Comment</h4>
+                          <h4 className="font-medium mb-2">{t("scenarios.finalComment") || "Comentário Final"}</h4>
                           <p className="text-sm text-muted-foreground mb-2">{finalComment.summary}</p>
                           <div className="flex items-center gap-2 mt-2">
                             <Badge>{finalComment.readiness}</Badge>
                           </div>
                           {finalComment.priorities?.length > 0 && (
                             <div className="mt-2">
-                              <p className="text-xs font-medium mb-1">Top Priorities:</p>
+                              <p className="text-xs font-medium mb-1">{t("scenarios.topPriorities") || "Prioridades Principais:"}</p>
                               <ol className="list-decimal list-inside text-xs text-muted-foreground space-y-0.5">
                                 {finalComment.priorities.map((p, i) => (
                                   <li key={i}>{p}</li>
@@ -835,7 +886,7 @@ export default function ScenarioSessionPage() {
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              {t("scenarios.previous") || "Previous"}
+              {t("scenarios.previous") || "Anterior"}
             </Button>
             <span className="text-sm text-muted-foreground">
               {activeQuestion + 1} / {responses.length}
@@ -846,7 +897,7 @@ export default function ScenarioSessionPage() {
               onClick={() => setActiveQuestion(activeQuestion + 1)}
               className="gap-2"
             >
-              {t("scenarios.next") || "Next"}
+              {t("scenarios.next") || "Seguinte"}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

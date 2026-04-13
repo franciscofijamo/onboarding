@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Home,
   CreditCard,
-  Settings,
   Briefcase,
   MessageSquare,
   Mic,
@@ -18,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { site } from "@/lib/brand-config";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -81,7 +81,20 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="flex h-14 items-center gap-2 px-3">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Settings className="h-5 w-5" />
+            {site.logo.dark && (
+              <img
+                src={site.logo.dark}
+                alt={site.name}
+                className="hidden h-5 w-5 object-contain dark:block"
+              />
+            )}
+            {site.logo.light && (
+              <img
+                src={site.logo.light}
+                alt={site.name}
+                className="h-5 w-5 object-contain dark:hidden"
+              />
+            )}
           </div>
           {!collapsed && (
             <span className="text-lg font-semibold">StandOut</span>
@@ -114,11 +127,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     <div className="flex min-w-0 flex-col">
                       <span>{label}</span>
                       {ptHint && ptHint !== label && (
-                        <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                        <span className="text-xs leading-tight text-muted-foreground/60">{ptHint}</span>
                       )}
                     </div>
                     {showComingSoon && (
-                      <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                      <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
                         Soon
                       </span>
                     )}
@@ -166,7 +179,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <div className="flex flex-col">
                     <span>{label}</span>
                     {ptHint && ptHint !== label && (
-                      <span className="text-[10px] text-muted-foreground">{ptHint}</span>
+                      <span className="text-xs text-muted-foreground">{ptHint}</span>
                     )}
                     {showComingSoon && (
                       <span className="mt-1 inline-block w-fit rounded bg-amber-500/10 px-1 py-[1px] text-[8px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20">

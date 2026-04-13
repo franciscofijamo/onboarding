@@ -39,7 +39,7 @@ import {
   X,
   BookOpen,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import Link from "next/link";
 
 interface ResponseData {
@@ -98,22 +98,27 @@ const GENERATION_STEPS = [
   "Finalising interview session...",
 ];
 
-function getStatusBadge(session: SessionData) {
+function getStatusBadge(session: SessionData, t: any) {
   if (session.analyzedCount === session.totalQuestions && session.totalQuestions > 0) {
-    return <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">Completed</Badge>;
+    return <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">{t("scenarios.completedBadge") || "Completed"}</Badge>;
   }
   if (session.answeredCount > 0) {
-    return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-xs">In Progress</Badge>;
+    return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-xs">{t("scenarios.inProgressBadge") || "In Progress"}</Badge>;
   }
-  return <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">New</Badge>;
+  return <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">{t("scenarios.newBadge") || "New"}</Badge>;
 }
 
 function ScenariosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { locale } = useLanguage();
+  const { locale, t } = useLanguage();
   const { credits, isLoading: creditsLoading } = useCredits();
+  const { data: creditSettings } = useQuery<{ featureCosts?: Record<string, number> }>({
+    queryKey: ["credit-settings"],
+    queryFn: () => api.get("/api/credits/settings"),
+    staleTime: 60_000,
+  });
 
   const jobApplicationId = searchParams.get("jobApplicationId");
 
@@ -183,7 +188,8 @@ function ScenariosContent() {
     });
   };
 
-  const hasCredits = (credits?.creditsRemaining ?? 0) >= 15;
+  const scenarioCost = creditSettings?.featureCosts?.scenario_simulation ?? 15;
+  const hasCredits = (credits?.creditsRemaining ?? 0) >= scenarioCost;
 
   const sessions = data?.sessions ?? [];
   const stats = data?.stats;
@@ -266,26 +272,26 @@ function ScenariosContent() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Generate Interview Session</DialogTitle>
+            <DialogTitle>Gerar sessão de entrevista</DialogTitle>
             <DialogDescription>
-              5 AI-generated questions tailored to this job application. 15 credits will be deducted.
+              5 perguntas geradas por IA para esta candidatura. {scenarioCost} créditos serão deduzidos.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             {confirmJob && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Job:</span>
+                <span className="text-muted-foreground">Vaga:</span>
                 <span className="font-medium">
-                  {confirmJob.jobTitle || "Untitled"} @ {confirmJob.companyName || "Company"}
+                  {confirmJob.jobTitle || "Sem título"} @ {confirmJob.companyName || "Empresa"}
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Cost:</span>
-              <Badge>15 credits</Badge>
+              <span className="text-muted-foreground">Custo:</span>
+              <Badge>{scenarioCost} créditos</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Balance:</span>
+              <span className="text-muted-foreground">Saldo:</span>
               <span className="flex items-center gap-1 font-medium">
                 <Coins className="h-4 w-4 text-yellow-500" />
                 {credits?.creditsRemaining ?? 0}
@@ -294,20 +300,20 @@ function ScenariosContent() {
             {!hasCredits && !creditsLoading && (
               <p className="text-sm text-red-500 flex items-center gap-1 pt-1">
                 <AlertCircle className="h-4 w-4" />
-                Insufficient credits. Please purchase more.
+                Créditos insuficientes. Compre mais para continuar.
               </p>
             )}
           </div>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmJobId(null)}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               disabled={!hasCredits || creditsLoading}
               onClick={() => confirmJobId && handleGenerate(confirmJobId)}
             >
               <Sparkles className="h-4 w-4" />
-              Confirm
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -349,6 +355,19 @@ function ScenariosContent() {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-yellow-500" />
+              <span>Custo por sessão de entrevista</span>
+            </div>
+            <Badge variant="outline">{scenarioCost} créditos</Badge>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            O custo só é cobrado quando a sessão é gerada com sucesso.
+          </p>
+        </div>
+
         {/* Search bar — only when there are sessions */}
         {!isLoading && sessions.length > 0 && (
           <div className="relative">
@@ -386,23 +405,23 @@ function ScenariosContent() {
             <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
               <Mic className="h-10 w-10 text-primary/60" />
             </div>
-            <h2 className="text-xl font-semibold mb-2">No interview sessions yet</h2>
+            <h2 className="text-xl font-semibold mb-2">{t("scenarios.noSessions") || "Sem sessões de entrevista"}</h2>
             <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-              Open a job application and click <strong>Practice Interview</strong> to generate your first session.
+              {t("scenarios.noSessionsDesc") || "Abra uma candidatura e clique em Praticar Entrevista para iniciar."}
             </p>
             <Button asChild size="lg" className="rounded-2xl">
               <Link href="/applications">
                 <Briefcase className="h-4 w-4 mr-2" />
-                Go to Applications
+                {t("scenarios.goToApplications") || "Ir para Candidaturas"}
               </Link>
             </Button>
           </div>
         ) : groupEntries.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">No results for &ldquo;{search}&rdquo;</p>
+            <p className="font-medium">{t("scenarios.noResults") || "Sem resultados para"} &ldquo;{search}&rdquo;</p>
             <button onClick={() => setSearch("")} className="text-sm text-primary mt-2 hover:underline">
-              Clear search
+              {t("scenarios.clearSearch") || "Limpar pesquisa"}
             </button>
           </div>
         ) : (
@@ -419,7 +438,7 @@ function ScenariosContent() {
                       </div>
                       <div>
                         <p className="font-semibold leading-tight">
-                          {job?.jobTitle || "Untitled Role"}
+                          {job?.jobTitle || t("scenarios.untitledRole") || "Vaga sem Título"}
                         </p>
                         {job?.companyName && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -437,7 +456,7 @@ function ScenariosContent() {
                         onClick={() => setConfirmJobId(job.id)}
                       >
                         <Plus className="h-4 w-4" />
-                        New Session
+                        {t("scenarios.newSessionBtn") || "Nova Sessão"}
                       </Button>
                     )}
                   </div>
@@ -473,10 +492,10 @@ function ScenariosContent() {
                                   Entrevista da empresa
                                 </Badge>
                               )}
-                              {getStatusBadge(session)}
+                              {getStatusBadge(session, t)}
                               {session.averageScore != null && (
                                 <Badge variant="outline" className="text-xs">
-                                  {session.averageScore}/10
+                                  {Math.round((session.averageScore || 0) * 10)}/100
                                 </Badge>
                               )}
                             </div>
@@ -489,15 +508,15 @@ function ScenariosContent() {
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <CircleDot className="h-3 w-3" />
-                              {session.answeredCount}/{session.totalQuestions} answered
+                              {session.answeredCount}/{session.totalQuestions} {t("scenarios.answeredList") || "respondidas"}
                             </span>
                             <span className="flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3" />
-                              {session.analyzedCount}/{session.totalQuestions} analysed
+                              {session.analyzedCount}/{session.totalQuestions} {t("scenarios.analysedList") || "analisadas"}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {new Date(session.createdAt).toLocaleDateString()}
+                              {formatDate(session.createdAt)}
                             </span>
                           </div>
                         </div>
@@ -509,8 +528,8 @@ function ScenariosContent() {
                         >
                           <Play className="h-4 w-4" />
                           {session.analyzedCount === session.totalQuestions && session.totalQuestions > 0
-                            ? "View"
-                            : "Continue"}
+                            ? (t("scenarios.viewDetails") || "Ver")
+                            : (t("scenarios.continueBtn") || "Continuar")}
                         </Button>
                       </div>
                     ))}

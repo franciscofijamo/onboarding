@@ -12,11 +12,13 @@ import {
   Pause,
   Play,
   Plus,
+  RotateCcw,
   Trash2,
   Users,
   X,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import {
   CATEGORY_LABELS,
@@ -41,13 +43,7 @@ import {
 
 type PostingsResponse = { postings: JobPosting[] };
 
-function formatDate(iso: string) {
-  return new Intl.DateTimeFormat("pt-MZ", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(iso));
-}
+
 
 export default function RecruiterPostingsPage() {
   useSetPageMetadata({
@@ -58,6 +54,7 @@ export default function RecruiterPostingsPage() {
 
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = React.useState<JobPosting | null>(null);
+  const [closeTarget, setCloseTarget] = React.useState<JobPosting | null>(null);
 
   const { data, isLoading } = useQuery<PostingsResponse>({
     queryKey: ["recruiterPostings"],
@@ -79,6 +76,10 @@ export default function RecruiterPostingsPage() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["recruiterPostings"], ctx.previous);
+      toast({ title: "Erro ao actualizar estado", variant: "destructive" });
+    },
+    onSuccess: () => {
+      toast({ title: "Estado da vaga actualizado" });
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["recruiterPostings"] }),
   });
@@ -88,6 +89,10 @@ export default function RecruiterPostingsPage() {
     onSuccess: () => {
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: ["recruiterPostings"] });
+      toast({ title: "Vaga eliminada com sucesso" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao eliminar vaga", variant: "destructive" });
     },
   });
 
@@ -131,6 +136,33 @@ export default function RecruiterPostingsPage() {
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >
               {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Eliminar"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={Boolean(closeTarget)} onOpenChange={(open) => { if (!open) setCloseTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Encerrar vaga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta vaga ficará indisponível para novas candidaturas. Pode reabrir mais tarde.
+            </AlertDialogDescription>
+            {closeTarget && (
+              <p className="text-sm font-medium">{closeTarget.title}</p>
+            )}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updateStatusMutation.isPending}>Cancelar</AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={updateStatusMutation.isPending}
+              onClick={() => {
+                if (closeTarget) updateStatusMutation.mutate({ id: closeTarget.id, status: "CLOSED" });
+                setCloseTarget(null);
+              }}
+            >
+              {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Encerrar"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -207,6 +239,7 @@ export default function RecruiterPostingsPage() {
                             updateStatusMutation.mutate({ id: posting.id, status })
                           }
                           onDelete={() => setDeleteTarget(posting)}
+                          onRequestClose={() => setCloseTarget(posting)}
                           isPending={
                             updateStatusMutation.isPending &&
                             updateStatusMutation.variables?.id === posting.id
@@ -229,11 +262,13 @@ function PostingCard({
   posting,
   onStatusChange,
   onDelete,
+  onRequestClose,
   isPending,
 }: {
   posting: JobPosting;
   onStatusChange: (status: JobPostingStatus) => void;
   onDelete: () => void;
+  onRequestClose: () => void;
   isPending: boolean;
 }) {
   return (
@@ -241,17 +276,17 @@ function PostingCard({
       <div className="space-y-1.5">
         <h3 className="text-sm font-medium leading-snug line-clamp-2">{posting.title}</h3>
         <div className="flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2 py-0.5 text-xs text-muted-foreground">
             {CATEGORY_LABELS[posting.category]}
           </span>
-          <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+          <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-2 py-0.5 text-xs text-muted-foreground">
             {JOB_TYPE_LABELS[posting.jobType]}
           </span>
         </div>
         <p className="text-[11px] text-emerald-600 font-medium">{SALARY_RANGE_LABELS[posting.salaryRange]}</p>
         <div className="flex items-center justify-between">
-          <p className="text-[10px] text-muted-foreground">{formatDate(posting.createdAt)}</p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">{formatDate(posting.createdAt)}</p>
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2 py-0.5 text-xs text-muted-foreground">
             <Users className="h-2.5 w-2.5" />
             {posting.applicationCount}
           </span>
@@ -311,6 +346,30 @@ function PostingCard({
                 <Play className="h-3.5 w-3.5" />
               </Button>
             )}
+            {posting.status === "CLOSED" && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg text-blue-600 hover:bg-blue-50"
+                  aria-label="Reabrir"
+                  title="Reabrir como rascunho"
+                  onClick={() => onStatusChange("DRAFT")}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg text-emerald-600 hover:bg-emerald-50"
+                  aria-label="Reabrir e publicar"
+                  title="Reabrir e publicar"
+                  onClick={() => onStatusChange("PUBLISHED")}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
             {posting.status !== "CLOSED" && (
               <Button
                 variant="ghost"
@@ -318,7 +377,7 @@ function PostingCard({
                 className="h-7 w-7 rounded-lg text-rose-500 hover:bg-rose-50"
                 aria-label="Encerrar"
                 title="Encerrar"
-                onClick={() => onStatusChange("CLOSED")}
+                onClick={onRequestClose}
               >
                 <X className="h-3.5 w-3.5" />
               </Button>

@@ -44,7 +44,6 @@ interface FormValues {
 }
 
 export default function EditPostingPage() {
-  useSetPageMetadata({ title: "Editar Vaga", showBreadcrumbs: true });
 
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -56,6 +55,21 @@ export default function EditPostingPage() {
   const { data, isLoading } = useQuery<{ posting: JobPosting }>({
     queryKey: ["recruiterPosting", id],
     queryFn: () => api.get(`/api/recruiter/postings/${id}`),
+  });
+
+
+  const postingTitle = data?.posting?.title ?? "Vaga";
+
+  useSetPageMetadata({
+    title: "Editar Vaga",
+    showBreadcrumbs: true,
+    breadcrumbs: [
+      { label: "Home", href: "/dashboard" },
+      { label: "Recruiter", href: "/recruiter/postings" },
+      { label: "Publicações", href: "/recruiter/postings" },
+      { label: postingTitle },
+      { label: "Editar" },
+    ],
   });
 
   const [form, setForm] = React.useState<FormValues>({
@@ -144,7 +158,7 @@ export default function EditPostingPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-xl">
+        <Button variant="ghost" size="icon" onClick={() => router.push("/recruiter/postings")} className="rounded-xl">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>

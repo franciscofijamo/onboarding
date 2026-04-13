@@ -406,7 +406,7 @@ function EnvChecklist({ items }: { items: EnvChecklistItem[] }) {
             )}
           >
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+              <Badge variant="outline" className="text-xs uppercase tracking-wide">
                 {item.category}
               </Badge>
               <code className="rounded bg-muted px-1.5 py-0.5 text-[11px]">{item.key}</code>

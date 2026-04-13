@@ -565,9 +565,27 @@
       "newApplication": "Nova Candidatura",
       "moveToStage": "Mover para fase",
       "continue": "Continuar",
+      "edit": "Editar",
+      "viewApplication": "Ver Candidatura",
+      "viewPosting": "Ver Vaga",
+      "practiceInterview": "Praticar Entrevista",
       "delete": "Apagar",
       "deleting": "A apagar...",
       "updatingStage": "A atualizar fase..."
+    },
+    "search": {
+      "placeholder": "Pesquisar por função ou empresa...",
+      "noResults": "Sem resultados para “{search}”",
+      "clear": "Limpar pesquisa"
+    },
+    "platformApplication": {
+      "statusTitle": "Estado da candidatura",
+      "statusDescription": "Esta candidatura foi submetida através da vaga pública e acompanha agora o pipeline do recrutador.",
+      "submittedAt": "Submetida em",
+      "lastUpdate": "Última atualização",
+      "nextStepTitle": "Próximo passo",
+      "nextStepInterview": "A candidatura já se encontra em entrevista. Podes praticar respostas antes da próxima etapa.",
+      "nextStepGeneral": "Acompanha esta candidatura por aqui. Quando avançar para entrevista, mostramos ações de preparação neste painel."
     },
     "errors": {
       "deleteFailed": "Falha ao apagar candidatura"

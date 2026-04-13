@@ -163,6 +163,7 @@ export async function GET(
     const sortedFlat = [...entries].sort(sortByFitScore);
 
     return NextResponse.json({
+      posting: { id: result.posting.id, title: result.posting.title },
       stages: grouped,
       pipeline: sortedFlat,
       stageConfig,

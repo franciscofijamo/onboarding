@@ -10,3 +10,13 @@ export function generateApiKey(): string {
   const bytes = randomBytes(32);
   return bytes.toString('hex');
 }
+
+export function formatDate(iso: string, options?: Intl.DateTimeFormatOptions, locale: string = "pt-MZ") {
+  if (!iso) return "—";
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    ...options
+  }).format(new Date(iso));
+}

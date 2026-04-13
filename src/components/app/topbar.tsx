@@ -76,11 +76,11 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                             <div className="flex flex-col">
                               <span>{t(item.nameKey)}</span>
                               {ptHint && (
-                                <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                                <span className="text-xs leading-tight text-muted-foreground/60">{ptHint}</span>
                               )}
                             </div>
                           </div>
-                          <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-[9px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
+                          <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
                             Soon
                           </span>
                         </div>
@@ -94,7 +94,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                             <div className="flex flex-col">
                               <span>{t(item.nameKey)}</span>
                               {ptHint && (
-                                <span className="text-[10px] leading-tight text-muted-foreground/60">{ptHint}</span>
+                                <span className="text-xs leading-tight text-muted-foreground/60">{ptHint}</span>
                               )}
                             </div>
                           </div>

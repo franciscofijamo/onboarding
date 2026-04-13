@@ -5,7 +5,7 @@ import { useCredits } from "@/hooks/use-credits";
 import { useLanguage } from "@/contexts/language";
 import { Coins } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -77,7 +77,7 @@ export function CreditStatus({ className, showUpgradeButton = true }: CreditStat
             </p>
             {credits.billingPeriodEnd && (
               <p className="text-xs text-muted-foreground">
-                {t("creditStatus.resetsOn", { date: new Date(credits.billingPeriodEnd).toLocaleDateString() })}
+                {t("creditStatus.resetsOn", { date: formatDate(credits.billingPeriodEnd) })}
               </p>
             )}
             <p className="text-xs text-muted-foreground">

@@ -21,17 +21,26 @@ export function PageHeader({ className }: PageHeaderProps) {
     const breadcrumbs: BreadcrumbItem[] = [
       { label: "Home", href: "/dashboard" }
     ];
+
+    const isIdSegment = (segment: string) => segment.length >= 12 && /^[a-z0-9]+$/i.test(segment);
+    let hasId = false;
     
     segments.forEach((segment, index) => {
       if (segment === "dashboard" && index === 0) return;
-      
-      const href = `/${segments.slice(0, index + 1).join("/")}`;
+
+      if (isIdSegment(segment)) {
+        hasId = true;
+        breadcrumbs.push({ label: "Detalhes" });
+        return;
+      }
+
+      const href = hasId ? undefined : `/${segments.slice(0, index + 1).join("/")}`;
       const label = segment
         .split("-")
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ");
       
-      breadcrumbs.push({ label, href });
+      breadcrumbs.push({ label, ...(href ? { href } : {}) });
     });
     
     return breadcrumbs;
