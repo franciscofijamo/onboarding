@@ -16,8 +16,10 @@ import {
   LayoutGrid,
   Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { site } from "@/lib/brand-config";
+import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -34,6 +36,14 @@ type NavItem = {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   disabled?: boolean;
+};
+
+type CompanySidebarData = {
+  company: {
+    id: string;
+    name: string;
+    logoUrl: string | null;
+  } | null;
 };
 
 export const candidateNavigationItems: NavItem[] = [
@@ -65,9 +75,27 @@ type SidebarProps = {
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { t, hint } = useLanguage();
-  const { role } = useProfile();
+  const { role, hasCompanyLogo } = useProfile();
+  const [imageError, setImageError] = React.useState(false);
 
   const items = role === "RECRUITER" ? recruiterNavigationItems : candidateNavigationItems;
+  const { data: companyData } = useQuery<CompanySidebarData>({
+    queryKey: ["company-profile"],
+    queryFn: () => api.get("/api/company/profile"),
+    enabled: role === "RECRUITER",
+    staleTime: 5 * 60_000,
+  });
+
+  const companyName = companyData?.company?.name || "Perfil da empresa";
+  const companyLogoUrl = companyData?.company?.logoUrl || null;
+  const companyNeedsLogo = role === "RECRUITER" && !hasCompanyLogo;
+  const headerHref = role === "RECRUITER" ? "/company/profile" : "/";
+  const headerLabel = role === "RECRUITER" ? companyName : site.name;
+  const companyInitial = companyName.trim().charAt(0).toUpperCase() || "C";
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [companyLogoUrl]);
 
   return (
     <aside
@@ -79,25 +107,41 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       aria-label="Main sidebar"
     >
       <div className="flex h-14 items-center gap-2 px-3">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            {site.logo.dark && (
+        <Link href={headerHref} className="flex min-w-0 items-center gap-2">
+          <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
+            {companyLogoUrl && !imageError ? (
               <img
-                src={site.logo.dark}
-                alt={site.name}
-                className="hidden h-5 w-5 object-contain dark:block"
+                src={companyLogoUrl}
+                alt={companyName}
+                className="h-full w-full object-cover"
+                onError={() => setImageError(true)}
               />
+            ) : role === "RECRUITER" ? (
+              <span className="text-sm font-semibold text-white">{companyInitial}</span>
+            ) : (
+              <>
+                {site.logo.dark && (
+                  <img
+                    src={site.logo.dark}
+                    alt={site.name}
+                    className="hidden h-5 w-5 object-contain dark:block"
+                  />
+                )}
+                {site.logo.light && (
+                  <img
+                    src={site.logo.light}
+                    alt={site.name}
+                    className="h-5 w-5 object-contain dark:hidden"
+                  />
+                )}
+              </>
             )}
-            {site.logo.light && (
-              <img
-                src={site.logo.light}
-                alt={site.name}
-                className="h-5 w-5 object-contain dark:hidden"
-              />
+            {companyNeedsLogo && (
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
             )}
           </div>
           {!collapsed && (
-            <span className="text-lg font-semibold">StandOut</span>
+            <span className="truncate text-lg font-semibold">{headerLabel}</span>
           )}
         </Link>
         <div className="ml-auto">
@@ -119,6 +163,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             const label = t(item.nameKey);
             const ptHint = hint(item.hintKey);
             const showComingSoon = Boolean(item.disabled);
+            const showRequired = role === "RECRUITER" && item.href === "/company/profile" && companyNeedsLogo;
             const itemContent = (
               <>
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -130,11 +175,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         <span className="text-xs leading-tight text-muted-foreground/60">{ptHint}</span>
                       )}
                     </div>
-                    {showComingSoon && (
+                    {showRequired ? (
+                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
+                    ) : showComingSoon ? (
                       <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
                         Soon
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </>
@@ -181,11 +228,13 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     {ptHint && ptHint !== label && (
                       <span className="text-xs text-muted-foreground">{ptHint}</span>
                     )}
-                    {showComingSoon && (
+                    {showRequired ? (
+                      <span className="mt-1 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
+                    ) : showComingSoon ? (
                       <span className="mt-1 inline-block w-fit rounded bg-amber-500/10 px-1 py-[1px] text-[8px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20">
                         Soon
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </TooltipContent>
               </Tooltip>

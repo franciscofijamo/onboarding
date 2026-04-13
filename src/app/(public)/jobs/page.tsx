@@ -361,6 +361,7 @@ export default function JobBoardPage() {
 }
 
 function JobCard({ posting }: { posting: PublicPosting }) {
+  const [imageError, setImageError] = React.useState(false);
   const descriptionPreview = posting.description.replace(/<[^>]*>?/gm, '');
 
   return (
@@ -372,11 +373,12 @@ function JobCard({ posting }: { posting: PublicPosting }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white shadow-sm">
-              {posting.company.logoUrl ? (
+              {posting.company.logoUrl && !imageError ? (
                 <img
                   src={posting.company.logoUrl}
                   alt={posting.company.name}
                   className="h-full w-full object-contain"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <Building2 className="h-5 w-5 text-muted-foreground/60" />

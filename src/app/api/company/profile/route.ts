@@ -10,7 +10,7 @@ const companySchema = z.object({
   location: z.string().min(2, 'Localização é obrigatória'),
   website: z.string().url('URL inválido').optional().or(z.literal('')),
   email: z.string().email('Email inválido'),
-  logoUrl: z.string().url().optional().or(z.literal('')),
+  logoUrl: z.string().url('Logo inválido'),
   logoPath: z.string().optional().or(z.literal('')),
 });
 
@@ -63,8 +63,8 @@ export async function PUT(request: Request) {
 
     const company = await db.company.upsert({
       where: { userId: user.id },
-      create: { userId: user.id, name, description, location, website: website || null, email, logoUrl: logoUrl || null, logoPath: logoPath || null },
-      update: { name, description, location, website: website || null, email, logoUrl: logoUrl || null, logoPath: logoPath || null },
+      create: { userId: user.id, name, description, location, website: website || null, email, logoUrl, logoPath: logoPath || null },
+      update: { name, description, location, website: website || null, email, logoUrl, logoPath: logoPath || null },
     });
 
     await db.user.update({

@@ -9,6 +9,7 @@ interface ProfileData {
     profileComplete: boolean;
     role: UserRole | null;
     hasCompany: boolean;
+    hasCompanyLogo: boolean;
     province: string | null;
     birthYear: number | null;
     gender: string | null;
@@ -38,6 +39,7 @@ export function useProfile(options?: UseProfileOptions) {
         role: query.data?.role ?? null,
         hasRole: query.data?.role != null,
         hasCompany: query.data?.hasCompany ?? false,
+        hasCompanyLogo: query.data?.hasCompanyLogo ?? false,
         refetch: query.refetch,
     };
 }

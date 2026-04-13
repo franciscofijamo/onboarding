@@ -983,21 +983,37 @@ function InterviewStageModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-purple-600" />
-            {step === "config" ? "Nova Fase de Entrevista" : step === "questions" ? "Rever Perguntas" : "Fase Publicada!"}
-          </DialogTitle>
-          {step === "config" && (
-            <DialogDescription>
-              Configure a fase de entrevista. A IA irá gerar perguntas baseadas na descrição da vaga.
-            </DialogDescription>
-          )}
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4 rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+              {step === "done"
+                ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                : <BookOpen className="h-4 w-4 text-purple-700" />
+              }
+            </div>
+            <div>
+              <p className="font-semibold leading-tight">
+                {step === "config" ? "Nova Fase de Entrevista" : step === "questions" ? "Rever Perguntas" : "Fase Publicada!"}
+              </p>
+              {step === "config" && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Configure a fase — a IA irá gerar perguntas baseadas na descrição da vaga.
+                </p>
+              )}
+              {step === "questions" && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {questions.length} perguntas geradas. Edite conforme necessário antes de publicar.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
 
+        <div className="px-6 py-5">
         {step === "config" && (
-          <div className="space-y-4 py-2">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="stageName">Nome da fase</Label>
               <Input
@@ -1040,7 +1056,7 @@ function InterviewStageModal({
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button variant="outline" onClick={handleClose}>Cancelar</Button>
               <Button
                 onClick={handleCreateAndGenerate}
@@ -1052,16 +1068,13 @@ function InterviewStageModal({
                   <><Sparkles className="h-4 w-4" /> Gerar perguntas</>
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </div>
         )}
 
         {step === "questions" && (
-          <div className="space-y-4 py-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                {questions.length} perguntas geradas. Edite conforme necessário antes de publicar.
-              </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -1089,7 +1102,7 @@ function InterviewStageModal({
               ))}
             </div>
 
-            <DialogFooter className="pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
               <Button variant="outline" onClick={() => setStep("config")}>Voltar</Button>
               <Button onClick={handlePublish} disabled={publishing || questions.length === 0}>
                 {publishing ? (
@@ -1098,7 +1111,7 @@ function InterviewStageModal({
                   <><CheckCircle2 className="h-4 w-4" /> Publicar fase</>
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </div>
         )}
 
@@ -1111,6 +1124,7 @@ function InterviewStageModal({
             </p>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );

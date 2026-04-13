@@ -58,6 +58,8 @@ export default function JobDetailPage() {
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const { role, isLoading: profileLoading } = useProfile({ enabled: !!isSignedIn && authLoaded });
+  const [logoErrorMain, setLogoErrorMain] = React.useState(false);
+  const [logoErrorSide, setLogoErrorSide] = React.useState(false);
 
   const { data, isLoading, isError } = useQuery<{ posting: PostingDetail; userHasApplied?: boolean }>({
     queryKey: ["publicJob", id],
@@ -117,11 +119,12 @@ export default function JobDetailPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-4">
                   <div className="h-14 w-14 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                    {posting.company.logoUrl ? (
+                    {posting.company.logoUrl && !logoErrorMain ? (
                       <img
                         src={posting.company.logoUrl}
                         alt={posting.company.name}
                         className="h-full w-full object-contain"
+                        onError={() => setLogoErrorMain(true)}
                       />
                     ) : (
                       <Building2 className="h-7 w-7 text-muted-foreground" />
@@ -186,11 +189,12 @@ export default function JobDetailPage() {
                 <div className="rounded-lg border border-border bg-muted/20 p-5 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                      {posting.company.logoUrl ? (
+                      {posting.company.logoUrl && !logoErrorSide ? (
                         <img
                           src={posting.company.logoUrl}
                           alt={posting.company.name}
                           className="h-full w-full object-contain"
+                          onError={() => setLogoErrorSide(true)}
                         />
                       ) : (
                         <Building2 className="h-5 w-5 text-muted-foreground" />

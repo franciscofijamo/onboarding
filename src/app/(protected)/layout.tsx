@@ -12,7 +12,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useProfile } from "@/hooks/use-profile";
 import { ProfileCompletionModal } from "@/components/onboarding/profile-completion-modal";
 
-const ROLE_EXEMPT_PATHS = ['/role-select', '/company/onboarding'];
+const ROLE_EXEMPT_PATHS = ['/role-select', '/company/onboarding', '/company/profile'];
 
 export default function ProtectedLayout({
   children,
@@ -27,7 +27,15 @@ export default function ProtectedLayout({
 
   const { data: subscriptionStatus, isLoading: isLoadingSubscription } = useSubscription();
 
-  const { isProfileComplete, isLoading: isLoadingProfile, role, hasRole, hasCompany, refetch: refetchProfile } = useProfile();
+  const {
+    isProfileComplete,
+    isLoading: isLoadingProfile,
+    role,
+    hasRole,
+    hasCompany,
+    hasCompanyLogo,
+    refetch: refetchProfile,
+  } = useProfile();
   const [showProfileModal, setShowProfileModal] = React.useState(false);
 
   const isRoleExempt = ROLE_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
@@ -45,6 +53,12 @@ export default function ProtectedLayout({
       router.replace('/company/onboarding');
     }
   }, [isLoadingProfile, isSignedIn, role, hasCompany, isRoleExempt, router]);
+
+  React.useEffect(() => {
+    if (!isLoadingProfile && isSignedIn && role === 'RECRUITER' && hasCompany && !hasCompanyLogo && !isRoleExempt) {
+      router.replace('/company/profile');
+    }
+  }, [isLoadingProfile, isSignedIn, role, hasCompany, hasCompanyLogo, isRoleExempt, router]);
 
   // Show profile modal only for CANDIDATEs who haven't completed their profile
   React.useEffect(() => {

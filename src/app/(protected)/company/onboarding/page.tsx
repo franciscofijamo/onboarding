@@ -121,7 +121,10 @@ export default function CompanyOnboardingPage() {
     try {
       await api.put("/api/company/profile", { ...form, logoUrl, logoPath });
       await session?.reload();
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["profile"] }),
+        queryClient.invalidateQueries({ queryKey: ["company-profile"] }),
+      ]);
       setDone(true);
       setTimeout(() => { window.location.assign("/recruiter/postings"); }, 1500);
     } catch {
