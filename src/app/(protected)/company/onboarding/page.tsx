@@ -127,8 +127,10 @@ export default function CompanyOnboardingPage() {
       ]);
       setDone(true);
       setTimeout(() => { window.location.assign("/recruiter/postings"); }, 1500);
-    } catch {
-      setErrors({ name: "Erro ao guardar. Tente novamente." });
+    } catch (error: any) {
+      console.error("Failed to create profile:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao guardar. Tente novamente.";
+      setErrors({ name: errorMessage });
     } finally {
       setLoading(false);
     }

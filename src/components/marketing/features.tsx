@@ -8,50 +8,36 @@ export function Features() {
 
   const features = [
     {
-      title: "CV Analysis",
-      titlePtMZ: "Análise de CV",
-      description: "AI-powered comparison of your CV against job descriptions with detailed fit scoring.",
-      descriptionPtMZ: "Comparação do seu CV com descrições de vagas usando IA com nota de adequação detalhada.",
+      title: t("marketing.feature1Title"),
+      description: t("marketing.feature1Description"),
       icon: FileText,
     },
     {
-      title: "Interview Prep",
-      titlePtMZ: "Preparação para Entrevista",
-      description: "AI-generated flashcards with interview questions tailored to your role and industry.",
-      descriptionPtMZ: "Flashcards com perguntas de entrevista geradas por IA adaptadas à sua função e indústria.",
+      title: t("marketing.feature2Title"),
+      description: t("marketing.feature2Description"),
       icon: BookOpen,
     },
     {
-      title: "Workplace Scenarios",
-      titlePtMZ: "Cenários de Trabalho",
-      description: "Audio simulations of real workplace situations like meetings and presentations.",
-      descriptionPtMZ: "Simulações áudio de situações reais de trabalho como reuniões e apresentações.",
+      title: t("marketing.feature3Title"),
+      description: t("marketing.feature3Description"),
       icon: Mic,
     },
     {
-      title: "AI Career Coach",
-      titlePtMZ: "Coach de Carreira IA",
-      description: "Personalized career advice, Business English coaching, and application support.",
-      descriptionPtMZ: "Conselhos personalizados de carreira, coaching de Business English e apoio na candidatura.",
+      title: t("marketing.feature4Title"),
+      description: t("marketing.feature4Description"),
       icon: Bot,
     },
     {
-      title: "Skills Gap Analysis",
-      titlePtMZ: "Análise de Lacunas",
-      description: "Identify missing skills and get actionable recommendations to improve your profile.",
-      descriptionPtMZ: "Identifique competências em falta e receba recomendações práticas para melhorar o seu perfil.",
+      title: t("marketing.feature5Title"),
+      description: t("marketing.feature5Description"),
       icon: BarChart2,
     },
     {
-      title: "Business English",
-      titlePtMZ: "Business English",
-      description: "Professional vocabulary, email writing, and meeting etiquette coaching.",
-      descriptionPtMZ: "Coaching de vocabulário profissional, escrita de emails e etiqueta de reuniões.",
+      title: t("marketing.feature6Title"),
+      description: t("marketing.feature6Description"),
       icon: MessageCircle,
     },
   ]
-
-  const isPtMZ = t("nav.dashboard") === "Painel";
 
   return (
     <section id="features" className="container mx-auto px-4 mt-24">
@@ -65,8 +51,8 @@ export function Features() {
             <div className="flex size-10 items-center justify-center rounded-md border bg-white/40 dark:bg-white/10">
               <f.icon className="size-5" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold">{isPtMZ ? f.titlePtMZ : f.title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">{isPtMZ ? f.descriptionPtMZ : f.description}</p>
+            <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">{f.description}</p>
           </div>
         ))}
       </div>

@@ -8,7 +8,7 @@ export function PublicFooter() {
 
   return (
     <footer className="border-t mt-24">
-      <div className="container mx-auto px-4 py-10 text-sm text-muted-foreground flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-10 text-sm text-muted-foreground sm:px-6 md:flex-row lg:px-10">
         <p>
           © {new Date().getFullYear()} {site.name}. {t("marketing.allRightsReserved")}
         </p>

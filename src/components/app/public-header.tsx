@@ -8,12 +8,15 @@ import { cn } from '@/lib/utils'
 import { site } from '@/lib/brand-config'
 import { Button } from '@/components/ui/button'
 import { Briefcase, Menu, X } from 'lucide-react'
+import { useLanguage } from '@/contexts/language'
+import { LanguageSwitcher } from '@/components/app/language-switcher'
 
 export function PublicHeader() {
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [menuOpen, setMenuOpen] = React.useState(false)
   const pathname = usePathname()
   const { isSignedIn, isLoaded } = useAuth()
+  const { t } = useLanguage()
 
   React.useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -29,8 +32,13 @@ export function PublicHeader() {
 
   return (
     <header>
-      <nav className="fixed z-20 w-full px-2">
-        <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5')}>
+      <nav className="fixed z-20 w-full">
+        <div
+          className={cn(
+            "mx-auto mt-2 max-w-7xl px-4 transition-all duration-300 sm:px-6 lg:px-10",
+            isScrolled && "bg-background/85 border-y border-border/70 backdrop-blur-lg"
+          )}
+        >
           <div className="flex items-center justify-between py-3 lg:py-4">
             <Link
               href="/"
@@ -51,21 +59,23 @@ export function PublicHeader() {
                 )}
               >
                 <Briefcase className="h-3.5 w-3.5" />
-                Vagas
+                {t("nav.jobBoard")}
               </Link>
+
+              <LanguageSwitcher compact />
 
               {isLoaded && (
                 isSignedIn ? (
                   <Button asChild variant="outline" size="sm" className="rounded-xl">
-                    <Link href="/dashboard">Entrar na app</Link>
+                    <Link href="/dashboard">{t("marketing.enterApp")}</Link>
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Button asChild variant="ghost" size="sm" className="rounded-xl">
-                      <Link href="/sign-in">Entrar</Link>
+                      <Link href="/sign-in">{t("marketing.signIn")}</Link>
                     </Button>
                     <Button asChild size="sm" className="rounded-xl">
-                      <Link href="/sign-up">Registar</Link>
+                      <Link href="/sign-up">{t("marketing.register")}</Link>
                     </Button>
                   </div>
                 )
@@ -75,7 +85,7 @@ export function PublicHeader() {
             <button
               className="sm:hidden text-muted-foreground hover:text-foreground"
               onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+              aria-label={menuOpen ? t("marketing.closeMenu") : t("marketing.openMenu")}
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -83,6 +93,9 @@ export function PublicHeader() {
 
           {menuOpen && (
             <div className="sm:hidden pb-4 space-y-2 border-t border-border pt-3">
+              <div className="flex justify-end">
+                <LanguageSwitcher compact />
+              </div>
               <Link
                 href="/jobs"
                 className={cn(
@@ -91,20 +104,20 @@ export function PublicHeader() {
                 )}
               >
                 <Briefcase className="h-4 w-4" />
-                Vagas
+                {t("nav.jobBoard")}
               </Link>
               {isLoaded && (
                 isSignedIn ? (
                   <Button asChild variant="outline" className="w-full rounded-xl">
-                    <Link href="/dashboard">Entrar na app</Link>
+                    <Link href="/dashboard">{t("marketing.enterApp")}</Link>
                   </Button>
                 ) : (
                   <div className="space-y-2">
                     <Button asChild variant="outline" className="w-full rounded-xl">
-                      <Link href="/sign-in">Entrar</Link>
+                      <Link href="/sign-in">{t("marketing.signIn")}</Link>
                     </Button>
                     <Button asChild className="w-full rounded-xl">
-                      <Link href="/sign-up">Registar</Link>
+                      <Link href="/sign-up">{t("marketing.register")}</Link>
                     </Button>
                   </div>
                 )

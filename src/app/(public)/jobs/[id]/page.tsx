@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, withAssetVersion } from "@/lib/utils";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
@@ -23,10 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { RichTextViewer } from "@/components/editor/rich-text-editor";
 import { useProfile } from "@/hooks/use-profile";
+import { useLanguage } from "@/contexts/language";
 import {
-  CATEGORY_LABELS,
-  JOB_TYPE_LABELS,
-  SALARY_RANGE_LABELS,
   type JobPostingCategory,
   type JobType,
   type SalaryRange,
@@ -47,14 +45,59 @@ type PostingDetail = {
     website: string | null;
     description: string;
     logoUrl?: string | null;
+    updatedAt: string;
   };
 };
+
+function useJobsI18n() {
+  const { t, locale } = useLanguage();
+
+  const categoryLabels: Record<JobPostingCategory, string> = {
+    TECHNOLOGY: t("jobs.categories.technology"),
+    FINANCE: t("jobs.categories.finance"),
+    HEALTHCARE: t("jobs.categories.healthcare"),
+    EDUCATION: t("jobs.categories.education"),
+    ENGINEERING: t("jobs.categories.engineering"),
+    MARKETING: t("jobs.categories.marketing"),
+    SALES: t("jobs.categories.sales"),
+    HUMAN_RESOURCES: t("jobs.categories.humanResources"),
+    LEGAL: t("jobs.categories.legal"),
+    OPERATIONS: t("jobs.categories.operations"),
+    LOGISTICS: t("jobs.categories.logistics"),
+    HOSPITALITY: t("jobs.categories.hospitality"),
+    CONSTRUCTION: t("jobs.categories.construction"),
+    MEDIA: t("jobs.categories.media"),
+    OTHER: t("jobs.categories.other"),
+  };
+
+  const jobTypeLabels: Record<JobType, string> = {
+    FULL_TIME: t("jobs.types.fullTime"),
+    PART_TIME: t("jobs.types.partTime"),
+    CONTRACT: t("jobs.types.contract"),
+    INTERNSHIP: t("jobs.types.internship"),
+    REMOTE: t("jobs.types.remote"),
+    HYBRID: t("jobs.types.hybrid"),
+  };
+
+  const salaryLabels: Record<SalaryRange, string> = {
+    UNDER_15K: t("jobs.salary.under15k"),
+    FROM_15K_TO_25K: t("jobs.salary.from15kTo25k"),
+    FROM_25K_TO_40K: t("jobs.salary.from25kTo40k"),
+    FROM_40K_TO_60K: t("jobs.salary.from40kTo60k"),
+    FROM_60K_TO_90K: t("jobs.salary.from60kTo90k"),
+    ABOVE_90K: t("jobs.salary.above90k"),
+    NEGOTIABLE: t("jobs.salary.negotiable"),
+  };
+
+  return { t, locale, categoryLabels, jobTypeLabels, salaryLabels };
+}
 
 
 export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { t, locale, categoryLabels, jobTypeLabels, salaryLabels } = useJobsI18n();
 
   const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const { role, isLoading: profileLoading } = useProfile({ enabled: !!isSignedIn && authLoaded });
@@ -71,7 +114,7 @@ export default function JobDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-dvh bg-background pt-20 pb-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-12 py-10 space-y-6">
+        <div className="mx-auto max-w-7xl px-4 py-10 space-y-6 sm:px-6 lg:px-10">
           <Skeleton className="h-8 w-2/3 rounded-xl" />
           <Skeleton className="h-5 w-1/3 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
@@ -83,16 +126,16 @@ export default function JobDetailPage() {
   if (isError || !data?.posting) {
     return (
       <div className="min-h-dvh bg-background pt-20 pb-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-12 py-20 text-center space-y-4">
+        <div className="mx-auto max-w-7xl px-4 py-20 text-center space-y-4 sm:px-6 lg:px-10">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             <Briefcase className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-bold">Vaga não encontrada</h1>
-          <p className="text-muted-foreground">Esta vaga pode ter sido encerrada ou removida.</p>
+          <h1 className="text-2xl font-bold">{t("jobs.notFoundTitle")}</h1>
+          <p className="text-muted-foreground">{t("jobs.notFoundDescription")}</p>
           <Button asChild variant="outline" className="rounded-lg gap-2">
             <Link href="/jobs">
               <ArrowLeft className="h-4 w-4" />
-              Ver todas as vagas
+              {t("jobs.viewAllJobs")}
             </Link>
           </Button>
         </div>
@@ -101,16 +144,17 @@ export default function JobDetailPage() {
   }
 
   const { posting, userHasApplied } = data;
+  const logoSrc = withAssetVersion(posting.company.logoUrl, posting.company.updatedAt);
 
   return (
     <div className="min-h-dvh bg-background pt-20 pb-16">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10 py-10 space-y-8">
+      <div className="mx-auto max-w-7xl px-4 py-10 space-y-8 sm:px-6 lg:px-10">
         <Link
           href="/jobs"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Voltar às vagas
+          {t("jobs.backToJobs")}
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -119,9 +163,9 @@ export default function JobDetailPage() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-4">
                   <div className="h-14 w-14 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                    {posting.company.logoUrl && !logoErrorMain ? (
+                    {logoSrc && !logoErrorMain ? (
                       <img
-                        src={posting.company.logoUrl}
+                        src={logoSrc}
                         alt={posting.company.name}
                         className="h-full w-full object-contain"
                         onError={() => setLogoErrorMain(true)}
@@ -158,26 +202,26 @@ export default function JobDetailPage() {
 
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="rounded-md px-3 py-1 text-xs">
-                  {CATEGORY_LABELS[posting.category]}
+                  {categoryLabels[posting.category]}
                 </Badge>
                 <Badge variant="outline" className="rounded-md px-3 py-1 text-xs">
-                  {JOB_TYPE_LABELS[posting.jobType]}
+                  {jobTypeLabels[posting.jobType]}
                 </Badge>
                 <Badge className="rounded-md px-3 py-1 text-xs bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
-                  {SALARY_RANGE_LABELS[posting.salaryRange]}
+                  {salaryLabels[posting.salaryRange]}
                 </Badge>
               </div>
 
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>Publicada a {formatDate(posting.createdAt, { month: "long" })}</span>
+                <span>{t("jobs.publishedAt", { date: formatDate(posting.createdAt, { month: "long" }, locale) })}</span>
               </div>
             </div>
 
             <Separator />
 
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold">Descrição da Vaga</h2>
+              <h2 className="text-lg font-semibold">{t("jobs.jobDescriptionTitle")}</h2>
               <RichTextViewer content={posting.description} className="text-sm leading-relaxed" />
             </div>
           </main>
@@ -185,13 +229,13 @@ export default function JobDetailPage() {
           <aside className="relative">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-6 shadow-sm space-y-6">
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Sobre a Empresa</h2>
+                <h2 className="text-lg font-semibold">{t("jobs.aboutCompanyTitle")}</h2>
                 <div className="rounded-lg border border-border bg-muted/20 p-5 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-lg border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                      {posting.company.logoUrl && !logoErrorSide ? (
+                      {logoSrc && !logoErrorSide ? (
                         <img
-                          src={posting.company.logoUrl}
+                          src={logoSrc}
                           alt={posting.company.name}
                           className="h-full w-full object-contain"
                           onError={() => setLogoErrorSide(true)}
@@ -219,7 +263,7 @@ export default function JobDetailPage() {
                         className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
                       >
                         <Globe className="h-3.5 w-3.5" />
-                        Website
+                        {t("jobs.website")}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
@@ -264,12 +308,13 @@ function ApplyButton({
   size?: "default" | "lg";
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   if (!authLoaded || profileLoading) {
     return (
       <Button disabled size={size} className="rounded-lg gap-2 shrink-0 w-full sm:w-auto">
         <Loader2 className="h-4 w-4 animate-spin" />
-        A carregar...
+        {t("common.loading")}
       </Button>
     );
   }
@@ -284,7 +329,7 @@ function ApplyButton({
           router.push(`/sign-up?redirect_url=${redirectUrl}`);
         }}
       >
-        Candidatar-se
+        {t("jobs.apply")}
       </Button>
     );
   }
@@ -293,10 +338,10 @@ function ApplyButton({
     return (
       <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
         <Button size={size} disabled className="rounded-lg shrink-0 opacity-60 w-full">
-          Candidatar-se
+          {t("jobs.apply")}
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Recrutadores não podem candidatar-se a vagas
+          {t("jobs.recruitersCannotApply")}
         </p>
       </div>
     );
@@ -311,10 +356,10 @@ function ApplyButton({
           className="rounded-lg shrink-0 w-full"
           onClick={() => router.push("/onboarding")}
         >
-          Completar perfil para candidatar-se
+          {t("jobs.completeProfileToApply")}
         </Button>
         <p className="text-xs text-muted-foreground text-center">
-          Complete o seu perfil primeiro
+          {t("jobs.completeProfileFirst")}
         </p>
       </div>
     );
@@ -325,13 +370,13 @@ function ApplyButton({
       <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
         <Button size={size} disabled className="rounded-lg shrink-0 opacity-60 w-full bg-emerald-50 text-emerald-700 border-emerald-200 cursor-not-allowed hidden sm:flex hover:bg-emerald-50">
           <CheckCircle2 className="h-4 w-4 mr-2" />
-          Já Se Candidatou
+          {t("jobs.alreadyApplied")}
         </Button>
         <Button size={size} disabled className="rounded-lg shrink-0 opacity-60 w-full sm:hidden text-white cursor-not-allowed">
-          Já Se Candidatou
+          {t("jobs.alreadyApplied")}
         </Button>
         <p className="text-xs text-muted-foreground text-center hidden sm:block">
-          A sua candidatura está submetida
+          {t("jobs.applicationSubmitted")}
         </p>
       </div>
     );
@@ -345,7 +390,7 @@ function ApplyButton({
         router.push(`/onboarding?new=1&jobPostingId=${jobId}`);
       }}
     >
-      Candidatar-se
+      {t("jobs.apply")}
     </Button>
   );
 }

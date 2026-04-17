@@ -35,7 +35,8 @@ export default E2E_BYPASS
   if (isPublicRoute(request)) {
     const authResult = await auth()
     if (authResult.userId && request.nextUrl.pathname === '/') {
-      const url = new URL('/dashboard', request.url)
+      const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null
+      const url = new URL(userRole ? '/dashboard' : '/role-select', request.url)
       return NextResponse.redirect(url)
     }
     return NextResponse.next()
@@ -62,8 +63,17 @@ export default E2E_BYPASS
 
   const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null
 
+  if (request.nextUrl.pathname.startsWith('/role-select') && userRole) {
+    const url = new URL('/dashboard', request.url)
+    return NextResponse.redirect(url)
+  }
+
   if (isRecruiterPageRoute(request)) {
     const isOnboarding = request.nextUrl.pathname.startsWith('/company/onboarding')
+    if (isOnboarding && userRole === 'CANDIDATE') {
+      const url = new URL('/dashboard', request.url)
+      return NextResponse.redirect(url)
+    }
     // Only redirect if the JWT explicitly says the user is NOT a recruiter.
     // If userRole is null (JWT hasn't propagated after session.reload yet), allow
     // through and let the client-side layout handle any redirects from the DB role.

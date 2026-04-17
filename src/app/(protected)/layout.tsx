@@ -12,7 +12,8 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { useProfile } from "@/hooks/use-profile";
 import { ProfileCompletionModal } from "@/components/onboarding/profile-completion-modal";
 
-const ROLE_EXEMPT_PATHS = ['/role-select', '/company/onboarding', '/company/profile'];
+const ROLE_REDIRECT_EXEMPT_PATHS = ["/role-select", "/company/onboarding", "/company/profile"];
+const CHROMELESS_PATHS = ["/role-select", "/company/onboarding"];
 
 export default function ProtectedLayout({
   children,
@@ -38,7 +39,8 @@ export default function ProtectedLayout({
   } = useProfile();
   const [showProfileModal, setShowProfileModal] = React.useState(false);
 
-  const isRoleExempt = ROLE_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
+  const isRoleExempt = ROLE_REDIRECT_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
+  const isChromeless = CHROMELESS_PATHS.some((p) => pathname.startsWith(p));
 
   // Redirect to role selection if signed in but role not yet chosen
   React.useEffect(() => {
@@ -103,6 +105,23 @@ export default function ProtectedLayout({
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  if (isChromeless) {
+    return (
+      <PageMetadataProvider>
+        <div className="min-h-dvh w-full bg-background text-foreground">
+          {children}
+        </div>
+
+        {role === 'CANDIDATE' && (
+          <ProfileCompletionModal
+            open={showProfileModal}
+            onComplete={handleProfileComplete}
+          />
+        )}
+      </PageMetadataProvider>
     );
   }
 

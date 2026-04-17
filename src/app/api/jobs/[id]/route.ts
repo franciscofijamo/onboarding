@@ -13,7 +13,7 @@ export async function GET(
       where: { id, status: 'PUBLISHED' },
       include: {
         company: {
-          select: { name: true, location: true, website: true, description: true, logoUrl: true },
+          select: { name: true, location: true, website: true, description: true, logoUrl: true, updatedAt: true },
         },
       },
     });

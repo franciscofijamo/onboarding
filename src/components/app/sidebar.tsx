@@ -17,7 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, withAssetVersion } from "@/lib/utils";
 import { site } from "@/lib/brand-config";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ type CompanySidebarData = {
     id: string;
     name: string;
     logoUrl: string | null;
+    updatedAt: string;
   } | null;
 };
 
@@ -88,6 +89,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const companyName = companyData?.company?.name || "Perfil da empresa";
   const companyLogoUrl = companyData?.company?.logoUrl || null;
+  const companyLogoSrc = withAssetVersion(companyLogoUrl, companyData?.company?.updatedAt);
   const companyNeedsLogo = role === "RECRUITER" && !hasCompanyLogo;
   const headerHref = role === "RECRUITER" ? "/company/profile" : "/";
   const headerLabel = role === "RECRUITER" ? companyName : site.name;
@@ -95,7 +97,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   React.useEffect(() => {
     setImageError(false);
-  }, [companyLogoUrl]);
+  }, [companyLogoSrc]);
 
   return (
     <aside
@@ -109,9 +111,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="flex h-14 items-center gap-2 px-3">
         <Link href={headerHref} className="flex min-w-0 items-center gap-2">
           <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground">
-            {companyLogoUrl && !imageError ? (
+            {companyLogoSrc && !imageError ? (
               <img
-                src={companyLogoUrl}
+                src={companyLogoSrc}
                 alt={companyName}
                 className="h-full w-full object-cover"
                 onError={() => setImageError(true)}

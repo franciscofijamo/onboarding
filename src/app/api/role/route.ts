@@ -39,6 +39,20 @@ export async function PUT(request: Request) {
     const role = validation.data.role;
     const user = await getUserFromClerkId(userId);
 
+    if (user.role && user.role !== role) {
+      return NextResponse.json(
+        {
+          error: 'Role already locked',
+          message: 'A conta já está configurada com outro perfil e não pode alternar entre candidato e recrutador.',
+        },
+        { status: 409 }
+      );
+    }
+
+    if (user.role === role) {
+      return NextResponse.json({ success: true, role });
+    }
+
     await db.user.update({
       where: { id: user.id },
       data: { role },

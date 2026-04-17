@@ -12,14 +12,13 @@ type PricingProps = {
 
 export function Pricing({ plans }: PricingProps) {
   const { t } = useLanguage();
-  const isPtMZ = t("nav.dashboard") === "Painel";
   const tiers = buildPlanTiers(plans)
 
   if (!tiers.length) {
     return (
       <section id="pricing" className="container mx-auto px-4 mt-24">
         <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-          {isPtMZ ? "Nenhum plano ativo disponível no momento." : "No active plans available at the moment."}
+          {t("marketing.pricingEmpty")}
         </div>
       </section>
     )
@@ -30,8 +29,8 @@ export function Pricing({ plans }: PricingProps) {
       <PlanPricingSection
         className="mt-24"
         tiers={tiers}
-        title={isPtMZ ? "Planos para impulsionar a sua carreira" : "Plans to boost your career"}
-        subtitle={isPtMZ ? "Escolha a cobrança mensal ou anual e desbloqueie recursos avançados conforme sua evolução." : "Choose monthly or annual billing and unlock advanced features as you grow."}
+        title={t("marketing.pricingTitle")}
+        subtitle={t("marketing.pricingSubtitle")}
         renderAction={({ tier, cta, defaultButtonClassName }) => {
           if (cta.type === 'contact') {
             if (!cta.url) {

@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { cn, withAssetVersion } from "@/lib/utils";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 
 interface Company {
@@ -32,6 +32,7 @@ interface Company {
   email: string;
   logoUrl: string | null;
   logoPath: string | null;
+  updatedAt: string;
 }
 
 interface FormErrors {
@@ -71,10 +72,12 @@ export default function CompanyProfilePage() {
   const [imageError, setImageError] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const companyInitial = form.name.trim().charAt(0).toUpperCase() || "C";
+  const persistedLogoSrc = withAssetVersion(data?.company?.logoUrl, data?.company?.updatedAt);
+  const displayLogoSrc = logoFile ? logoPreview : persistedLogoSrc;
 
   React.useEffect(() => {
     setImageError(false);
-  }, [logoPreview]);
+  }, [displayLogoSrc]);
 
   React.useEffect(() => {
     if (data?.company) {
@@ -174,15 +177,27 @@ export default function CompanyProfilePage() {
     if (!validate()) return;
 
     setSaving(true);
+    setSaved(false);
     try {
-      await api.put("/api/company/profile", { ...form, logoUrl, logoPath });
+      const response = await api.put<{ success: boolean; company: Company }>("/api/company/profile", { 
+        ...form, 
+        logoUrl, 
+        logoPath 
+      });
+      
+      // Update local query cache immediately for better UX and consistency
+      queryClient.setQueryData(["company-profile"], { company: response.company });
+      
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["company-profile"] }),
         queryClient.invalidateQueries({ queryKey: ["profile"] }),
       ]);
+      
       setSaved(true);
-    } catch {
-      setErrors((current) => ({ ...current, name: "Erro ao guardar. Tente novamente." }));
+    } catch (error: any) {
+      console.error("Failed to save profile:", error);
+      const errorMessage = error instanceof Error ? error.message : "Erro ao guardar. Tente novamente.";
+      setErrors((current) => ({ ...current, name: errorMessage }));
     } finally {
       setSaving(false);
     }
@@ -211,13 +226,13 @@ export default function CompanyProfilePage() {
                 Logo da empresa <span className="text-destructive">*</span>
               </Label>
 
-              {logoPreview ? (
+              {displayLogoSrc ? (
                 <div className="rounded-2xl border border-border bg-muted/20 p-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-white p-3">
                       {!imageError ? (
                         <img
-                          src={logoPreview}
+                          src={displayLogoSrc}
                           alt="Logo preview"
                           className="h-full w-full object-contain"
                           onError={() => setImageError(true)}

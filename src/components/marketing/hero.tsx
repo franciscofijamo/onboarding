@@ -82,7 +82,7 @@ export function Hero() {
                     <span className="block h-4 w-px bg-border"></span>
 
                     <span className="flex items-center gap-1 rounded-full bg-background/50 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors group-hover:bg-primary/10">
-                      Explore
+                      {t("marketing.heroExplore")}
                       <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </Link>
@@ -155,7 +155,7 @@ export function Hero() {
                   <Image
                     className="z-2 border-border/25 dark:border-white/10 aspect-15/8 relative rounded-2xl border"
                     src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=2700&auto=format&fit=crop"
-                    alt="StandOut platform preview"
+                    alt={t("marketing.heroPreviewAlt")}
                     width={2700}
                     height={1440}
                   />

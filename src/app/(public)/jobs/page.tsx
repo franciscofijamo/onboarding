@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate, withAssetVersion } from "@/lib/utils";
 import {
   ArrowRight,
   Briefcase,
@@ -39,6 +39,7 @@ import {
   type JobType,
   type SalaryRange,
 } from "@/lib/recruiter/postings";
+import { useLanguage } from "@/contexts/language";
 
 const PAGE_SIZE = 12;
 const NONE = "ALL";
@@ -53,7 +54,7 @@ type PublicPosting = {
   applicationCount?: number;
   userHasApplied?: boolean;
   createdAt: string;
-  company: { name: string; location: string; logoUrl?: string | null };
+  company: { name: string; location: string; logoUrl?: string | null; updatedAt: string };
 };
 
 type JobsResponse = {
@@ -61,6 +62,49 @@ type JobsResponse = {
   hasMore: boolean;
   nextCursor: string | null;
 };
+
+function useJobsI18n() {
+  const { t, locale } = useLanguage();
+
+  const categoryLabels: Record<JobPostingCategory, string> = {
+    TECHNOLOGY: t("jobs.categories.technology"),
+    FINANCE: t("jobs.categories.finance"),
+    HEALTHCARE: t("jobs.categories.healthcare"),
+    EDUCATION: t("jobs.categories.education"),
+    ENGINEERING: t("jobs.categories.engineering"),
+    MARKETING: t("jobs.categories.marketing"),
+    SALES: t("jobs.categories.sales"),
+    HUMAN_RESOURCES: t("jobs.categories.humanResources"),
+    LEGAL: t("jobs.categories.legal"),
+    OPERATIONS: t("jobs.categories.operations"),
+    LOGISTICS: t("jobs.categories.logistics"),
+    HOSPITALITY: t("jobs.categories.hospitality"),
+    CONSTRUCTION: t("jobs.categories.construction"),
+    MEDIA: t("jobs.categories.media"),
+    OTHER: t("jobs.categories.other"),
+  };
+
+  const jobTypeLabels: Record<JobType, string> = {
+    FULL_TIME: t("jobs.types.fullTime"),
+    PART_TIME: t("jobs.types.partTime"),
+    CONTRACT: t("jobs.types.contract"),
+    INTERNSHIP: t("jobs.types.internship"),
+    REMOTE: t("jobs.types.remote"),
+    HYBRID: t("jobs.types.hybrid"),
+  };
+
+  const salaryLabels: Record<SalaryRange, string> = {
+    UNDER_15K: t("jobs.salary.under15k"),
+    FROM_15K_TO_25K: t("jobs.salary.from15kTo25k"),
+    FROM_25K_TO_40K: t("jobs.salary.from25kTo40k"),
+    FROM_40K_TO_60K: t("jobs.salary.from40kTo60k"),
+    FROM_60K_TO_90K: t("jobs.salary.from60kTo90k"),
+    ABOVE_90K: t("jobs.salary.above90k"),
+    NEGOTIABLE: t("jobs.salary.negotiable"),
+  };
+
+  return { t, locale, categoryLabels, jobTypeLabels, salaryLabels };
+}
 
 async function fetchJobsPage({
   q,
@@ -89,6 +133,7 @@ async function fetchJobsPage({
 
 
 export default function JobBoardPage() {
+  const { t, locale, categoryLabels, jobTypeLabels, salaryLabels } = useJobsI18n();
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [category, setCategory] = React.useState(NONE);
@@ -146,13 +191,13 @@ export default function JobBoardPage() {
         <div className="py-10">
           <div className="max-w-3xl space-y-3">
             <Badge variant="secondary" className="rounded-md px-3 py-1 text-xs font-medium">
-              Vagas publicadas por empresas na plataforma
+              {t("jobs.heroBadge")}
             </Badge>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Oportunidades
+              {t("jobs.title")}
             </h1>
             <p className="text-base text-muted-foreground sm:text-lg">
-              Descubra vagas activas, compare perfis e encontre a oportunidade certa com uma navegação mais clara e filtros completos.
+              {t("jobs.description")}
             </p>
           </div>
         </div>
@@ -163,11 +208,13 @@ export default function JobBoardPage() {
               <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">
-                    {allPostings.length} vaga{allPostings.length !== 1 ? "s" : ""} encontrada{allPostings.length !== 1 ? "s" : ""}
-                    {hasNextPage ? "+" : ""}
+                    {t("jobs.resultsCount", {
+                      count: `${allPostings.length}${hasNextPage ? "+" : ""}`,
+                      label: t(allPostings.length === 1 ? "jobs.resultSingle" : "jobs.resultPlural"),
+                    })}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Refine a pesquisa por categoria, formato de trabalho e faixa salarial.
+                    {t("jobs.resultsHelp")}
                   </p>
                 </div>
 
@@ -177,7 +224,7 @@ export default function JobBoardPage() {
                   onClick={() => setShowFilters((v) => !v)}
                 >
                   <SlidersHorizontal className="h-4 w-4" />
-                  <span>Filtros</span>
+                  <span>{t("jobs.filtersButton")}</span>
                   {activeFilterCount > 0 && (
                     <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-xs">
                       {activeFilterCount}
@@ -197,11 +244,11 @@ export default function JobBoardPage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Briefcase className="h-8 w-8" />
                   </div>
-                  <h2 className="text-xl font-semibold">Sem vagas disponíveis</h2>
+                  <h2 className="text-xl font-semibold">{t("jobs.emptyTitle")}</h2>
                   <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                     {activeFilterCount > 0 || debouncedSearch
-                      ? "Nenhuma vaga encontrada com os filtros actuais."
-                      : "Ainda não há vagas publicadas na plataforma. Volte em breve."}
+                      ? t("jobs.emptyFiltered")
+                      : t("jobs.emptyDefault")}
                   </p>
                   {(activeFilterCount > 0 || debouncedSearch) && (
                     <Button
@@ -209,7 +256,7 @@ export default function JobBoardPage() {
                       className="mt-4 rounded-lg"
                       onClick={clearFilters}
                     >
-                      Limpar filtros
+                      {t("jobs.clearFilters")}
                     </Button>
                   )}
                 </div>
@@ -230,12 +277,12 @@ export default function JobBoardPage() {
                         {isFetchingNextPage ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            A carregar...
+                            {t("common.loading")}
                           </>
                         ) : (
                           <>
                             <ChevronDown className="h-4 w-4" />
-                            Carregar mais vagas
+                            {t("jobs.loadMore")}
                           </>
                         )}
                       </Button>
@@ -252,10 +299,10 @@ export default function JobBoardPage() {
                 <div className="mb-5 flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight">
-                      Filtrar oportunidades
+                      {t("jobs.filterTitle")}
                     </h2>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Pesquise e afine os resultados sem sair da lista.
+                      {t("jobs.filterDescription")}
                     </p>
                   </div>
                   {(activeFilterCount > 0 || search) && (
@@ -263,18 +310,18 @@ export default function JobBoardPage() {
                       className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                       onClick={clearFilters}
                     >
-                      Limpar
+                      {t("jobs.clear")}
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Pesquisar</label>
+                    <label className="text-sm font-medium text-foreground">{t("jobs.searchLabel")}</label>
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder="Título, empresa ou palavra-chave..."
+                        placeholder={t("jobs.searchPlaceholder")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="h-12 rounded-lg border-border/70 pl-10 pr-10"
@@ -283,7 +330,7 @@ export default function JobBoardPage() {
                         <button
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           onClick={() => setSearch("")}
-                          aria-label="Limpar pesquisa"
+                          aria-label={t("jobs.clearSearch")}
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -292,16 +339,16 @@ export default function JobBoardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Categoria</label>
+                    <label className="text-sm font-medium text-foreground">{t("jobs.categoryLabel")}</label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger className="h-12 rounded-lg border-border/70">
-                        <SelectValue placeholder="Todas as categorias" />
+                        <SelectValue placeholder={t("jobs.allCategories")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NONE}>Todas as categorias</SelectItem>
+                        <SelectItem value={NONE}>{t("jobs.allCategories")}</SelectItem>
                         {JOB_POSTING_CATEGORIES.map((c) => (
                           <SelectItem key={c} value={c}>
-                            {CATEGORY_LABELS[c]}
+                            {categoryLabels[c]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -309,16 +356,16 @@ export default function JobBoardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Tipo de vaga</label>
+                    <label className="text-sm font-medium text-foreground">{t("jobs.typeLabel")}</label>
                     <Select value={jobType} onValueChange={setJobType}>
                       <SelectTrigger className="h-12 rounded-lg border-border/70">
-                        <SelectValue placeholder="Todos os tipos" />
+                        <SelectValue placeholder={t("jobs.allTypes")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NONE}>Todos os tipos</SelectItem>
-                        {JOB_TYPES.map((t) => (
-                          <SelectItem key={t} value={t}>
-                            {JOB_TYPE_LABELS[t]}
+                        <SelectItem value={NONE}>{t("jobs.allTypes")}</SelectItem>
+                        {JOB_TYPES.map((jobTypeValue) => (
+                          <SelectItem key={jobTypeValue} value={jobTypeValue}>
+                            {jobTypeLabels[jobTypeValue]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -326,16 +373,16 @@ export default function JobBoardPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Faixa salarial</label>
+                    <label className="text-sm font-medium text-foreground">{t("jobs.salaryLabel")}</label>
                     <Select value={salaryRange} onValueChange={setSalaryRange}>
                       <SelectTrigger className="h-12 rounded-lg border-border/70">
-                        <SelectValue placeholder="Todos os salários" />
+                        <SelectValue placeholder={t("jobs.allSalaries")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NONE}>Todos os salários</SelectItem>
+                        <SelectItem value={NONE}>{t("jobs.allSalaries")}</SelectItem>
                         {SALARY_RANGES.map((s) => (
                           <SelectItem key={s} value={s}>
-                            {SALARY_RANGE_LABELS[s]}
+                            {salaryLabels[s]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -343,11 +390,15 @@ export default function JobBoardPage() {
                   </div>
 
                   <div className="rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground">Resumo dos filtros</p>
+                    <p className="font-medium text-foreground">{t("jobs.filtersSummaryTitle")}</p>
                     <p className="mt-1">
                       {activeFilterCount > 0 || debouncedSearch
-                        ? `${activeFilterCount} filtro${activeFilterCount !== 1 ? "s" : ""} activo${activeFilterCount !== 1 ? "s" : ""}${debouncedSearch ? " e pesquisa por texto aplicada" : ""}.`
-                        : "Sem filtros activos no momento."}
+                        ? t("jobs.filtersSummaryActive", {
+                            count: activeFilterCount,
+                            suffix: activeFilterCount !== 1 ? "s" : "",
+                            applied: debouncedSearch ? t("jobs.searchApplied") : "",
+                          })
+                        : t("jobs.filtersSummaryEmpty")}
                     </p>
                   </div>
                 </div>
@@ -361,8 +412,10 @@ export default function JobBoardPage() {
 }
 
 function JobCard({ posting }: { posting: PublicPosting }) {
+  const { t, locale, categoryLabels, jobTypeLabels, salaryLabels } = useJobsI18n();
   const [imageError, setImageError] = React.useState(false);
   const descriptionPreview = posting.description.replace(/<[^>]*>?/gm, '');
+  const logoSrc = withAssetVersion(posting.company.logoUrl, posting.company.updatedAt);
 
   return (
     <Link
@@ -373,9 +426,9 @@ function JobCard({ posting }: { posting: PublicPosting }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-white shadow-sm">
-              {posting.company.logoUrl && !imageError ? (
+              {logoSrc && !imageError ? (
                 <img
-                  src={posting.company.logoUrl}
+                  src={logoSrc}
                   alt={posting.company.name}
                   className="h-full w-full object-contain"
                   onError={() => setImageError(true)}
@@ -389,16 +442,19 @@ function JobCard({ posting }: { posting: PublicPosting }) {
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-[11px] font-medium hover:bg-secondary">
-                    {CATEGORY_LABELS[posting.category]}
+                    {categoryLabels[posting.category]}
                   </Badge>
                   {posting.userHasApplied && (
                     <Badge className="rounded-md border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 hover:bg-emerald-50">
-                      Candidatura submetida
+                      {t("jobs.applied")}
                     </Badge>
                   )}
                   {(posting.applicationCount ?? 0) > 0 && (
                     <Badge variant="outline" className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      {(posting.applicationCount ?? 0)} candidatura{(posting.applicationCount ?? 0) !== 1 ? "s" : ""}
+                      {t("jobs.applicationCount", {
+                        count: posting.applicationCount ?? 0,
+                        suffix: (posting.applicationCount ?? 0) !== 1 ? "s" : "",
+                      })}
                     </Badge>
                   )}
                 </div>
@@ -418,7 +474,7 @@ function JobCard({ posting }: { posting: PublicPosting }) {
                 </span>
                 <span className="flex items-center gap-1.5 pt-0.5">
                   <CalendarDays className="h-3.5 w-3.5" />
-                  {formatDate(posting.createdAt)}
+                  {formatDate(posting.createdAt, undefined, locale)}
                 </span>
               </div>
 
@@ -438,10 +494,10 @@ function JobCard({ posting }: { posting: PublicPosting }) {
                 </div>
                 <div>
                   <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground leading-none">
-                    Remuneração
+                    {t("jobs.compensation")}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-foreground leading-none">
-                    {SALARY_RANGE_LABELS[posting.salaryRange]}
+                    {salaryLabels[posting.salaryRange]}
                   </p>
                 </div>
               </div>
@@ -452,10 +508,10 @@ function JobCard({ posting }: { posting: PublicPosting }) {
                 </div>
                 <div>
                   <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground leading-none">
-                    Modelo
+                    {t("jobs.model")}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-foreground leading-none">
-                    {JOB_TYPE_LABELS[posting.jobType]}
+                    {jobTypeLabels[posting.jobType]}
                   </p>
                 </div>
               </div>
@@ -463,7 +519,7 @@ function JobCard({ posting }: { posting: PublicPosting }) {
 
             <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3 text-sm font-semibold">
               <span className={cn(posting.userHasApplied ? "text-emerald-700" : "text-primary")}>
-                {posting.userHasApplied ? "Candidatura submetida" : "Ver vaga"}
+                {posting.userHasApplied ? t("jobs.applied") : t("jobs.viewJob")}
               </span>
               <ArrowRight
                 className={cn(

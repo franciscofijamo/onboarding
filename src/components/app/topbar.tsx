@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { AccountMenu } from "@/components/auth/account-menu";
 
 import { Menu } from "lucide-react";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { CreditStatus } from "@/components/credits/credit-status";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose, SheetFooter } from "@/components/ui/sheet";
 import { candidateNavigationItems, recruiterNavigationItems } from "@/components/app/sidebar";
@@ -109,7 +110,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
                   <div className="flex items-center gap-3">
                     <SignedIn>
                       <div className="flex items-center gap-3">
-                        <UserButton afterSignOutUrl="/" />
+                        <AccountMenu afterSignOutUrl="/" />
                         <CreditStatus />
                       </div>
                     </SignedIn>
@@ -180,7 +181,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
           </DropdownMenu>
 
           <SignedIn>
-            <UserButton />
+            <AccountMenu />
           </SignedIn>
 
           <SignedOut>

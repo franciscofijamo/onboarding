@@ -1,8 +1,9 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AccountMenu } from "@/components/auth/account-menu";
 
 export function SimpleTopbar() {
   return (
@@ -17,7 +18,7 @@ export function SimpleTopbar() {
         <div className="flex-1" />
         <div className="flex items-center gap-2">
           <SignedIn>
-            <UserButton afterSignOutUrl="/" />
+            <AccountMenu afterSignOutUrl="/" />
           </SignedIn>
           <SignedOut>
             <SignInButton mode="modal">
@@ -32,4 +33,3 @@ export function SimpleTopbar() {
     </header>
   )
 }
-
