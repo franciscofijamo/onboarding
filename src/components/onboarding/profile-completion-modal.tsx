@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import { useLanguage } from "@/contexts/language";
-import { type Locale } from "@/i18n";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -34,8 +33,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Check, ChevronsUpDown, Globe, User } from "lucide-react";
+import { Check, ChevronsUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { mozambiqueProvinces } from "@/lib/data/mozambique-provinces";
@@ -47,13 +45,10 @@ interface ProfileCompletionModalProps {
     onComplete: () => void;
 }
 
-type Step = "language" | "profile";
-
 export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionModalProps) {
-    const { t, locale, setLocale } = useLanguage();
+    const { t } = useLanguage();
     const router = useRouter();
 
-    const [step, setStep] = useState<Step>("language");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form state
@@ -67,6 +62,9 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
     const [courseOpen, setCourseOpen] = useState(false);
     const [universityOpen, setUniversityOpen] = useState(false);
 
+    const NO_DEGREE_VALUE = "__no_degree__";
+    const hasNoDegree = course === NO_DEGREE_VALUE;
+
     const currentYear = new Date().getFullYear();
     const years = useMemo(() => {
         const yearList = [];
@@ -76,11 +74,7 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
         return yearList;
     }, [currentYear]);
 
-    const isProfileValid = province && birthYear && gender && course && university;
-
-    const handleLanguageNext = () => {
-        setStep("profile");
-    };
+    const isProfileValid = province && birthYear && gender && course && (hasNoDegree || university);
 
     const handleSubmit = async () => {
         if (!isProfileValid) return;
@@ -94,8 +88,8 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                     province,
                     birthYear,
                     gender,
-                    course,
-                    university,
+                    course: hasNoDegree ? NO_DEGREE_VALUE : course,
+                    university: hasNoDegree ? null : university,
                 }),
             });
 
@@ -106,10 +100,10 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                 onComplete();
                 router.refresh();
             } else {
-                toast.error(data.error || "Error saving profile");
+                toast.error(data.error || t("profileCompletion.errorSaving"));
             }
         } catch {
-            toast.error("Error connecting to server");
+            toast.error(t("profileCompletion.errorConnecting"));
         } finally {
             setIsSubmitting(false);
         }
@@ -135,65 +129,13 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                     <span className={cn(
                         "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
-                        step === "language" ? "bg-primary text-primary-foreground" : "bg-muted"
+                        "bg-primary text-primary-foreground"
                     )}>
                         1
                     </span>
-                    <div className="h-px flex-1 bg-border" />
-                    <span className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
-                        step === "profile" ? "bg-primary text-primary-foreground" : "bg-muted"
-                    )}>
-                        2
-                    </span>
                 </div>
 
-                {step === "language" && (
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                                <Globe className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                                <p className="font-medium">{t("profileCompletion.languageStep")}</p>
-                                <p className="text-sm text-muted-foreground">{t("profileCompletion.languageStepDesc")}</p>
-                            </div>
-                        </div>
-
-                        <RadioGroup
-                            value={locale}
-                            onValueChange={(value) => setLocale(value as Locale)}
-                            className="grid gap-3"
-                        >
-                            {[
-                                { value: "pt-MZ", label: t("language.ptMZ") },
-                                { value: "en-US", label: t("language.enUS") },
-                                { value: "en-GB", label: t("language.enGB") },
-                            ].map((lang) => (
-                                <Label
-                                    key={lang.value}
-                                    htmlFor={lang.value}
-                                    className={cn(
-                                        "flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-colors",
-                                        locale === lang.value
-                                            ? "border-primary bg-primary/5"
-                                            : "border-border hover:bg-muted/50"
-                                    )}
-                                >
-                                    <RadioGroupItem value={lang.value} id={lang.value} />
-                                    <span className="font-medium">{lang.label}</span>
-                                </Label>
-                            ))}
-                        </RadioGroup>
-
-                        <Button onClick={handleLanguageNext} className="w-full">
-                            {t("common.continue")}
-                        </Button>
-                    </div>
-                )}
-
-                {step === "profile" && (
-                    <div className="space-y-5">
+                <div className="space-y-5">
                         <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                                 <User className="h-5 w-5 text-primary" />
@@ -264,7 +206,9 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                                         aria-expanded={courseOpen}
                                         className="w-full justify-between font-normal"
                                     >
-                                        {course || t("profileCompletion.coursePlaceholder")}
+                                        {course === NO_DEGREE_VALUE
+                                            ? t("profileCompletion.noDegree")
+                                            : course || t("profileCompletion.coursePlaceholder")}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
@@ -274,6 +218,24 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                                         <CommandList>
                                             <CommandEmpty>{t("profileCompletion.courseNoResults")}</CommandEmpty>
                                             <CommandGroup>
+                                                {/* No degree option — always at the top */}
+                                                <CommandItem
+                                                    key={NO_DEGREE_VALUE}
+                                                    value={NO_DEGREE_VALUE}
+                                                    onSelect={(currentValue) => {
+                                                        setCourse(currentValue === course ? "" : currentValue);
+                                                        setUniversity("");
+                                                        setCourseOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-4 w-4",
+                                                            course === NO_DEGREE_VALUE ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {t("profileCompletion.noDegree")}
+                                                </CommandItem>
                                                 {courses.map((c) => (
                                                     <CommandItem
                                                         key={c}
@@ -299,7 +261,8 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                             </Popover>
                         </div>
 
-                        {/* University (Searchable) */}
+                        {/* University (Searchable) — hidden when no degree selected */}
+                        {!hasNoDegree && (
                         <div className="space-y-2">
                             <Label>{t("profileCompletion.university")} *</Label>
                             <Popover open={universityOpen} onOpenChange={setUniversityOpen}>
@@ -346,21 +309,16 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                                 </PopoverContent>
                             </Popover>
                         </div>
+                        )}
 
-                        <div className="flex gap-3 pt-2">
-                            <Button variant="outline" onClick={() => setStep("language")} className="flex-1">
-                                {t("common.back")}
-                            </Button>
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={!isProfileValid || isSubmitting}
-                                className="flex-1"
-                            >
-                                {isSubmitting ? t("profileCompletion.submitting") : t("profileCompletion.submit")}
-                            </Button>
-                        </div>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={!isProfileValid || isSubmitting}
+                            className="w-full"
+                        >
+                            {isSubmitting ? t("profileCompletion.submitting") : t("profileCompletion.submit")}
+                        </Button>
                     </div>
-                )}
             </DialogContent>
         </Dialog>
     );

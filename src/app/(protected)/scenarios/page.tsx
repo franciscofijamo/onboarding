@@ -91,11 +91,11 @@ interface SessionsResponse {
 }
 
 const GENERATION_STEPS = [
-  "Analysing job description...",
-  "Reviewing your CV and profile...",
-  "Crafting behavioural questions...",
-  "Generating situational scenarios...",
-  "Finalising interview session...",
+  "scenarios.generationSteps.analyzingJob",
+  "scenarios.generationSteps.reviewingProfile",
+  "scenarios.generationSteps.craftingBehavioral",
+  "scenarios.generationSteps.generatingSituational",
+  "scenarios.generationSteps.finalizingSession",
 ];
 
 function getStatusBadge(session: SessionData, t: any) {
@@ -130,9 +130,9 @@ function ScenariosContent() {
   const [search, setSearch] = useState("");
 
   useSetPageMetadata({
-    title: "Interview Practice",
-    description: "All your interview practice sessions, organised by job application",
-    breadcrumbs: [{ label: "Interview Practice" }],
+    title: t("scenarios.practiceTitle"),
+    description: t("scenarios.practiceDescription"),
+    breadcrumbs: [{ label: t("scenarios.practiceTitle") }],
   });
 
   const { data, isLoading } = useQuery<SessionsResponse>({
@@ -159,16 +159,16 @@ function ScenariosContent() {
       queryClient.invalidateQueries({ queryKey: ["scenario-sessions"] });
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       toast({
-        title: "Interview session created!",
-        description: "5 personalised interview questions are ready.",
+        title: t("scenarios.sessionCreated"),
+        description: t("scenarios.sessionCreatedDesc"),
       });
       router.push(`/scenarios/${data.session.id}`);
     },
     onError: (error: Error) => {
       setGenerating(false);
       toast({
-        title: "Error generating questions",
-        description: error.message || "Please try again.",
+        title: t("scenarios.errorGenerating"),
+        description: error.message || t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     },
@@ -247,11 +247,11 @@ function ScenariosContent() {
               ) : (
                 <div className="h-5 w-5 rounded-full border border-muted-foreground/30" />
               )}
-              <span className="text-sm">{step}</span>
+              <span className="text-sm">{t(step)}</span>
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">This may take up to 60 seconds...</p>
+        <p className="text-xs text-muted-foreground">{t("scenarios.generatingWait")}</p>
       </div>
     );
   }
@@ -272,26 +272,26 @@ function ScenariosContent() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Gerar sessão de entrevista</DialogTitle>
+            <DialogTitle>{t("scenarios.confirmTitle")}</DialogTitle>
             <DialogDescription>
-              5 perguntas geradas por IA para esta candidatura. {scenarioCost} créditos serão deduzidos.
+              {t("scenarios.confirmDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             {confirmJob && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Vaga:</span>
+                <span className="text-muted-foreground">{t("scenarios.roleLabel")}</span>
                 <span className="font-medium">
-                  {confirmJob.jobTitle || "Sem título"} @ {confirmJob.companyName || "Empresa"}
+                  {confirmJob.jobTitle || t("scenarios.untitledRole")} @ {confirmJob.companyName || t("scenarios.companyFallback")}
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Custo:</span>
-              <Badge>{scenarioCost} créditos</Badge>
+              <span className="text-muted-foreground">{t("scenarios.costLabel")}</span>
+              <Badge>{scenarioCost} {t("common.credits")}</Badge>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Saldo:</span>
+              <span className="text-muted-foreground">{t("scenarios.balanceLabel")}</span>
               <span className="flex items-center gap-1 font-medium">
                 <Coins className="h-4 w-4 text-yellow-500" />
                 {credits?.creditsRemaining ?? 0}
@@ -300,20 +300,20 @@ function ScenariosContent() {
             {!hasCredits && !creditsLoading && (
               <p className="text-sm text-red-500 flex items-center gap-1 pt-1">
                 <AlertCircle className="h-4 w-4" />
-                Créditos insuficientes. Compre mais para continuar.
+                {t("scenarios.noCredits")}
               </p>
             )}
           </div>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmJobId(null)}>
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button
               disabled={!hasCredits || creditsLoading}
               onClick={() => confirmJobId && handleGenerate(confirmJobId)}
             >
               <Sparkles className="h-4 w-4" />
-              Confirmar
+              {t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -327,7 +327,7 @@ function ScenariosContent() {
               <div className="h-9 w-9 rounded-xl bg-purple-100 flex items-center justify-center">
                 <Briefcase className="h-4 w-4 text-purple-700" />
               </div>
-              <span className="text-sm text-muted-foreground">Total Sessions</span>
+              <span className="text-sm text-muted-foreground">{t("scenarios.totalSessionsLabel")}</span>
             </div>
             <p className="text-2xl font-bold">{stats?.totalSessions ?? 0}</p>
           </div>
@@ -337,7 +337,7 @@ function ScenariosContent() {
               <div className="h-9 w-9 rounded-xl bg-emerald-100 flex items-center justify-center">
                 <Target className="h-4 w-4 text-emerald-700" />
               </div>
-              <span className="text-sm text-muted-foreground">Questions Analysed</span>
+              <span className="text-sm text-muted-foreground">{t("scenarios.questionsAnalyzedLabel")}</span>
             </div>
             <p className="text-2xl font-bold">{stats?.totalAnalyzed ?? 0}</p>
           </div>
@@ -347,7 +347,7 @@ function ScenariosContent() {
               <div className="h-9 w-9 rounded-xl bg-blue-100 flex items-center justify-center">
                 <TrendingUp className="h-4 w-4 text-blue-700" />
               </div>
-              <span className="text-sm text-muted-foreground">Average Score</span>
+              <span className="text-sm text-muted-foreground">{t("scenarios.avgScore")}</span>
             </div>
             <p className="text-2xl font-bold">
               {stats?.averageScore != null ? `${stats.averageScore}/10` : "—"}
@@ -359,12 +359,12 @@ function ScenariosContent() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Coins className="h-4 w-4 text-yellow-500" />
-              <span>Custo por sessão de entrevista</span>
+              <span>{t("scenarios.costPerSessionLabel")}</span>
             </div>
-            <Badge variant="outline">{scenarioCost} créditos</Badge>
+            <Badge variant="outline">{scenarioCost} {t("common.credits")}</Badge>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            O custo só é cobrado quando a sessão é gerada com sucesso.
+            {t("scenarios.costChargedOnSuccess")}
           </p>
         </div>
 
@@ -375,7 +375,7 @@ function ScenariosContent() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by job title or company..."
+              placeholder={t("scenarios.searchPlaceholder")}
               className="pl-9 pr-9 rounded-2xl"
             />
             {search && (
@@ -412,16 +412,16 @@ function ScenariosContent() {
             <Button asChild size="lg" className="rounded-2xl">
               <Link href="/applications">
                 <Briefcase className="h-4 w-4 mr-2" />
-                {t("scenarios.goToApplications") || "Ir para Candidaturas"}
+                {t("scenarios.goToApplications")}
               </Link>
             </Button>
           </div>
         ) : groupEntries.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">{t("scenarios.noResults") || "Sem resultados para"} &ldquo;{search}&rdquo;</p>
+            <p className="font-medium">{t("scenarios.noResults")} &ldquo;{search}&rdquo;</p>
             <button onClick={() => setSearch("")} className="text-sm text-primary mt-2 hover:underline">
-              {t("scenarios.clearSearch") || "Limpar pesquisa"}
+              {t("scenarios.clearSearch")}
             </button>
           </div>
         ) : (
@@ -438,7 +438,7 @@ function ScenariosContent() {
                       </div>
                       <div>
                         <p className="font-semibold leading-tight">
-                          {job?.jobTitle || t("scenarios.untitledRole") || "Vaga sem Título"}
+                          {job?.jobTitle || t("scenarios.untitledRole")}
                         </p>
                         {job?.companyName && (
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -456,7 +456,7 @@ function ScenariosContent() {
                         onClick={() => setConfirmJobId(job.id)}
                       >
                         <Plus className="h-4 w-4" />
-                        {t("scenarios.newSessionBtn") || "Nova Sessão"}
+                        {t("scenarios.newSessionBtn")}
                       </Button>
                     )}
                   </div>
@@ -489,7 +489,7 @@ function ScenariosContent() {
                             <div className="flex items-center gap-2 shrink-0">
                               {session.recruitmentStageId && (
                                 <Badge className="text-xs bg-purple-100 text-purple-700 border-purple-200">
-                                  Entrevista da empresa
+                                  {t("scenarios.companyInterviewBadge")}
                                 </Badge>
                               )}
                               {getStatusBadge(session, t)}
@@ -508,11 +508,11 @@ function ScenariosContent() {
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <CircleDot className="h-3 w-3" />
-                              {session.answeredCount}/{session.totalQuestions} {t("scenarios.answeredList") || "respondidas"}
+                              {session.answeredCount}/{session.totalQuestions} {t("scenarios.answeredList")}
                             </span>
                             <span className="flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3" />
-                              {session.analyzedCount}/{session.totalQuestions} {t("scenarios.analysedList") || "analisadas"}
+                              {session.analyzedCount}/{session.totalQuestions} {t("scenarios.analysedList")}
                             </span>
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -528,8 +528,8 @@ function ScenariosContent() {
                         >
                           <Play className="h-4 w-4" />
                           {session.analyzedCount === session.totalQuestions && session.totalQuestions > 0
-                            ? (t("scenarios.viewDetails") || "Ver")
-                            : (t("scenarios.continueBtn") || "Continuar")}
+                            ? t("scenarios.viewDetails")
+                            : t("scenarios.continueBtn")}
                         </Button>
                       </div>
                     ))}

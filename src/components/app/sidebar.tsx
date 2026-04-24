@@ -15,6 +15,7 @@ import {
   Building2,
   LayoutGrid,
   Users,
+  Settings,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { cn, withAssetVersion } from "@/lib/utils";
@@ -55,6 +56,7 @@ export const candidateNavigationItems: NavItem[] = [
   { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },
   { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit, disabled: true },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
+  { nameKey: "nav.settings", hintKey: "nav.settings", href: "/settings/profile", icon: Settings },
 ];
 
 export const recruiterNavigationItems: NavItem[] = [
@@ -64,6 +66,7 @@ export const recruiterNavigationItems: NavItem[] = [
   { nameKey: "nav.candidates", hintKey: "nav.candidates", href: "/recruiter/candidates", icon: Users, disabled: true },
   { nameKey: "nav.companyProfile", hintKey: "nav.companyProfile", href: "/company/profile", icon: Building2 },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
+  { nameKey: "nav.settings", hintKey: "nav.settings", href: "/settings/profile", icon: Settings },
 ];
 
 export const navigationItems = candidateNavigationItems;
@@ -75,7 +78,7 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { t, hint } = useLanguage();
+  const { t } = useLanguage();
   const { role, hasCompanyLogo } = useProfile();
   const [imageError, setImageError] = React.useState(false);
 
@@ -87,7 +90,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     staleTime: 5 * 60_000,
   });
 
-  const companyName = companyData?.company?.name || "Perfil da empresa";
+  const companyName = companyData?.company?.name || t("nav.companyProfile");
   const companyLogoUrl = companyData?.company?.logoUrl || null;
   const companyLogoSrc = withAssetVersion(companyLogoUrl, companyData?.company?.updatedAt);
   const companyNeedsLogo = role === "RECRUITER" && !hasCompanyLogo;
@@ -106,7 +109,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         collapsed ? "w-[64px]" : "w-64",
         "my-4 md:sticky md:top-4 md:h-[calc(100vh-2rem)] md:max-h-[calc(100vh-2rem)] md:overflow-hidden"
       )}
-      aria-label="Main sidebar"
+      aria-label={t("nav.mainSidebar")}
     >
       <div className="flex h-14 items-center gap-2 px-3">
         <Link href={headerHref} className="flex min-w-0 items-center gap-2">
@@ -150,7 +153,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
             onClick={onToggle}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -159,11 +162,10 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
       
       <ScrollArea className="flex-1 min-h-0">
-        <nav className="flex flex-col gap-1 p-2" aria-label="Main navigation">
+        <nav className="flex flex-col gap-1 p-2" aria-label={t("nav.mainNav")}>
           {items.map((item) => {
             const isActive = !item.disabled && pathname === item.href;
             const label = t(item.nameKey);
-            const ptHint = hint(item.hintKey);
             const showComingSoon = Boolean(item.disabled);
             const showRequired = role === "RECRUITER" && item.href === "/company/profile" && companyNeedsLogo;
             const itemContent = (
@@ -171,17 +173,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <item.icon className="h-4 w-4 shrink-0" />
                 {!collapsed && (
                   <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-                    <div className="flex min-w-0 flex-col">
-                      <span>{label}</span>
-                      {ptHint && ptHint !== label && (
-                        <span className="text-xs leading-tight text-muted-foreground/60">{ptHint}</span>
-                      )}
-                    </div>
+                    <span className="min-w-0 truncate">{label}</span>
                     {showRequired ? (
                       <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
                     ) : showComingSoon ? (
                       <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
-                        Soon
+                        {t("dashboard.soonBadge")}
                       </span>
                     ) : null}
                   </div>
@@ -202,7 +199,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             const link = item.disabled ? (
               <div
                 key={item.nameKey}
-                aria-label={collapsed ? label + " (Coming soon)" : undefined}
+                aria-label={collapsed ? `${label} (${t("dashboard.soonBadge")})` : undefined}
                 aria-disabled="true"
                 className={itemClassName}
               >
@@ -227,14 +224,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <TooltipContent side="right" align="center">
                   <div className="flex flex-col">
                     <span>{label}</span>
-                    {ptHint && ptHint !== label && (
-                      <span className="text-xs text-muted-foreground">{ptHint}</span>
-                    )}
                     {showRequired ? (
                       <span className="mt-1 h-2.5 w-2.5 rounded-full bg-red-500" aria-hidden="true" />
                     ) : showComingSoon ? (
                       <span className="mt-1 inline-block w-fit rounded bg-amber-500/10 px-1 py-[1px] text-[8px] font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20">
-                        Soon
+                        {t("dashboard.soonBadge")}
                       </span>
                     ) : null}
                   </div>

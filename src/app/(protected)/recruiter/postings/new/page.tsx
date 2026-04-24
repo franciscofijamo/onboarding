@@ -39,6 +39,7 @@ import {
   type SalaryRange,
 } from "@/lib/recruiter/postings";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 
 interface FormValues {
   title: string;
@@ -58,24 +59,24 @@ interface FormErrors {
 
 function validateStep1(form: FormValues): FormErrors {
   const errors: FormErrors = {};
-  if (!form.title.trim() || form.title.trim().length < 2) errors.title = "Título é obrigatório (mín. 2 caracteres)";
-  if (!form.category) errors.category = "Selecione uma categoria";
-  if (!form.salaryRange) errors.salaryRange = "Selecione um range salarial";
-  if (!form.jobType) errors.jobType = "Selecione o tipo de trabalho";
+  if (!form.title.trim() || form.title.trim().length < 2) errors.title = "recruiterPostingForm.errors.titleMin";
+  if (!form.category) errors.category = "recruiterPostingForm.errors.categoryRequired";
+  if (!form.salaryRange) errors.salaryRange = "recruiterPostingForm.errors.salaryRangeRequired";
+  if (!form.jobType) errors.jobType = "recruiterPostingForm.errors.jobTypeRequired";
   if (!form.description.trim() || form.description.replace(/<[^>]*>/g, "").trim().length < 10)
-    errors.description = "Descrição é obrigatória (mín. 10 caracteres)";
+    errors.description = "recruiterPostingForm.errors.descriptionMin";
   return errors;
 }
 
 export default function NewPostingPage() {
+  const { t } = useLanguage();
   useSetPageMetadata({
-    title: "Nova Vaga",
+    title: t("recruiterPostingForm.newTitle"),
     showBreadcrumbs: true,
     breadcrumbs: [
-      { label: "Home", href: "/dashboard" },
-      { label: "Recruiter", href: "/recruiter/postings" },
-      { label: "Publicações", href: "/recruiter/postings" },
-      { label: "Nova Vaga" },
+      { label: t("nav.dashboard"), href: "/dashboard" },
+      { label: t("recruiterPostings.title"), href: "/recruiter/postings" },
+      { label: t("recruiterPostingForm.newTitle") },
     ],
   });
 
@@ -161,8 +162,8 @@ export default function NewPostingPage() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
           <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
-          <h2 className="text-2xl font-bold">Vaga criada com sucesso!</h2>
-          <p className="text-muted-foreground">A redirigir...</p>
+          <h2 className="text-2xl font-bold">{t("recruiterPostingForm.createdTitle")}</h2>
+          <p className="text-muted-foreground">{t("recruiterPostingForm.redirecting")}</p>
         </div>
       </div>
     );
@@ -175,8 +176,8 @@ export default function NewPostingPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-xl font-semibold">Nova Vaga</h1>
-          <p className="text-sm text-muted-foreground">Passo {step} de 2 — {step === 1 ? "Informações" : "Pré-visualização"}</p>
+          <h1 className="text-xl font-semibold">{t("recruiterPostingForm.newTitle")}</h1>
+          <p className="text-sm text-muted-foreground">{t("recruiterPostingForm.step", { step, label: step === 1 ? t("recruiterPostingForm.information") : t("recruiterPostingForm.preview") })}</p>
         </div>
       </div>
 
@@ -196,23 +197,23 @@ export default function NewPostingPage() {
         <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
           <div className="space-y-2">
             <Label htmlFor="title">
-              Título da vaga <span className="text-destructive">*</span>
+              {t("recruiterPostingForm.fields.title")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="title"
-              placeholder="Ex: Engenheiro de Software Sénior"
+              placeholder={t("recruiterPostingForm.placeholders.title")}
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
               className={cn(errors.title && "border-destructive")}
               disabled={loading}
             />
-            {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
+            {errors.title && <p className="text-xs text-destructive">{t(errors.title)}</p>}
           </div>
 
           <div className="grid gap-5 sm:grid-cols-3">
             <div className="space-y-2">
               <Label>
-                Categoria <span className="text-destructive">*</span>
+                {t("recruiterPostingForm.fields.category")} <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={form.category}
@@ -220,7 +221,7 @@ export default function NewPostingPage() {
                 disabled={loading}
               >
                 <SelectTrigger className={cn(errors.category && "border-destructive")}>
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={t("recruiterPostingForm.fields.category")} />
                 </SelectTrigger>
                 <SelectContent>
                   {JOB_POSTING_CATEGORIES.map((cat) => (
@@ -228,12 +229,12 @@ export default function NewPostingPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.category && <p className="text-xs text-destructive">{errors.category}</p>}
+              {errors.category && <p className="text-xs text-destructive">{t(errors.category)}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>
-                Range salarial <span className="text-destructive">*</span>
+                {t("recruiterPostingForm.fields.salaryRange")} <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={form.salaryRange}
@@ -241,7 +242,7 @@ export default function NewPostingPage() {
                 disabled={loading}
               >
                 <SelectTrigger className={cn(errors.salaryRange && "border-destructive")}>
-                  <SelectValue placeholder="Salário" />
+                  <SelectValue placeholder={t("recruiterPostingForm.fields.salaryRange")} />
                 </SelectTrigger>
                 <SelectContent>
                   {SALARY_RANGES.map((r) => (
@@ -249,12 +250,12 @@ export default function NewPostingPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.salaryRange && <p className="text-xs text-destructive">{errors.salaryRange}</p>}
+              {errors.salaryRange && <p className="text-xs text-destructive">{t(errors.salaryRange)}</p>}
             </div>
 
             <div className="space-y-2">
               <Label>
-                Tipo <span className="text-destructive">*</span>
+                {t("recruiterPostingForm.fields.jobType")} <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={form.jobType}
@@ -262,7 +263,7 @@ export default function NewPostingPage() {
                 disabled={loading}
               >
                 <SelectTrigger className={cn(errors.jobType && "border-destructive")}>
-                  <SelectValue placeholder="Tipo" />
+                  <SelectValue placeholder={t("recruiterPostingForm.fields.jobType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {JOB_TYPES.map((t) => (
@@ -270,27 +271,27 @@ export default function NewPostingPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.jobType && <p className="text-xs text-destructive">{errors.jobType}</p>}
+              {errors.jobType && <p className="text-xs text-destructive">{t(errors.jobType)}</p>}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>
-              Descrição da vaga <span className="text-destructive">*</span>
+              {t("recruiterPostingForm.fields.description")} <span className="text-destructive">*</span>
             </Label>
             <RichTextEditor
               value={form.description}
               onChange={(html) => set("description", html)}
-              placeholder="Descreva as responsabilidades, requisitos e benefícios da vaga..."
+              placeholder={t("recruiterPostingForm.placeholders.description")}
               minHeight={280}
               disabled={loading}
             />
-            {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+            {errors.description && <p className="text-xs text-destructive">{t(errors.description)}</p>}
           </div>
 
           <div className="flex justify-end">
             <Button onClick={handleNextStep} className="gap-2 rounded-xl">
-              Pré-visualizar
+              {t("recruiterPostingForm.preview")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
@@ -339,7 +340,7 @@ export default function NewPostingPage() {
               disabled={loading}
             >
               <ArrowLeft className="h-4 w-4" />
-              Editar
+              {t("common.edit")}
             </Button>
             <div className="flex gap-3">
               <Button
@@ -349,7 +350,7 @@ export default function NewPostingPage() {
                 className="gap-2 rounded-xl"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Guardar Rascunho
+                {t("recruiterPostingForm.saveDraft")}
               </Button>
               <Button
                 onClick={() => handleSubmit("PUBLISHED")}
@@ -357,7 +358,7 @@ export default function NewPostingPage() {
                 className="gap-2 rounded-xl"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
-                Publicar
+                {t("recruiterPostings.actions.publish")}
               </Button>
             </div>
           </div>

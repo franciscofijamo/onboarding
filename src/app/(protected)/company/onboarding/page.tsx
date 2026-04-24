@@ -11,6 +11,7 @@ import { api } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useClerk } from "@clerk/nextjs";
+import { useLanguage } from "@/contexts/language";
 
 interface FormErrors {
   name?: string;
@@ -25,6 +26,7 @@ export default function CompanyOnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { session } = useClerk();
+  const { t } = useLanguage();
 
   const [form, setForm] = React.useState({
     name: "",
@@ -50,11 +52,11 @@ export default function CompanyOnboardingPage() {
 
   const handleLogoChange = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setErrors((e) => ({ ...e, logo: "O ficheiro deve ser uma imagem (PNG, JPG, SVG, etc.)" }));
+      setErrors((e) => ({ ...e, logo: t("companyOnboarding.errors.logoFileType") }));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setErrors((e) => ({ ...e, logo: "Imagem demasiado grande (máximo 5 MB)" }));
+      setErrors((e) => ({ ...e, logo: t("companyOnboarding.errors.logoFileSize") }));
       return;
     }
     setErrors((e) => ({ ...e, logo: undefined }));
@@ -68,12 +70,12 @@ export default function CompanyOnboardingPage() {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Upload falhou");
+      if (!res.ok) throw new Error(t("companyOnboarding.errors.uploadFailed"));
       const data = await res.json();
       setLogoUrl(data.url);
       setLogoPath(data.pathname);
     } catch {
-      setErrors((e) => ({ ...e, logo: "Erro ao carregar logo. Tente novamente." }));
+      setErrors((e) => ({ ...e, logo: t("companyOnboarding.errors.logoUpload") }));
       setLogoFile(null);
       setLogoPreview(null);
     } finally {
@@ -102,13 +104,13 @@ export default function CompanyOnboardingPage() {
 
   const validate = (): boolean => {
     const errs: FormErrors = {};
-    if (!form.name.trim()) errs.name = "Nome da empresa é obrigatório";
-    if (!form.description.trim() || form.description.trim().length < 10) errs.description = "Descrição deve ter pelo menos 10 caracteres";
-    if (!form.location.trim()) errs.location = "Localização é obrigatória";
-    if (form.website && !/^https?:\/\/.+/.test(form.website)) errs.website = "URL deve começar com http:// ou https://";
-    if (!form.email.trim()) errs.email = "Email de contacto é obrigatório";
-    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) errs.email = "Email inválido";
-    if (!logoUrl) errs.logo = "Logo da empresa é obrigatório";
+    if (!form.name.trim()) errs.name = t("companyOnboarding.errors.nameRequired");
+    if (!form.description.trim() || form.description.trim().length < 10) errs.description = t("companyOnboarding.errors.descriptionLength");
+    if (!form.location.trim()) errs.location = t("companyOnboarding.errors.locationRequired");
+    if (form.website && !/^https?:\/\/.+/.test(form.website)) errs.website = t("companyOnboarding.errors.websiteInvalid");
+    if (!form.email.trim()) errs.email = t("companyOnboarding.errors.emailRequired");
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) errs.email = t("companyOnboarding.errors.emailInvalid");
+    if (!logoUrl) errs.logo = t("companyOnboarding.errors.logoRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -129,7 +131,7 @@ export default function CompanyOnboardingPage() {
       setTimeout(() => { window.location.assign("/recruiter/postings"); }, 1500);
     } catch (error: any) {
       console.error("Failed to create profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao guardar. Tente novamente.";
+      const errorMessage = error instanceof Error ? error.message : t("companyOnboarding.errors.saveFailed");
       setErrors({ name: errorMessage });
     } finally {
       setLoading(false);
@@ -143,8 +145,8 @@ export default function CompanyOnboardingPage() {
           <div className="flex justify-center">
             <CheckCircle className="h-16 w-16 text-emerald-500" />
           </div>
-          <h2 className="text-2xl font-bold">Perfil criado com sucesso!</h2>
-          <p className="text-muted-foreground">A redirigir para o dashboard...</p>
+          <h2 className="text-2xl font-bold">{t("companyOnboarding.successTitle")}</h2>
+          <p className="text-muted-foreground">{t("companyOnboarding.successDescription")}</p>
         </div>
       </div>
     );
@@ -159,9 +161,9 @@ export default function CompanyOnboardingPage() {
               <Building2 className="h-8 w-8" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Perfil da Empresa</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("companyOnboarding.title")}</h1>
           <p className="text-muted-foreground">
-            Preencha os dados da sua empresa para começar a publicar vagas.
+            {t("companyOnboarding.description")}
           </p>
         </div>
 
@@ -170,13 +172,13 @@ export default function CompanyOnboardingPage() {
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              Logo da empresa <span className="text-destructive">*</span>
+              {t("companyOnboarding.logoLabel")} <span className="text-destructive">*</span>
             </Label>
 
             {logoPreview ? (
               <div className="relative flex items-center gap-4 rounded-2xl border border-border bg-muted/20 p-4">
                 <div className="h-16 w-16 rounded-xl border border-border bg-white flex items-center justify-center overflow-hidden shrink-0">
-                  <img src={logoPreview} alt="Logo preview" className="h-full w-full object-contain" />
+                  <img src={logoPreview} alt={t("companyOnboarding.logoPreviewAlt")} className="h-full w-full object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{logoFile?.name}</p>
@@ -184,10 +186,10 @@ export default function CompanyOnboardingPage() {
                     {logoUploading ? (
                       <span className="flex items-center gap-1.5 text-amber-600">
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        A carregar...
+                        {t("companyOnboarding.uploading")}
                       </span>
                     ) : logoUrl ? (
-                      <span className="text-emerald-600 font-medium">✓ Carregado com sucesso</span>
+                      <span className="text-emerald-600 font-medium">{t("companyOnboarding.uploadSuccess")}</span>
                     ) : null}
                   </p>
                 </div>
@@ -215,8 +217,8 @@ export default function CompanyOnboardingPage() {
                   <Upload className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium">Clique ou arraste o logo aqui</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">PNG, JPG, SVG — máximo 5 MB</p>
+                  <p className="text-sm font-medium">{t("companyOnboarding.logoDropTitle")}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("companyOnboarding.fileTypes")}</p>
                 </div>
               </div>
             )}
@@ -233,11 +235,11 @@ export default function CompanyOnboardingPage() {
           <div className="space-y-2">
             <Label htmlFor="name" className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-muted-foreground" />
-              Nome da empresa <span className="text-destructive">*</span>
+              {t("companyOnboarding.nameLabel")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
-              placeholder="Ex: Acme Moçambique, Lda."
+              placeholder={t("companyOnboarding.namePlaceholder")}
               value={form.name}
               onChange={set("name")}
               className={cn(errors.name && "border-destructive")}
@@ -249,11 +251,11 @@ export default function CompanyOnboardingPage() {
           <div className="space-y-2">
             <Label htmlFor="description" className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              Descrição da empresa <span className="text-destructive">*</span>
+              {t("companyOnboarding.descriptionLabel")} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="description"
-              placeholder="Descreva a sua empresa, sector de actividade, missão e valores..."
+              placeholder={t("companyOnboarding.descriptionPlaceholder")}
               value={form.description}
               onChange={set("description")}
               rows={4}
@@ -266,11 +268,11 @@ export default function CompanyOnboardingPage() {
           <div className="space-y-2">
             <Label htmlFor="location" className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
-              Localização <span className="text-destructive">*</span>
+              {t("companyOnboarding.locationLabel")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="location"
-              placeholder="Ex: Maputo, Moçambique"
+              placeholder={t("companyOnboarding.locationPlaceholder")}
               value={form.location}
               onChange={set("location")}
               className={cn(errors.location && "border-destructive")}
@@ -283,12 +285,12 @@ export default function CompanyOnboardingPage() {
             <div className="space-y-2">
               <Label htmlFor="website" className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                Website
+                {t("companyOnboarding.websiteLabel")}
               </Label>
               <Input
                 id="website"
                 type="url"
-                placeholder="https://www.empresa.co.mz"
+                placeholder={t("companyOnboarding.websitePlaceholder")}
                 value={form.website}
                 onChange={set("website")}
                 className={cn(errors.website && "border-destructive")}
@@ -300,12 +302,12 @@ export default function CompanyOnboardingPage() {
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                Email de contacto <span className="text-destructive">*</span>
+                {t("companyOnboarding.emailLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="rh@empresa.co.mz"
+                placeholder={t("companyOnboarding.emailPlaceholder")}
                 value={form.email}
                 onChange={set("email")}
                 className={cn(errors.email && "border-destructive")}
@@ -319,10 +321,10 @@ export default function CompanyOnboardingPage() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                A criar perfil...
+                {t("companyOnboarding.creating")}
               </>
             ) : (
-              "Criar perfil e continuar"
+              t("companyOnboarding.submit")
             )}
           </Button>
         </form>

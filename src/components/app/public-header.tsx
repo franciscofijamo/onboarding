@@ -9,7 +9,6 @@ import { site } from '@/lib/brand-config'
 import { Button } from '@/components/ui/button'
 import { Briefcase, Menu, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/language'
-import { LanguageSwitcher } from '@/components/app/language-switcher'
 
 export function PublicHeader() {
   const [isScrolled, setIsScrolled] = React.useState(false)
@@ -62,8 +61,6 @@ export function PublicHeader() {
                 {t("nav.jobBoard")}
               </Link>
 
-              <LanguageSwitcher compact />
-
               {isLoaded && (
                 isSignedIn ? (
                   <Button asChild variant="outline" size="sm" className="rounded-xl">
@@ -93,9 +90,6 @@ export function PublicHeader() {
 
           {menuOpen && (
             <div className="sm:hidden pb-4 space-y-2 border-t border-border pt-3">
-              <div className="flex justify-end">
-                <LanguageSwitcher compact />
-              </div>
               <Link
                 href="/jobs"
                 className={cn(

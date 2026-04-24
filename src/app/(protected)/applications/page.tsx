@@ -167,12 +167,12 @@ function getLocalizedOutcomeLabel(status: JobApplicationStatus | string, t: Tran
 
 function getPipelineStageLabel(stage: PipelineStage): string {
   switch (stage) {
-    case "RECEIVED": return "Candidatura enviada";
-    case "REVIEWING": return "Em avaliação";
-    case "INTERVIEW": return "Em entrevista";
-    case "OFFER": return "Oferta recebida";
-    case "REJECTED": return "Rejeitado";
-    case "ACCEPTED": return "Aceite";
+    case "RECEIVED": return "applicationsPage.pipeline.received";
+    case "REVIEWING": return "applicationsPage.pipeline.reviewing";
+    case "INTERVIEW": return "applicationsPage.pipeline.interview";
+    case "OFFER": return "applicationsPage.pipeline.offer";
+    case "REJECTED": return "applicationsPage.pipeline.rejected";
+    case "ACCEPTED": return "applicationsPage.pipeline.accepted";
   }
 }
 

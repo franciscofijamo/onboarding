@@ -12,12 +12,14 @@ export const LOCALES: { code: Locale; label: string; flag: string }[] = [
 
 export const DEFAULT_LOCALE: Locale = 'en-US'
 
-export const PT_HINTS_LOCALE: Locale = 'pt-MZ'
-
 const dictionaries: Record<Locale, Record<string, unknown>> = {
   'pt-MZ': ptMZ,
   'en-US': enUS,
   'en-GB': enGB,
+}
+
+export function isLocale(value: string | null | undefined): value is Locale {
+  return value === 'pt-MZ' || value === 'en-US' || value === 'en-GB'
 }
 
 function getNestedValue(obj: unknown, path: string): string | undefined {
@@ -82,9 +84,4 @@ export function getTranslationArray(locale: Locale, key: string): string[] {
     current = (current as Record<string, unknown>)[k]
   }
   return Array.isArray(current) ? current : []
-}
-
-export function getHint(key: string): string | undefined {
-  const dict = getDictionary(PT_HINTS_LOCALE)
-  return getNestedValue(dict, key)
 }

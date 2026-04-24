@@ -215,24 +215,24 @@ export default function BillingPage() {
       <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Custos por ação</h2>
-            <p className="text-sm text-muted-foreground">Veja quantos créditos cada funcionalidade consome.</p>
+            <h2 className="text-lg font-semibold text-foreground">{t("billing.actionCostsTitle")}</h2>
+            <p className="text-sm text-muted-foreground">{t("billing.actionCostsDescription")}</p>
           </div>
-          <Badge variant="outline">Atualizado automaticamente</Badge>
+          <Badge variant="outline">{t("billing.autoUpdated")}</Badge>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {([
-            { key: "cv_analysis", label: "Análise de CV" },
-            { key: "scenario_simulation", label: "Sessão de entrevista" },
-            { key: "interview_prep", label: "Preparação de entrevista" },
-            { key: "ai_text_chat", label: "Chat IA" },
-            { key: "ai_image_generation", label: "Geração de imagem" },
+            { key: "cv_analysis", label: t("billing.actionCosts.cvAnalysis") },
+            { key: "scenario_simulation", label: t("billing.actionCosts.scenarioSimulation") },
+            { key: "interview_prep", label: t("billing.actionCosts.interviewPrep") },
+            { key: "ai_text_chat", label: t("billing.actionCosts.aiTextChat") },
+            { key: "ai_image_generation", label: t("billing.actionCosts.aiImageGeneration") },
           ] as const).map((item) => {
             const cost = creditSettings?.featureCosts?.[item.key] ?? (item.key === "scenario_simulation" ? 15 : item.key === "cv_analysis" ? 10 : item.key === "interview_prep" ? 15 : item.key === "ai_text_chat" ? 1 : 5);
             return (
               <div key={item.key} className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
                 <span className="text-sm font-medium text-foreground">{item.label}</span>
-                <span className="text-sm text-muted-foreground">{cost} créditos</span>
+                <span className="text-sm text-muted-foreground">{cost} {t("common.credits")}</span>
               </div>
             );
           })}

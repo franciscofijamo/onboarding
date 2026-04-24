@@ -24,6 +24,7 @@ model User {
   clerkId   String   @unique
   email     String?  @unique
   name      String?
+  locale    String   @default("en-US")
   role      UserRole?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

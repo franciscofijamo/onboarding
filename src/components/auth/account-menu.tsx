@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SignOutButton, useUser } from "@clerk/nextjs";
 import { LogOut, Settings, User } from "lucide-react";
+import { useLanguage } from "@/contexts/language";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,11 +29,12 @@ function getInitials(name?: string | null, email?: string | null) {
 
 export function AccountMenu({ afterSignOutUrl = "/" }: { afterSignOutUrl?: string }) {
   const { user } = useUser();
+  const { t } = useLanguage();
 
   if (!user) return null;
 
   const email = user.primaryEmailAddress?.emailAddress ?? null;
-  const name = user.fullName ?? user.firstName ?? email ?? "Account";
+  const name = user.fullName ?? user.firstName ?? email ?? t("accountMenu.account");
 
   return (
     <DropdownMenu>
@@ -55,20 +57,20 @@ export function AccountMenu({ afterSignOutUrl = "/" }: { afterSignOutUrl?: strin
         <DropdownMenuItem asChild>
           <Link href="/dashboard">
             <User className="mr-2 h-4 w-4" />
-            Dashboard
+            {t("nav.dashboard")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard">
+          <Link href="/settings/profile">
             <Settings className="mr-2 h-4 w-4" />
-            Account
+            {t("nav.settings")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <SignOutButton redirectUrl={afterSignOutUrl}>
           <DropdownMenuItem>
             <LogOut className="mr-2 h-4 w-4" />
-            Sign out
+            {t("accountMenu.signOut")}
           </DropdownMenuItem>
         </SignOutButton>
       </DropdownMenuContent>

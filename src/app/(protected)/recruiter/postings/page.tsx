@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn, formatDate } from "@/lib/utils";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 import {
   CATEGORY_LABELS,
   JOB_TYPE_LABELS,
@@ -46,9 +47,10 @@ type PostingsResponse = { postings: JobPosting[] };
 
 
 export default function RecruiterPostingsPage() {
+  const { t } = useLanguage();
   useSetPageMetadata({
-    title: "Publicações",
-    description: "Gerencie as suas vagas de emprego",
+    title: t("recruiterPostings.title"),
+    description: t("recruiterPostings.description"),
     showBreadcrumbs: true,
   });
 
@@ -76,10 +78,10 @@ export default function RecruiterPostingsPage() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["recruiterPostings"], ctx.previous);
-      toast({ title: "Erro ao actualizar estado", variant: "destructive" });
+      toast({ title: t("recruiterPostings.toasts.updateStatusError"), variant: "destructive" });
     },
     onSuccess: () => {
-      toast({ title: "Estado da vaga actualizado" });
+      toast({ title: t("recruiterPostings.toasts.updateStatusSuccess") });
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["recruiterPostings"] }),
   });
@@ -89,10 +91,10 @@ export default function RecruiterPostingsPage() {
     onSuccess: () => {
       setDeleteTarget(null);
       queryClient.invalidateQueries({ queryKey: ["recruiterPostings"] });
-      toast({ title: "Vaga eliminada com sucesso" });
+      toast({ title: t("recruiterPostings.toasts.deleteSuccess") });
     },
     onError: () => {
-      toast({ title: "Erro ao eliminar vaga", variant: "destructive" });
+      toast({ title: t("recruiterPostings.toasts.deleteError"), variant: "destructive" });
     },
   });
 
@@ -120,22 +122,22 @@ export default function RecruiterPostingsPage() {
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar vaga?</AlertDialogTitle>
+            <AlertDialogTitle>{t("recruiterPostings.deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acção é permanente e não pode ser revertida.
+              {t("recruiterPostings.deleteDialog.description")}
             </AlertDialogDescription>
             {deleteTarget && (
               <p className="text-sm font-medium">{deleteTarget.title}</p>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >
-              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Eliminar"}
+              {deleteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.delete")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -144,16 +146,16 @@ export default function RecruiterPostingsPage() {
       <AlertDialog open={Boolean(closeTarget)} onOpenChange={(open) => { if (!open) setCloseTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Encerrar vaga?</AlertDialogTitle>
+            <AlertDialogTitle>{t("recruiterPostings.closeDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta vaga ficará indisponível para novas candidaturas. Pode reabrir mais tarde.
+              {t("recruiterPostings.closeDialog.description")}
             </AlertDialogDescription>
             {closeTarget && (
               <p className="text-sm font-medium">{closeTarget.title}</p>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updateStatusMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={updateStatusMutation.isPending}>{t("common.cancel")}</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={updateStatusMutation.isPending}
@@ -162,7 +164,7 @@ export default function RecruiterPostingsPage() {
                 setCloseTarget(null);
               }}
             >
-              {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Encerrar"}
+              {updateStatusMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("recruiterPostings.actions.close")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -175,18 +177,18 @@ export default function RecruiterPostingsPage() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <LayoutGrid className="h-5 w-5 text-primary" />
-                <h1 className="text-2xl font-semibold tracking-tight">Publicações</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">{t("recruiterPostings.title")}</h1>
               </div>
               <p className="text-sm text-muted-foreground">
                 {postings.length === 0
-                  ? "Ainda não tem vagas publicadas."
-                  : `${postings.length} vaga${postings.length !== 1 ? "s" : ""} no total`}
+                  ? t("recruiterPostings.emptySummary")
+                  : t("recruiterPostings.total", { count: postings.length, suffix: postings.length !== 1 ? "s" : "" })}
               </p>
             </div>
             <Button asChild className="rounded-2xl gap-2 shrink-0">
               <Link href="/recruiter/postings/new">
                 <Plus className="h-4 w-4" />
-                Nova Vaga
+                {t("recruiterPostings.actions.new")}
               </Link>
             </Button>
           </div>
@@ -197,14 +199,14 @@ export default function RecruiterPostingsPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Briefcase className="h-8 w-8" />
             </div>
-            <h2 className="text-xl font-semibold">Nenhuma vaga criada</h2>
+            <h2 className="text-xl font-semibold">{t("recruiterPostings.emptyTitle")}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Crie a sua primeira vaga e comece a receber candidaturas.
+              {t("recruiterPostings.emptyDescription")}
             </p>
             <Button asChild className="mt-6 rounded-2xl gap-2">
               <Link href="/recruiter/postings/new">
                 <Plus className="h-4 w-4" />
-                Criar primeira vaga
+                {t("recruiterPostings.actions.createFirst")}
               </Link>
             </Button>
           </section>
@@ -228,7 +230,7 @@ export default function RecruiterPostingsPage() {
                   <div className="space-y-3">
                     {colPostings.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-xs text-muted-foreground">
-                        Sem vagas aqui
+                        {t("recruiterPostings.emptyColumn")}
                       </div>
                     ) : (
                       colPostings.map((posting) => (
@@ -271,6 +273,8 @@ function PostingCard({
   onRequestClose: () => void;
   isPending: boolean;
 }) {
+  const { t } = useLanguage();
+
   return (
     <article className="rounded-2xl border border-border bg-background p-4 space-y-3 group">
       <div className="space-y-1.5">
@@ -298,13 +302,13 @@ function PostingCard({
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
           <>
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-primary hover:bg-primary/10" aria-label="Candidatos" title="Candidatos">
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-primary hover:bg-primary/10" aria-label={t("recruiterPostings.actions.candidates")} title={t("recruiterPostings.actions.candidates")}>
               <Link href={`/recruiter/postings/${posting.id}/candidates`}>
                 <Users className="h-3.5 w-3.5" />
               </Link>
             </Button>
 
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg" aria-label="Editar" title="Editar">
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg" aria-label={t("common.edit")} title={t("common.edit")}>
               <Link href={`/recruiter/postings/${posting.id}/edit`}>
                 <Edit2 className="h-3.5 w-3.5" />
               </Link>
@@ -315,8 +319,8 @@ function PostingCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                aria-label="Publicar"
-                title="Publicar"
+                aria-label={t("recruiterPostings.actions.publish")}
+                title={t("recruiterPostings.actions.publish")}
                 onClick={() => onStatusChange("PUBLISHED")}
               >
                 <Eye className="h-3.5 w-3.5" />
@@ -327,8 +331,8 @@ function PostingCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-lg text-amber-600 hover:bg-amber-50"
-                aria-label="Pausar"
-                title="Pausar"
+                aria-label={t("recruiterPostings.actions.pause")}
+                title={t("recruiterPostings.actions.pause")}
                 onClick={() => onStatusChange("PAUSED")}
               >
                 <Pause className="h-3.5 w-3.5" />
@@ -339,8 +343,8 @@ function PostingCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                aria-label="Retomar"
-                title="Retomar"
+                aria-label={t("recruiterPostings.actions.resume")}
+                title={t("recruiterPostings.actions.resume")}
                 onClick={() => onStatusChange("PUBLISHED")}
               >
                 <Play className="h-3.5 w-3.5" />
@@ -352,8 +356,8 @@ function PostingCard({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 rounded-lg text-blue-600 hover:bg-blue-50"
-                  aria-label="Reabrir"
-                  title="Reabrir como rascunho"
+                  aria-label={t("recruiterPostings.actions.reopenDraft")}
+                  title={t("recruiterPostings.actions.reopenDraft")}
                   onClick={() => onStatusChange("DRAFT")}
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
@@ -362,8 +366,8 @@ function PostingCard({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 rounded-lg text-emerald-600 hover:bg-emerald-50"
-                  aria-label="Reabrir e publicar"
-                  title="Reabrir e publicar"
+                  aria-label={t("recruiterPostings.actions.reopenPublish")}
+                  title={t("recruiterPostings.actions.reopenPublish")}
                   onClick={() => onStatusChange("PUBLISHED")}
                 >
                   <Eye className="h-3.5 w-3.5" />
@@ -375,8 +379,8 @@ function PostingCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-lg text-rose-500 hover:bg-rose-50"
-                aria-label="Encerrar"
-                title="Encerrar"
+                aria-label={t("recruiterPostings.actions.close")}
+                title={t("recruiterPostings.actions.close")}
                 onClick={onRequestClose}
               >
                 <X className="h-3.5 w-3.5" />
@@ -386,8 +390,8 @@ function PostingCard({
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10"
-              aria-label="Eliminar"
-              title="Eliminar"
+              aria-label={t("common.delete")}
+              title={t("common.delete")}
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />

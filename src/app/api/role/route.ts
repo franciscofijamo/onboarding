@@ -66,6 +66,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, role });
   } catch (error) {
     console.error('[Role API] PUT error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }

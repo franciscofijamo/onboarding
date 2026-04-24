@@ -82,6 +82,7 @@ import {
 import { cn, formatDate } from "@/lib/utils";
 import { type PipelineStage } from "@/lib/recruiter/pipeline";
 import { toast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/language";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -210,15 +211,6 @@ type CandidateSessionsResponse = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STAGE_LABELS: Record<PipelineStage, string> = {
-  RECEIVED: "Candidaturas Recebidas",
-  REVIEWING: "Em Avaliação",
-  INTERVIEW: "Entrevista",
-  OFFER: "Oferta",
-  REJECTED: "Rejeitado",
-  ACCEPTED: "Aceite",
-};
-
 const STAGE_COLORS: Record<string, { accent: string; badge: string }> = {
   RECEIVED: {
     accent: "from-blue-500/20 via-blue-500/5 to-transparent",
@@ -282,6 +274,14 @@ function getFitScoreRingColor(score: number | null) {
   return "stroke-red-400";
 }
 
+function getStageLabel(t: (key: string, vars?: Record<string, string | number>) => string, stage: PipelineStage) {
+  return t(`recruiterCandidates.stageLabels.${stage}`);
+}
+
+function getInterviewFocusLabel(t: (key: string, vars?: Record<string, string | number>) => string, focusType: "TECHNICAL" | "BEHAVIORAL" | "MIXED") {
+  return t(`recruiterCandidates.focusType.${focusType}`);
+}
+
 // ─── Analysis Modal ───────────────────────────────────────────────────────────
 
 function AnalysisModal({
@@ -293,6 +293,7 @@ function AnalysisModal({
   entry: PipelineEntry | null;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const { data, isLoading } = useQuery<{ pipelineEntry: PipelineEntry }>({
     queryKey: ["recruiterCandidateAnalysis", postingId, entry?.user.id],
     queryFn: () => api.get(`/api/recruiter/postings/${postingId}/candidates/${entry!.user.id}/analysis`),
@@ -328,7 +329,7 @@ function AnalysisModal({
               </div>
               <div className="min-w-0">
                 <p className="font-semibold leading-tight truncate">
-                  {candidate.name ?? candidate.email ?? "Candidato"}
+                  {candidate.name ?? candidate.email ?? t("common.candidate")}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 mt-0.5">
                   {candidate.currentRole && (
@@ -345,14 +346,14 @@ function AnalysisModal({
                       className="inline-flex items-center gap-0.5 text-[11px] text-primary hover:underline"
                     >
                       <FileText className="h-2.5 w-2.5" />
-                      CV
+                      {t("recruiterCandidates.analysis.resumeLink")}
                     </a>
                   )}
                 </div>
               </div>
             </div>
             <Badge variant="outline" className="rounded-full text-xs shrink-0">
-              {STAGE_LABELS[fullEntry.currentStage] ?? fullEntry.currentStage}
+              {getStageLabel(t, fullEntry.currentStage)}
             </Badge>
           </div>
         </div>
@@ -367,9 +368,9 @@ function AnalysisModal({
           {!isLoading && !analysis && (
             <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
               <Sparkles className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-30" />
-              <p className="text-sm font-medium text-muted-foreground">Análise IA ainda não disponível</p>
+              <p className="text-sm font-medium text-muted-foreground">{t("recruiterCandidates.analysis.emptyTitle")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                A análise é processada em segundo plano após a candidatura.
+                {t("recruiterCandidates.analysis.emptyDescription")}
               </p>
             </div>
           )}
@@ -402,31 +403,31 @@ function AnalysisModal({
                         <span className="text-xs text-muted-foreground font-medium">/100</span>
                       </div>
                     </div>
-                    <p className="text-xs font-semibold text-muted-foreground mt-2 text-center">Score de Compatibilidade</p>
+                    <p className="text-xs font-semibold text-muted-foreground mt-2 text-center">{t("recruiterCandidates.analysis.fitScoreLabel")}</p>
                   </div>
 
                   {/* Score details */}
                   <div className="flex-1 p-5 space-y-4">
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {(fitScore ?? 0) >= 70
-                        ? "Excelente compatibilidade com a vaga. Este candidato alinha bem com os requisitos."
+                        ? t("recruiterCandidates.analysis.scoreSummaries.high")
                         : (fitScore ?? 0) >= 50
-                        ? "Compatibilidade razoável — vale a pena aprofundar na entrevista."
-                        : "Compatibilidade baixa — reveja os gaps identificados antes de avançar."}
+                        ? t("recruiterCandidates.analysis.scoreSummaries.medium")
+                        : t("recruiterCandidates.analysis.scoreSummaries.low")}
                     </p>
 
                     <div className="grid grid-cols-3 gap-2">
                       <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-center">
                         <div className="text-2xl font-bold text-emerald-600 tabular-nums">{skillsMatch.length}</div>
-                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">Skills alinhadas</div>
+                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">{t("recruiterCandidates.analysis.stats.skillsMatch")}</div>
                       </div>
                       <div className="rounded-xl bg-orange-50 border border-orange-100 p-3 text-center">
                         <div className="text-2xl font-bold text-orange-500 tabular-nums">{missingSkills.length}</div>
-                        <div className="text-[11px] text-orange-700 font-medium mt-0.5">Gaps identificados</div>
+                        <div className="text-[11px] text-orange-700 font-medium mt-0.5">{t("recruiterCandidates.analysis.stats.missingSkills")}</div>
                       </div>
                       <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 text-center">
                         <div className="text-2xl font-bold text-blue-600 tabular-nums">{recommendations.length}</div>
-                        <div className="text-[11px] text-blue-700 font-medium mt-0.5">Recomendações</div>
+                        <div className="text-[11px] text-blue-700 font-medium mt-0.5">{t("recruiterCandidates.analysis.stats.recommendations")}</div>
                       </div>
                     </div>
 
@@ -448,7 +449,7 @@ function AnalysisModal({
                         <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center">
                           <span className="text-white text-xs font-bold">✓</span>
                         </div>
-                        <h4 className="text-sm font-semibold text-emerald-800">Skills Compatíveis</h4>
+                        <h4 className="text-sm font-semibold text-emerald-800">{t("recruiterCandidates.analysis.skillsMatchTitle")}</h4>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {skillsMatch.map((skill, i) => (
@@ -465,7 +466,7 @@ function AnalysisModal({
                         <div className="h-5 w-5 rounded-full bg-orange-400 flex items-center justify-center">
                           <span className="text-white text-xs font-bold">!</span>
                         </div>
-                        <h4 className="text-sm font-semibold text-orange-800">Gaps Identificados</h4>
+                        <h4 className="text-sm font-semibold text-orange-800">{t("recruiterCandidates.analysis.missingSkillsTitle")}</h4>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {missingSkills.map((skill, i) => (
@@ -486,7 +487,7 @@ function AnalysisModal({
                     <div className="rounded-2xl border border-border bg-card p-4">
                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                         <span className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">✓</span>
-                        Pontos Fortes
+                        {t("recruiterCandidates.analysis.strengthsTitle")}
                       </h4>
                       <ul className="space-y-2">
                         {strengths.map((s, i) => (
@@ -502,7 +503,7 @@ function AnalysisModal({
                     <div className="rounded-2xl border border-border bg-card p-4">
                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                         <span className="h-5 w-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">!</span>
-                        Áreas de Melhoria
+                        {t("recruiterCandidates.analysis.improvementsTitle")}
                       </h4>
                       <ul className="space-y-2">
                         {improvements.map((s, i) => (
@@ -521,7 +522,7 @@ function AnalysisModal({
                 <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
                   <h4 className="text-sm font-semibold mb-3 text-blue-900 flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-blue-600" />
-                    Recomendações
+                    {t("recruiterCandidates.analysis.recommendationsTitle")}
                   </h4>
                   <ol className="space-y-2">
                     {recommendations.map((s, i) => (
@@ -540,13 +541,13 @@ function AnalysisModal({
 
           {!isLoading && fullEntry.stageHistory.length > 0 && (
             <div className="rounded-2xl border border-border bg-muted/20 p-4">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Histórico de Fases</h4>
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">{t("recruiterCandidates.analysis.stageHistoryTitle")}</h4>
               <div className="space-y-1.5">
                 {fullEntry.stageHistory.map((h) => (
                   <div key={h.id} className="flex items-center gap-2 text-xs">
-                    <span className="font-medium text-foreground">{STAGE_LABELS[h.fromStage] ?? h.fromStage}</span>
+                    <span className="font-medium text-foreground">{getStageLabel(t, h.fromStage)}</span>
                     <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{STAGE_LABELS[h.toStage] ?? h.toStage}</span>
+                    <span className="font-medium text-foreground">{getStageLabel(t, h.toStage)}</span>
                     <span className="ml-auto text-muted-foreground">{formatDate(h.movedAt)}</span>
                     {h.mover.name && <span className="text-muted-foreground">· {h.mover.name}</span>}
                   </div>
@@ -571,6 +572,7 @@ function InterviewSessionsModal({
   entry: PipelineEntry | null;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const [expandedSession, setExpandedSession] = React.useState<string | null>(null);
 
   const { data, isLoading } = useQuery<CandidateSessionsResponse>({
@@ -585,9 +587,9 @@ function InterviewSessionsModal({
   const sessions = data?.sessions ?? [];
 
   function getSessionStatusLabel(session: CandidateSessionsResponse["sessions"][0]) {
-    if (session.analyzedCount === session.totalQuestions && session.totalQuestions > 0) return "Concluído";
-    if (session.answeredCount > 0) return "Em progresso";
-    return "Pendente";
+    if (session.analyzedCount === session.totalQuestions && session.totalQuestions > 0) return t("recruiterCandidates.sessions.status.completed");
+    if (session.answeredCount > 0) return t("recruiterCandidates.sessions.status.inProgress");
+    return t("recruiterCandidates.sessions.status.pending");
   }
 
   function getSessionStatusColor(session: CandidateSessionsResponse["sessions"][0]) {
@@ -629,7 +631,7 @@ function InterviewSessionsModal({
 
     return (
       <div className="mt-2 rounded-xl bg-purple-50 border border-purple-100 p-3 space-y-2">
-        <p className="text-xs font-semibold text-purple-700">Avaliação IA</p>
+        <p className="text-xs font-semibold text-purple-700">{t("recruiterCandidates.sessions.aiEvaluationTitle")}</p>
         {summary && <p className="text-xs text-foreground leading-snug">{summary}</p>}
         {criteria.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -646,7 +648,7 @@ function InterviewSessionsModal({
         )}
         {strengths.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-emerald-700 mb-0.5">Pontos fortes</p>
+            <p className="text-xs font-medium text-emerald-700 mb-0.5">{t("recruiterCandidates.sessions.strengthsTitle")}</p>
             <ul className="list-disc list-inside space-y-0.5">
               {strengths.map((s, i) => <li key={i} className="text-xs text-foreground">{s}</li>)}
             </ul>
@@ -654,7 +656,7 @@ function InterviewSessionsModal({
         )}
         {improvements.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-amber-700 mb-0.5">Melhorias sugeridas</p>
+            <p className="text-xs font-medium text-amber-700 mb-0.5">{t("recruiterCandidates.sessions.improvementsTitle")}</p>
             <ul className="list-disc list-inside space-y-0.5">
               {improvements.map((imp, i) => <li key={i} className="text-xs text-foreground">{imp}</li>)}
             </ul>
@@ -675,9 +677,9 @@ function InterviewSessionsModal({
             </div>
             <div className="min-w-0">
               <p className="font-semibold leading-tight truncate">
-                {entry.user.name ?? entry.user.email ?? "Candidato"}
+                {entry.user.name ?? entry.user.email ?? t("common.candidate")}
               </p>
-              <p className="text-xs text-muted-foreground">Sessões de entrevista IA</p>
+              <p className="text-xs text-muted-foreground">{t("recruiterCandidates.sessions.title")}</p>
             </div>
           </div>
         </div>
@@ -693,9 +695,9 @@ function InterviewSessionsModal({
         {!isLoading && sessions.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center">
             <Mic className="h-8 w-8 mx-auto mb-3 text-muted-foreground opacity-40" />
-            <p className="text-sm font-medium text-muted-foreground">Sem sessões de entrevista</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("recruiterCandidates.sessions.emptyTitle")}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              O candidato ainda não foi movido para uma fase de entrevista publicada.
+              {t("recruiterCandidates.sessions.emptyDescription")}
             </p>
           </div>
         )}
@@ -725,7 +727,7 @@ function InterviewSessionsModal({
                           </span>
                         )}
                         <span className="text-xs text-muted-foreground">
-                          {session.answeredCount}/{session.totalQuestions} respondidas
+                          {t("recruiterCandidates.sessions.answeredCount", { answered: session.answeredCount, total: session.totalQuestions })}
                         </span>
                       </div>
                     </div>
@@ -744,7 +746,14 @@ function InterviewSessionsModal({
                           <div className="mt-0.5">{getResponseStatusIcon(resp.status)}</div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-muted-foreground mb-1">
-                              Pergunta {resp.questionIndex + 1} · {resp.status === "ANALYZED" ? "Analisada" : resp.status === "RECORDED" ? "Gravada" : "Pendente"}
+                              {t("recruiterCandidates.sessions.questionStatus", {
+                                index: resp.questionIndex + 1,
+                                status: resp.status === "ANALYZED"
+                                  ? t("recruiterCandidates.sessions.responseStatus.analyzed")
+                                  : resp.status === "RECORDED"
+                                  ? t("recruiterCandidates.sessions.responseStatus.recorded")
+                                  : t("recruiterCandidates.sessions.responseStatus.pending"),
+                              })}
                               {resp.score !== null && (
                                 <span className="ml-2 text-amber-600 font-bold">{resp.score}/10</span>
                               )}
@@ -752,7 +761,7 @@ function InterviewSessionsModal({
                             <p className="text-sm text-foreground leading-snug mb-2">{resp.prompt}</p>
                             {resp.transcript && (
                               <div className="rounded-xl bg-muted/40 border border-border p-3 text-xs text-muted-foreground">
-                                <p className="font-medium text-foreground mb-1">Transcrição:</p>
+                                <p className="font-medium text-foreground mb-1">{t("recruiterCandidates.sessions.transcriptLabel")}</p>
                                 <p className="line-clamp-4">{resp.transcript}</p>
                               </div>
                             )}
@@ -784,6 +793,7 @@ function InterviewStageModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [step, setStep] = React.useState<"config" | "questions" | "done">("config");
   const [stageName, setStageName] = React.useState("");
@@ -827,13 +837,13 @@ function InterviewStageModal({
       ) as { stage: InterviewStage; warning?: string };
       setQuestions(genRes.stage.questions ?? []);
       if (genRes.warning) {
-        toast({ title: "Atenção", description: genRes.warning });
+        toast({ title: t("common.warning"), description: genRes.warning });
       }
       setStep("questions");
     } catch (err) {
       toast({
-        title: "Erro ao gerar perguntas",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.generateErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -850,14 +860,14 @@ function InterviewStageModal({
       ) as { stage: InterviewStage; warning?: string };
       setQuestions(genRes.stage.questions ?? []);
       if (genRes.warning) {
-        toast({ title: "Atenção", description: genRes.warning });
+        toast({ title: t("common.warning"), description: genRes.warning });
       } else {
-        toast({ title: "Perguntas regeneradas!" });
+        toast({ title: t("recruiterCandidates.stageModal.toasts.regenerateSuccessTitle") });
       }
     } catch (err) {
       toast({
-        title: "Erro ao regenerar",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.regenerateErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -874,8 +884,8 @@ function InterviewStageModal({
       setQuestions(prev => prev.map(q => q.id === questionId ? res.question : q));
     } catch (err) {
       toast({
-        title: "Erro ao guardar pergunta",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.saveQuestionErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     }
@@ -905,15 +915,15 @@ function InterviewStageModal({
           orders: remaining.map(q => ({ id: q.id, order: q.order })),
         }).catch(() => {
           toast({
-            title: "Atenção",
-            description: "Pergunta eliminada, mas a reordenação pode não ter sido guardada.",
+            title: t("common.warning"),
+            description: t("recruiterCandidates.stageModal.toasts.reorderAfterDeleteWarning"),
           });
         });
       }
     } catch (err) {
       toast({
-        title: "Erro ao eliminar pergunta",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.deleteQuestionErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     }
@@ -942,8 +952,8 @@ function InterviewStageModal({
       });
     } catch {
       toast({
-        title: "Erro ao reordenar",
-        description: "A ordem pode não ter sido guardada. Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.reorderErrorTitle"),
+        description: t("recruiterCandidates.stageModal.toasts.reorderErrorDescription"),
         variant: "destructive",
       });
       // Revert optimistic update on failure
@@ -956,24 +966,24 @@ function InterviewStageModal({
     // Warn recruiter if question count is below the configured target (e.g. due to deduplication)
     if (questions.length < questionCount) {
       toast({
-        title: "Atenção: menos perguntas que o configurado",
-        description: `Esta fase tem ${questions.length} pergunta(s), mas foi configurada para ${questionCount}. Pode regenerar para atingir o total, ou publicar com as perguntas atuais.`,
+        title: t("recruiterCandidates.stageModal.toasts.lowQuestionCountTitle"),
+        description: t("recruiterCandidates.stageModal.toasts.lowQuestionCountDescription", { current: questions.length, target: questionCount }),
       });
     }
     setPublishing(true);
     try {
       await api.post(`/api/recruiter/stages/${stageId}/publish`, {});
       toast({
-        title: "Fase publicada!",
-        description: "A nova coluna de entrevista aparece agora no kanban.",
+        title: t("recruiterCandidates.stageModal.toasts.publishSuccessTitle"),
+        description: t("recruiterCandidates.stageModal.toasts.publishSuccessDescription"),
       });
       queryClient.invalidateQueries({ queryKey: ["recruiterPipeline", postingId] });
       setStep("done");
       setTimeout(() => handleClose(), 1500);
     } catch (err) {
       toast({
-        title: "Erro ao publicar",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.stageModal.toasts.publishErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -995,16 +1005,16 @@ function InterviewStageModal({
             </div>
             <div>
               <p className="font-semibold leading-tight">
-                {step === "config" ? "Nova Fase de Entrevista" : step === "questions" ? "Rever Perguntas" : "Fase Publicada!"}
+                {step === "config" ? t("recruiterCandidates.stageModal.titleConfig") : step === "questions" ? t("recruiterCandidates.stageModal.titleQuestions") : t("recruiterCandidates.stageModal.titleDone")}
               </p>
               {step === "config" && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Configure a fase — a IA irá gerar perguntas baseadas na descrição da vaga.
+                  {t("recruiterCandidates.stageModal.descriptionConfig")}
                 </p>
               )}
               {step === "questions" && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {questions.length} perguntas geradas. Edite conforme necessário antes de publicar.
+                  {t("recruiterCandidates.stageModal.descriptionQuestions", { count: questions.length })}
                 </p>
               )}
             </div>
@@ -1015,10 +1025,10 @@ function InterviewStageModal({
         {step === "config" && (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="stageName">Nome da fase</Label>
+              <Label htmlFor="stageName">{t("recruiterCandidates.stageModal.stageNameLabel")}</Label>
               <Input
                 id="stageName"
-                placeholder="ex. Entrevista Técnica, Entrevista RH..."
+                placeholder={t("recruiterCandidates.stageModal.stageNamePlaceholder")}
                 value={stageName}
                 onChange={(e) => setStageName(e.target.value)}
               />
@@ -1026,7 +1036,7 @@ function InterviewStageModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Número de perguntas</Label>
+                <Label>{t("recruiterCandidates.stageModal.questionCountLabel")}</Label>
                 <Select
                   value={String(questionCount)}
                   onValueChange={(v) => setQuestionCount(Number(v) as 5 | 10)}
@@ -1035,37 +1045,37 @@ function InterviewStageModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5 perguntas</SelectItem>
-                    <SelectItem value="10">10 perguntas</SelectItem>
+                    <SelectItem value="5">{t("recruiterCandidates.stageModal.questionCountOption", { count: 5 })}</SelectItem>
+                    <SelectItem value="10">{t("recruiterCandidates.stageModal.questionCountOption", { count: 10 })}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Foco da entrevista</Label>
+                <Label>{t("recruiterCandidates.stageModal.focusTypeLabel")}</Label>
                 <Select value={focusType} onValueChange={(v) => setFocusType(v as typeof focusType)}>
                   <SelectTrigger className="rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="MIXED">Misto</SelectItem>
-                    <SelectItem value="TECHNICAL">Técnico</SelectItem>
-                    <SelectItem value="BEHAVIORAL">Comportamental</SelectItem>
+                    <SelectItem value="MIXED">{getInterviewFocusLabel(t, "MIXED")}</SelectItem>
+                    <SelectItem value="TECHNICAL">{getInterviewFocusLabel(t, "TECHNICAL")}</SelectItem>
+                    <SelectItem value="BEHAVIORAL">{getInterviewFocusLabel(t, "BEHAVIORAL")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-border">
-              <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+              <Button variant="outline" onClick={handleClose}>{t("common.cancel")}</Button>
               <Button
                 onClick={handleCreateAndGenerate}
                 disabled={!stageName.trim() || generating}
               >
                 {generating ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> A gerar perguntas...</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("recruiterCandidates.stageModal.generating")}</>
                 ) : (
-                  <><Sparkles className="h-4 w-4" /> Gerar perguntas</>
+                  <><Sparkles className="h-4 w-4" /> {t("recruiterCandidates.stageModal.generateCta")}</>
                 )}
               </Button>
             </div>
@@ -1083,7 +1093,7 @@ function InterviewStageModal({
                 className="rounded-xl gap-1"
               >
                 {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                Regenerar
+                {t("recruiterCandidates.stageModal.regenerateCta")}
               </Button>
             </div>
 
@@ -1103,12 +1113,12 @@ function InterviewStageModal({
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => setStep("config")}>Voltar</Button>
+              <Button variant="outline" onClick={() => setStep("config")}>{t("common.back")}</Button>
               <Button onClick={handlePublish} disabled={publishing || questions.length === 0}>
                 {publishing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> A publicar...</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("recruiterCandidates.stageModal.publishing")}</>
                 ) : (
-                  <><CheckCircle2 className="h-4 w-4" /> Publicar fase</>
+                  <><CheckCircle2 className="h-4 w-4" /> {t("recruiterCandidates.stageModal.publishCta")}</>
                 )}
               </Button>
             </div>
@@ -1118,9 +1128,9 @@ function InterviewStageModal({
         {step === "done" && (
           <div className="py-8 text-center space-y-3">
             <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
-            <p className="font-semibold">Fase publicada com sucesso!</p>
+            <p className="font-semibold">{t("recruiterCandidates.stageModal.doneTitle")}</p>
             <p className="text-sm text-muted-foreground">
-              A nova coluna aparece no kanban. Mova candidatos para lá para enviar as perguntas.
+              {t("recruiterCandidates.stageModal.doneDescription")}
             </p>
           </div>
         )}
@@ -1147,6 +1157,7 @@ function EditableQuestion({
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
+  const { t } = useLanguage();
   const [editing, setEditing] = React.useState(false);
   const [value, setValue] = React.useState(question.prompt);
   const [saving, setSaving] = React.useState(false);
@@ -1178,13 +1189,13 @@ function EditableQuestion({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar pergunta?</AlertDialogTitle>
+            <AlertDialogTitle>{t("recruiterCandidates.editableQuestion.deleteDialogTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação remove a pergunta desta fase de entrevista.
+              {t("recruiterCandidates.editableQuestion.deleteDialogDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("common.cancel")}</AlertDialogCancel>
             <Button
               variant="destructive"
               disabled={deleting}
@@ -1193,7 +1204,7 @@ function EditableQuestion({
                 await handleDelete();
               }}
             >
-              {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Eliminar"}
+              {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : t("common.delete")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1210,7 +1221,7 @@ function EditableQuestion({
           </Badge>
           {question.isEdited && (
             <Badge variant="outline" className="text-xs rounded-full bg-amber-50 text-amber-700 border-amber-200">
-              Editada
+              {t("recruiterCandidates.editableQuestion.editedBadge")}
             </Badge>
           )}
         </div>
@@ -1223,7 +1234,7 @@ function EditableQuestion({
               className="rounded-xl h-7 w-7 p-0"
               disabled={!onMoveUp}
               onClick={onMoveUp}
-              title="Mover para cima"
+              title={t("recruiterCandidates.editableQuestion.moveUp")}
             >
               <ChevronUp className="h-3 w-3" />
             </Button>
@@ -1234,7 +1245,7 @@ function EditableQuestion({
               className="rounded-xl h-7 w-7 p-0"
               disabled={!onMoveDown}
               onClick={onMoveDown}
-              title="Mover para baixo"
+              title={t("recruiterCandidates.editableQuestion.moveDown")}
             >
               <ChevronDown className="h-3 w-3" />
             </Button>
@@ -1244,7 +1255,7 @@ function EditableQuestion({
               size="sm"
               className="rounded-xl h-7 w-7 p-0"
               onClick={() => { setValue(question.prompt); setEditing(true); }}
-              title="Editar"
+              title={t("common.edit")}
             >
               <Pencil className="h-3 w-3" />
             </Button>
@@ -1256,7 +1267,7 @@ function EditableQuestion({
                 className="rounded-xl h-7 w-7 p-0 text-destructive hover:text-destructive"
                 onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
-                title="Eliminar"
+                title={t("common.delete")}
               >
                 {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
               </Button>
@@ -1280,11 +1291,11 @@ function EditableQuestion({
               onClick={() => { setValue(question.prompt); setEditing(false); }}
             >
               <X className="h-3 w-3" />
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button size="sm" className="rounded-xl" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
-              Guardar
+              {t("common.save")}
             </Button>
           </div>
         </div>
@@ -1323,6 +1334,7 @@ function CandidateCard({
   isMoving: boolean;
   isDragOverlay?: boolean;
 }) {
+  const { t } = useLanguage();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: entry.id,
     data: { entryId: entry.id, isInterviewStage: isInterviewStageColumn, interviewStageId },
@@ -1354,14 +1366,14 @@ function CandidateCard({
           {...listeners}
           className="mt-0.5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors shrink-0 touch-none"
           tabIndex={-1}
-          aria-label="Arrastar candidato"
+          aria-label={t("recruiterCandidates.card.dragCandidate")}
         >
           <GripVertical className="h-4 w-4" />
         </button>
         <div className="flex-1 flex items-start justify-between gap-2 min-w-0">
           <div className="min-w-0">
             <p className="font-semibold truncate leading-tight text-sm">
-              {entry.user.name ?? entry.user.email ?? "Candidato"}
+              {entry.user.name ?? entry.user.email ?? t("common.candidate")}
             </p>
             {entry.user.currentRole && (
               <p className="text-xs text-muted-foreground truncate">{entry.user.currentRole}</p>
@@ -1391,7 +1403,7 @@ function CandidateCard({
             <span>·</span>
             <span className="inline-flex items-center gap-0.5 text-primary">
               <Sparkles className="h-3 w-3" />
-              Analisado
+              {t("common.analyzed")}
             </span>
           </>
         )}
@@ -1401,7 +1413,7 @@ function CandidateCard({
       {isInterviewStageColumn && session && (
         <div className="rounded-xl bg-purple-50 border border-purple-200 p-2.5 space-y-1 ml-6">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-purple-700">Sessão</span>
+            <span className="text-xs font-medium text-purple-700">{t("recruiterCandidates.card.sessionLabel")}</span>
             {session.averageScore !== null && (
               <span className="flex items-center gap-1 text-xs font-bold text-amber-600">
                 <Star className="h-3 w-3" />
@@ -1411,7 +1423,7 @@ function CandidateCard({
           </div>
           <div className="flex items-center gap-2 text-xs text-purple-600">
             <Mic className="h-3 w-3" />
-            <span>{session.answeredCount}/{session.totalQuestions} respondidas · {session.analyzedCount} analisadas</span>
+            <span>{t("recruiterCandidates.card.sessionSummary", { answered: session.answeredCount, total: session.totalQuestions, analyzed: session.analyzedCount })}</span>
           </div>
         </div>
       )}
@@ -1427,7 +1439,7 @@ function CandidateCard({
             onClick={() => onViewAnalysis(entry)}
           >
             <BarChart3 className="h-3 w-3" />
-            Análise
+            {t("common.analysis")}
           </Button>
           {isInterviewStageColumn && (
             <Button
@@ -1437,7 +1449,7 @@ function CandidateCard({
               onClick={() => onViewSessions(entry)}
             >
               <Mic className="h-3 w-3" />
-              Respostas
+              {t("recruiterCandidates.card.responsesCta")}
             </Button>
           )}
           <DropdownMenu>
@@ -1447,25 +1459,25 @@ function CandidateCard({
                 size="sm"
                 className="rounded-xl h-7 px-2.5 text-xs gap-1"
               >
-                Ações
+                {t("common.actions")}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[200px]">
-              <DropdownMenuLabel>Transferir para</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("recruiterCandidates.card.transferTo")}</DropdownMenuLabel>
               {(["RECEIVED", "REVIEWING", "INTERVIEW", "OFFER", "REJECTED", "ACCEPTED"] as const).map((stage) => (
                 <DropdownMenuItem
                   key={stage}
                   onClick={() => onMove(entry.id, stage)}
                   disabled={(entry.currentStage === stage && stage !== "INTERVIEW") || isMoving}
                 >
-                  {STAGE_LABELS[stage]}
+                  {getStageLabel(t, stage)}
                 </DropdownMenuItem>
               ))}
               {publishedInterviewStages.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuLabel>Fases de entrevista</DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("recruiterCandidates.card.interviewStages")}</DropdownMenuLabel>
                   {publishedInterviewStages.map((stage) => (
                     <DropdownMenuItem
                       key={stage.id}
@@ -1491,7 +1503,7 @@ function CandidateCard({
               onClick={() => onMove(entry.id, "OFFER")}
               disabled={isMoving}
             >
-              {isMoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <><span>Oferta</span> <ArrowRight className="h-3 w-3" /></>}
+              {isMoving ? <Loader2 className="h-3 w-3 animate-spin" /> : <><span>{getStageLabel(t, "OFFER")}</span> <ArrowRight className="h-3 w-3" /></>}
             </Button>
             <Button
               size="sm"
@@ -1499,7 +1511,7 @@ function CandidateCard({
               className="rounded-xl h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/5 px-2.5"
               onClick={() => onMove(entry.id, "REJECTED")}
               disabled={isMoving}
-              title="Rejeitar candidato"
+              title={t("recruiterCandidates.card.rejectCandidate")}
             >
               <X className="h-3 w-3" />
             </Button>
@@ -1515,7 +1527,7 @@ function CandidateCard({
             {isMoving ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <><span>Avançar</span> <ArrowRight className="h-3 w-3" /></>
+              <><span>{t("recruiterCandidates.card.advanceCta")}</span> <ArrowRight className="h-3 w-3" /></>
             )}
           </Button>
         ) : null}
@@ -1562,6 +1574,7 @@ function KanbanColumn({
   count: number;
   children: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   const { setNodeRef, isOver } = useDroppable({ id: columnId });
 
   return (
@@ -1590,7 +1603,7 @@ function KanbanColumn({
             "rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center text-xs text-muted-foreground transition-colors",
             isOver && "border-primary/40 bg-primary/10 text-primary",
           )}>
-            {isOver ? "Largar aqui" : "Sem candidatos nesta fase"}
+            {isOver ? t("recruiterCandidates.column.dropHere") : t("recruiterCandidates.column.empty")}
           </div>
         ) : (
           children
@@ -1605,6 +1618,7 @@ function KanbanColumn({
 export default function RecruiterCandidatesPage() {
   const { id: postingId } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
 
   const [selectedEntry, setSelectedEntry] = React.useState<PipelineEntry | null>(null);
@@ -1621,17 +1635,17 @@ export default function RecruiterCandidatesPage() {
   });
 
 
-  const postingTitle = data?.posting?.title ?? "Vaga";
+  const postingTitle = data?.posting?.title ?? t("recruiterCandidates.page.postingFallback");
 
   useSetPageMetadata({
-    title: "Pipeline de Candidatos",
-    description: "Gerencie os candidatos à sua vaga",
+    title: t("recruiterCandidates.page.title"),
+    description: t("recruiterCandidates.page.description"),
     breadcrumbs: [
-      { label: "Home", href: "/dashboard" },
-      { label: "Recruiter", href: "/recruiter/postings" },
-      { label: "Publicações", href: "/recruiter/postings" },
+      { label: t("nav.dashboard"), href: "/dashboard" },
+      { label: t("nav.recruiterPostings"), href: "/recruiter/postings" },
+      { label: t("recruiterPostings.title"), href: "/recruiter/postings" },
       { label: postingTitle },
-      { label: "Pipeline de Candidatos" },
+      { label: t("recruiterCandidates.page.title") },
     ],
     showBreadcrumbs: true,
   });
@@ -1647,8 +1661,8 @@ export default function RecruiterCandidatesPage() {
     },
     onError: (err) => {
       toast({
-        title: "Erro ao mover candidato",
-        description: err instanceof Error ? err.message : "Tente novamente.",
+        title: t("recruiterCandidates.toasts.moveErrorTitle"),
+        description: err instanceof Error ? err.message : t("recruiterCandidates.tryAgain"),
         variant: "destructive",
       });
     },
@@ -1738,14 +1752,14 @@ export default function RecruiterCandidatesPage() {
             <Button asChild variant="ghost" size="sm" className="rounded-xl -ml-2">
               <Link href="/recruiter/postings">
                 <ArrowLeft className="h-4 w-4" />
-                Voltar às publicações
+                {t("recruiterCandidates.page.backToPostings")}
               </Link>
             </Button>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-1">
-                <h1 className="text-2xl font-semibold tracking-tight">Pipeline de Candidatos</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">{t("recruiterCandidates.page.title")}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Gerencie e avalie os candidatos à vaga
+                  {t("recruiterCandidates.page.description")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -1757,23 +1771,23 @@ export default function RecruiterCandidatesPage() {
                 >
                   <Link href={`/jobs/${postingId}`} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
-                    Ver vaga pública
+                    {t("recruiterCandidates.page.viewPublicJob")}
                   </Link>
                 </Button>
                 <div className="flex gap-3 text-sm">
                   <div className="rounded-2xl border border-border bg-background px-4 py-2 text-center">
                     <div className="text-xl font-bold">{totalCount}</div>
-                    <div className="text-xs text-muted-foreground">Candidatos</div>
+                    <div className="text-xs text-muted-foreground">{t("recruiterCandidates.page.stats.candidates")}</div>
                   </div>
                   <div className="rounded-2xl border border-border bg-background px-4 py-2 text-center">
                     <div className="text-xl font-bold">{analyzedCount}</div>
-                    <div className="text-xs text-muted-foreground">Analisados</div>
+                    <div className="text-xs text-muted-foreground">{t("recruiterCandidates.page.stats.analyzed")}</div>
                   </div>
                   <div className="rounded-2xl border border-border bg-background px-4 py-2 text-center">
                     <div className={cn("text-xl font-bold", avgScore !== null ? getFitScoreColor(avgScore) : "")}>
                       {avgScore !== null ? `${avgScore}` : "—"}
                     </div>
-                    <div className="text-xs text-muted-foreground">Score médio</div>
+                    <div className="text-xs text-muted-foreground">{t("recruiterCandidates.page.stats.averageScore")}</div>
                   </div>
                 </div>
                 <Button
@@ -1781,7 +1795,7 @@ export default function RecruiterCandidatesPage() {
                   className="rounded-2xl gap-2 bg-purple-600 hover:bg-purple-700 text-white shrink-0"
                 >
                   <Plus className="h-4 w-4" />
-                  Fase de entrevista
+                  {t("recruiterCandidates.page.newInterviewStage")}
                 </Button>
               </div>
             </div>
@@ -1796,7 +1810,7 @@ export default function RecruiterCandidatesPage() {
                 <Mic className="h-3.5 w-3.5" />
                 <span className="font-medium">{stage.name}</span>
                 <Badge variant="outline" className="text-xs bg-purple-100 border-purple-300 text-purple-700">
-                  {stage.questionCount} perguntas
+                  {t("recruiterCandidates.stageModal.questionCountOption", { count: stage.questionCount })}
                 </Badge>
               </div>
             ))}
@@ -1809,9 +1823,9 @@ export default function RecruiterCandidatesPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Briefcase className="h-8 w-8" />
             </div>
-            <h2 className="text-xl font-semibold">Sem candidaturas ainda</h2>
+            <h2 className="text-xl font-semibold">{t("recruiterCandidates.page.emptyTitle")}</h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-              Quando candidatos se candidatarem à sua vaga, aparecerão aqui organizados por fase.
+              {t("recruiterCandidates.page.emptyDescription")}
             </p>
           </section>
         )}

@@ -11,6 +11,7 @@ import { PageMetadataProvider } from "@/contexts/page-metadata";
 import { useSubscription } from "@/hooks/use-subscription";
 import { useProfile } from "@/hooks/use-profile";
 import { ProfileCompletionModal } from "@/components/onboarding/profile-completion-modal";
+import { PendingAnalysisHandler } from "@/components/app/pending-analysis-handler";
 
 const ROLE_REDIRECT_EXEMPT_PATHS = ["/role-select", "/company/onboarding", "/company/profile"];
 const CHROMELESS_PATHS = ["/role-select", "/company/onboarding"];
@@ -111,6 +112,7 @@ export default function ProtectedLayout({
   if (isChromeless) {
     return (
       <PageMetadataProvider>
+        <PendingAnalysisHandler />
         <div className="min-h-dvh w-full bg-background text-foreground">
           {children}
         </div>
@@ -127,6 +129,7 @@ export default function ProtectedLayout({
 
   return (
     <PageMetadataProvider>
+      <PendingAnalysisHandler />
       <div className="min-h-dvh w-full text-foreground">
         <div className="flex">
           <Sidebar collapsed={collapsed} onToggle={toggleCollapse} />

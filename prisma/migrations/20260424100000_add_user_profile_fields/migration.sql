@@ -1,0 +1,31 @@
+-- AddColumn: profile fields
+ALTER TABLE "User"
+ADD COLUMN IF NOT EXISTS "province" TEXT,
+ADD COLUMN IF NOT EXISTS "birthYear" INTEGER,
+ADD COLUMN IF NOT EXISTS "gender" TEXT,
+ADD COLUMN IF NOT EXISTS "course" TEXT,
+ADD COLUMN IF NOT EXISTS "university" TEXT,
+ADD COLUMN IF NOT EXISTS "profileComplete" BOOLEAN NOT NULL DEFAULT false;
+
+-- AddColumn: extended career profile fields
+ALTER TABLE "User"
+ADD COLUMN IF NOT EXISTS "careerPath" TEXT,
+ADD COLUMN IF NOT EXISTS "industry" TEXT,
+ADD COLUMN IF NOT EXISTS "experienceLevel" TEXT,
+ADD COLUMN IF NOT EXISTS "englishLevel" TEXT,
+ADD COLUMN IF NOT EXISTS "targetRole" TEXT,
+ADD COLUMN IF NOT EXISTS "currentRole" TEXT,
+ADD COLUMN IF NOT EXISTS "skills" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
+
+-- CreateEnum (if not exists)
+DO $$ BEGIN
+  CREATE TYPE "ExperienceLevel" AS ENUM ('ENTRY', 'JUNIOR', 'MID', 'SENIOR', 'LEAD', 'EXECUTIVE');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "EnglishLevel" AS ENUM ('BEGINNER', 'ELEMENTARY', 'INTERMEDIATE', 'UPPER_INTERMEDIATE', 'ADVANCED', 'PROFICIENT');
+EXCEPTION
+  WHEN duplicate_object THEN null;
+END $$;

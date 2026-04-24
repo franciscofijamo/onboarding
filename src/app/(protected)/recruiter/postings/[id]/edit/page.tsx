@@ -33,6 +33,7 @@ import {
   type SalaryRange,
 } from "@/lib/recruiter/postings";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 
 interface FormValues {
   title: string;
@@ -44,6 +45,7 @@ interface FormValues {
 }
 
 export default function EditPostingPage() {
+  const { t } = useLanguage();
 
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -58,17 +60,16 @@ export default function EditPostingPage() {
   });
 
 
-  const postingTitle = data?.posting?.title ?? "Vaga";
+  const postingTitle = data?.posting?.title ?? t("recruiterPostingForm.postingFallback");
 
   useSetPageMetadata({
-    title: "Editar Vaga",
+    title: t("recruiterPostingForm.editTitle"),
     showBreadcrumbs: true,
     breadcrumbs: [
-      { label: "Home", href: "/dashboard" },
-      { label: "Recruiter", href: "/recruiter/postings" },
-      { label: "Publicações", href: "/recruiter/postings" },
+      { label: t("nav.dashboard"), href: "/dashboard" },
+      { label: t("recruiterPostings.title"), href: "/recruiter/postings" },
       { label: postingTitle },
-      { label: "Editar" },
+      { label: t("common.edit") },
     ],
   });
 
@@ -102,12 +103,12 @@ export default function EditPostingPage() {
 
   const validate = (): boolean => {
     const errs: Partial<Record<keyof FormValues, string>> = {};
-    if (!form.title.trim() || form.title.trim().length < 2) errs.title = "Título é obrigatório";
-    if (!form.category) errs.category = "Selecione uma categoria";
-    if (!form.salaryRange) errs.salaryRange = "Selecione um range salarial";
-    if (!form.jobType) errs.jobType = "Selecione o tipo de trabalho";
+    if (!form.title.trim() || form.title.trim().length < 2) errs.title = t("recruiterPostingForm.errors.titleRequired");
+    if (!form.category) errs.category = t("recruiterPostingForm.errors.categoryRequired");
+    if (!form.salaryRange) errs.salaryRange = t("recruiterPostingForm.errors.salaryRangeRequired");
+    if (!form.jobType) errs.jobType = t("recruiterPostingForm.errors.jobTypeRequired");
     if (!form.description.trim() || form.description.replace(/<[^>]*>/g, "").trim().length < 10)
-      errs.description = "Descrição é obrigatória";
+      errs.description = t("recruiterPostingForm.errors.descriptionRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -138,7 +139,7 @@ export default function EditPostingPage() {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
           <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
-          <h2 className="text-2xl font-bold">Vaga actualizada!</h2>
+          <h2 className="text-2xl font-bold">{t("recruiterPostingForm.updatedTitle")}</h2>
         </div>
       </div>
     );
@@ -162,14 +163,14 @@ export default function EditPostingPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-xl font-semibold">Editar Vaga</h1>
+          <h1 className="text-xl font-semibold">{t("recruiterPostingForm.editTitle")}</h1>
           <p className="text-sm text-muted-foreground">{data?.posting.title}</p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="title">Título <span className="text-destructive">*</span></Label>
+          <Label htmlFor="title">{t("recruiterPostingForm.fields.title")} <span className="text-destructive">*</span></Label>
           <Input
             id="title"
             value={form.title}
@@ -182,10 +183,10 @@ export default function EditPostingPage() {
 
         <div className="grid gap-5 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label>Categoria <span className="text-destructive">*</span></Label>
+            <Label>{t("recruiterPostingForm.fields.category")} <span className="text-destructive">*</span></Label>
             <Select value={form.category} onValueChange={(v) => set("category", v as JobPostingCategory)} disabled={loading}>
               <SelectTrigger className={cn(errors.category && "border-destructive")}>
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder={t("recruiterPostingForm.fields.category")} />
               </SelectTrigger>
               <SelectContent>
                 {JOB_POSTING_CATEGORIES.map((c) => (
@@ -197,10 +198,10 @@ export default function EditPostingPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Salário <span className="text-destructive">*</span></Label>
+            <Label>{t("recruiterPostingForm.fields.salaryRange")} <span className="text-destructive">*</span></Label>
             <Select value={form.salaryRange} onValueChange={(v) => set("salaryRange", v as SalaryRange)} disabled={loading}>
               <SelectTrigger className={cn(errors.salaryRange && "border-destructive")}>
-                <SelectValue placeholder="Salário" />
+                <SelectValue placeholder={t("recruiterPostingForm.fields.salaryRange")} />
               </SelectTrigger>
               <SelectContent>
                 {SALARY_RANGES.map((r) => (
@@ -212,10 +213,10 @@ export default function EditPostingPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Tipo <span className="text-destructive">*</span></Label>
+            <Label>{t("recruiterPostingForm.fields.jobType")} <span className="text-destructive">*</span></Label>
             <Select value={form.jobType} onValueChange={(v) => set("jobType", v as JobType)} disabled={loading}>
               <SelectTrigger className={cn(errors.jobType && "border-destructive")}>
-                <SelectValue placeholder="Tipo" />
+                <SelectValue placeholder={t("recruiterPostingForm.fields.jobType")} />
               </SelectTrigger>
               <SelectContent>
                 {JOB_TYPES.map((t) => (
@@ -228,7 +229,7 @@ export default function EditPostingPage() {
         </div>
 
         <div className="space-y-2">
-          <Label>Descrição <span className="text-destructive">*</span></Label>
+          <Label>{t("recruiterPostingForm.fields.description")} <span className="text-destructive">*</span></Label>
           <RichTextEditor
             value={form.description}
             onChange={(html) => set("description", html)}
@@ -240,30 +241,30 @@ export default function EditPostingPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
           <Button variant="outline" onClick={() => router.back()} disabled={loading} className="rounded-xl">
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <div className="flex flex-wrap gap-2">
             {currentStatus === "PUBLISHED" && (
               <Button variant="outline" onClick={() => handleSave("PAUSED")} disabled={loading} className="gap-2 rounded-xl">
                 <Pause className="h-4 w-4" />
-                Pausar
+                {t("recruiterPostings.actions.pause")}
               </Button>
             )}
             {(currentStatus === "DRAFT" || currentStatus === "PAUSED") && (
               <Button variant="outline" onClick={() => handleSave("PUBLISHED")} disabled={loading} className="gap-2 rounded-xl text-emerald-600 border-emerald-300 hover:bg-emerald-50">
                 <Eye className="h-4 w-4" />
-                Publicar
+                {t("recruiterPostings.actions.publish")}
               </Button>
             )}
             {currentStatus !== "CLOSED" && (
               <Button variant="outline" onClick={() => handleSave("CLOSED")} disabled={loading} className="gap-2 rounded-xl text-rose-600 border-rose-300 hover:bg-rose-50">
                 <X className="h-4 w-4" />
-                Encerrar
+                {t("recruiterPostings.actions.close")}
               </Button>
             )}
             <Button onClick={() => handleSave()} disabled={loading} className="gap-2 rounded-xl">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Guardar
+              {t("common.save")}
             </Button>
           </div>
         </div>

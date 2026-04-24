@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/contexts/language";
 
 interface Notification {
   id: string;
@@ -30,6 +31,7 @@ interface NotificationsResponse {
 }
 
 export function NotificationBell() {
+  const { t, locale } = useLanguage();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -62,7 +64,7 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
+        <Button variant="ghost" size="icon" className="relative" aria-label={t("notifications.ariaLabel")}>
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center leading-none">
@@ -73,12 +75,12 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="p-3 border-b border-border">
-          <h3 className="font-semibold text-sm">Notificações</h3>
+          <h3 className="font-semibold text-sm">{t("notifications.title")}</h3>
         </div>
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              Sem notificações
+              {t("notifications.empty")}
             </div>
           ) : (
             notifications.map((n) => (
@@ -98,7 +100,7 @@ export function NotificationBell() {
                     <p className="text-sm font-medium leading-tight">{n.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(n.createdAt).toLocaleDateString("pt-MZ", {
+                      {new Date(n.createdAt).toLocaleDateString(locale, {
                         day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
                       })}
                     </p>

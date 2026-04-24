@@ -35,7 +35,11 @@
     "needsImprovement": "Requer Melhorias",
     "saving": "A guardar...",
     "saved": "Guardado",
-    "savedAt": "Guardado às"
+    "savedAt": "Guardado às",
+    "details": "Detalhes",
+    "actions": "Ações",
+    "candidate": "Candidato",
+    "warning": "Atenção"
   },
   "nav": {
     "dashboard": "Painel",
@@ -83,7 +87,36 @@
     "planNotAvailable": "Plano de créditos não disponível no momento.",
     "paymentError": "Erro ao processar pagamento",
     "serverError": "Erro ao conectar com o servidor",
-    "packageDescription": "Pacote de créditos para acesso completo às ferramentas de análise e correção."
+    "packageDescription": "Pacote de créditos para acesso completo às ferramentas de análise e correção.",
+    "actionCostsTitle": "Custos por ação",
+    "actionCostsDescription": "Veja quantos créditos cada funcionalidade consome.",
+    "autoUpdated": "Atualizado automaticamente",
+    "actionCosts": {
+      "cvAnalysis": "Análise de CV",
+      "scenarioSimulation": "Sessão de entrevista",
+      "interviewPrep": "Preparação de entrevista",
+      "aiTextChat": "Chat IA",
+      "aiImageGeneration": "Geração de imagem"
+    }
+  },
+  "notifications": {
+    "ariaLabel": "Notificações",
+    "title": "Notificações",
+    "empty": "Sem notificações"
+  },
+  "richTextEditor": {
+    "placeholder": "Escreva a descrição da vaga...",
+    "toolbar": {
+      "bold": "Negrito",
+      "italic": "Itálico",
+      "heading2": "Título 2",
+      "heading3": "Título 3",
+      "bulletList": "Lista com marcadores",
+      "orderedList": "Lista numerada",
+      "quote": "Citação",
+      "undo": "Desfazer",
+      "redo": "Refazer"
+    }
   },
   "creditStatus": {
     "buyCredits": "Comprar Créditos",
@@ -170,6 +203,13 @@
     "ptMZ": "Português (MZ)",
     "enUS": "English (US)",
     "enGB": "English (UK)"
+  },
+  "accountMenu": {
+    "account": "Conta",
+    "signOut": "Terminar sessão"
+  },
+  "topbar": {
+    "openMenu": "Abrir menu"
   },
   "marketing": {
     "heroTagline": "Acompanha, analisa e conquista a tua próxima vaga",
@@ -372,8 +412,346 @@
     "boardTitle": "Quadro de Candidaturas",
     "boardSummary": "Kanban e Análise com IA",
     "boardDescription": "Acompanha cada candidatura, adiciona descrições reais de vagas e deixa a IA analisar a adequação do teu CV para aumentar as tuas hipóteses.",
+    "recruiterHeroTitle": "Bem-vindo, {name}!",
+    "recruiterDefaultUser": "Recrutador",
+    "recruiterHeroDescription": "Publique vagas, receba candidaturas com pontuação IA e gira o seu pipeline de recrutamento num só lugar.",
+    "recruiterNewPosting": "Nova vaga",
+    "recruiterCompanyProfile": "Perfil da empresa",
+    "recruiterFeatures": "Funcionalidades",
+    "recruiterPostingsTitle": "Publicações",
+    "recruiterPostingsSummary": "Gerencie as suas vagas",
+    "recruiterPostingsDescription": "Crie e publique vagas com descrição detalhada. Receba candidaturas com pontuação IA automática.",
+    "recruiterCompanyCardTitle": "Perfil da Empresa",
+    "recruiterCompanyCardSummary": "Actualizar informações",
+    "recruiterCompanyCardDescription": "Mantenha o perfil da sua empresa actualizado para atrair os melhores candidatos.",
     "comingSoon": "Em breve",
     "soonBadge": "Breve"
+  },
+  "companyProfile": {
+    "title": "Perfil da Empresa",
+    "description": "Gerencie as informações da sua empresa",
+    "visualIdentity": "Identidade visual",
+    "logoLabel": "Logo da empresa",
+    "currentLogo": "Logo actual",
+    "uploading": "A carregar...",
+    "uploadSuccess": "✓ Carregado com sucesso",
+    "changeLogo": "Trocar",
+    "addLogo": "Adicione o logo da empresa",
+    "addLogoHelp": "Se não houver logo, a inicial da empresa será usada no sidebar.",
+    "fileTypes": "PNG, JPG, SVG — máximo 5 MB",
+    "nameLabel": "Nome da empresa",
+    "namePlaceholder": "Ex: Acme Moçambique, Lda.",
+    "descriptionLabel": "Descrição da empresa",
+    "descriptionPlaceholder": "Descreva a sua empresa, sector de actividade, missão e valores...",
+    "locationLabel": "Localização",
+    "locationPlaceholder": "Ex: Maputo, Moçambique",
+    "emailLabel": "Email de contacto",
+    "emailPlaceholder": "rh@empresa.co.mz",
+    "websiteLabel": "Website",
+    "websitePlaceholder": "https://www.empresa.co.mz",
+    "saving": "A guardar...",
+    "saveChanges": "Guardar alterações",
+    "saved": "Guardado com sucesso",
+    "errors": {
+      "logoFileType": "O ficheiro deve ser uma imagem (PNG, JPG, SVG, etc.)",
+      "logoFileSize": "Imagem demasiado grande (máximo 5 MB)",
+      "uploadFailed": "Upload falhou",
+      "logoUpload": "Erro ao carregar logo. Tente novamente.",
+      "logoRequired": "Logo da empresa é obrigatório",
+      "nameRequired": "Nome da empresa é obrigatório",
+      "descriptionLength": "Descrição deve ter pelo menos 10 caracteres",
+      "locationRequired": "Localização é obrigatória",
+      "websiteInvalid": "URL deve começar com http:// ou https://",
+      "emailRequired": "Email de contacto é obrigatório",
+      "emailInvalid": "Email inválido",
+      "saveFailed": "Erro ao guardar. Tente novamente."
+    }
+  },
+  "companyOnboarding": {
+    "title": "Perfil da Empresa",
+    "description": "Preencha os dados da sua empresa para começar a publicar vagas.",
+    "successTitle": "Perfil criado com sucesso!",
+    "successDescription": "A redirigir para o dashboard...",
+    "logoLabel": "Logo da empresa",
+    "logoPreviewAlt": "Pré-visualização do logo",
+    "uploading": "A carregar...",
+    "uploadSuccess": "✓ Carregado com sucesso",
+    "logoDropTitle": "Clique ou arraste o logo aqui",
+    "fileTypes": "PNG, JPG, SVG — máximo 5 MB",
+    "nameLabel": "Nome da empresa",
+    "namePlaceholder": "Ex: Acme Moçambique, Lda.",
+    "descriptionLabel": "Descrição da empresa",
+    "descriptionPlaceholder": "Descreva a sua empresa, sector de actividade, missão e valores...",
+    "locationLabel": "Localização",
+    "locationPlaceholder": "Ex: Maputo, Moçambique",
+    "websiteLabel": "Website",
+    "websitePlaceholder": "https://www.empresa.co.mz",
+    "emailLabel": "Email de contacto",
+    "emailPlaceholder": "rh@empresa.co.mz",
+    "creating": "A criar perfil...",
+    "submit": "Criar perfil e continuar",
+    "errors": {
+      "logoFileType": "O ficheiro deve ser uma imagem (PNG, JPG, SVG, etc.)",
+      "logoFileSize": "Imagem demasiado grande (máximo 5 MB)",
+      "uploadFailed": "Upload falhou",
+      "logoUpload": "Erro ao carregar logo. Tente novamente.",
+      "logoRequired": "Logo da empresa é obrigatório",
+      "nameRequired": "Nome da empresa é obrigatório",
+      "descriptionLength": "Descrição deve ter pelo menos 10 caracteres",
+      "locationRequired": "Localização é obrigatória",
+      "websiteInvalid": "URL deve começar com http:// ou https://",
+      "emailRequired": "Email de contacto é obrigatório",
+      "emailInvalid": "Email inválido",
+      "saveFailed": "Erro ao guardar. Tente novamente."
+    }
+  },
+  "recruiterPostings": {
+    "title": "Publicações",
+    "description": "Gerencie as suas vagas de emprego",
+    "emptySummary": "Ainda não tem vagas publicadas.",
+    "total": "{count} vaga{suffix} no total",
+    "emptyTitle": "Nenhuma vaga criada",
+    "emptyDescription": "Crie a sua primeira vaga e comece a receber candidaturas.",
+    "emptyColumn": "Sem vagas aqui",
+    "actions": {
+      "new": "Nova Vaga",
+      "createFirst": "Criar primeira vaga",
+      "publish": "Publicar",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "reopenDraft": "Reabrir como rascunho",
+      "reopenPublish": "Reabrir e publicar",
+      "close": "Encerrar",
+      "candidates": "Candidatos"
+    },
+    "toasts": {
+      "updateStatusError": "Erro ao actualizar estado",
+      "updateStatusSuccess": "Estado da vaga actualizado",
+      "deleteSuccess": "Vaga eliminada com sucesso",
+      "deleteError": "Erro ao eliminar vaga"
+    },
+    "deleteDialog": {
+      "title": "Eliminar vaga?",
+      "description": "Esta acção é permanente e não pode ser revertida."
+    },
+    "closeDialog": {
+      "title": "Encerrar vaga?",
+      "description": "Esta vaga ficará indisponível para novas candidaturas. Pode reabrir mais tarde."
+    },
+    "categories": {
+      "TECHNOLOGY": "Tecnologia",
+      "FINANCE": "Finanças",
+      "HEALTHCARE": "Saúde",
+      "EDUCATION": "Educação",
+      "ENGINEERING": "Engenharia",
+      "MARKETING": "Marketing",
+      "SALES": "Vendas",
+      "HUMAN_RESOURCES": "Recursos Humanos",
+      "LEGAL": "Jurídico",
+      "OPERATIONS": "Operações",
+      "LOGISTICS": "Logística",
+      "HOSPITALITY": "Hotelaria",
+      "CONSTRUCTION": "Construção",
+      "MEDIA": "Média",
+      "OTHER": "Outros"
+    },
+    "jobTypes": {
+      "FULL_TIME": "Tempo Inteiro",
+      "PART_TIME": "Meio Período",
+      "CONTRACT": "Contrato",
+      "INTERNSHIP": "Estágio",
+      "REMOTE": "Remoto",
+      "HYBRID": "Híbrido"
+    },
+    "salaryRanges": {
+      "UNDER_15K": "Até 15.000 MT",
+      "FROM_15K_TO_25K": "15.000 – 25.000 MT",
+      "FROM_25K_TO_40K": "25.000 – 40.000 MT",
+      "FROM_40K_TO_60K": "40.000 – 60.000 MT",
+      "FROM_60K_TO_90K": "60.000 – 90.000 MT",
+      "ABOVE_90K": "Acima de 90.000 MT",
+      "NEGOTIABLE": "Negociável"
+    },
+    "statuses": {
+      "DRAFT": "Rascunho",
+      "PUBLISHED": "Publicada",
+      "PAUSED": "Pausada",
+      "CLOSED": "Encerrada"
+    }
+  },
+  "recruiterPostingForm": {
+    "newTitle": "Nova Vaga",
+    "editTitle": "Editar Vaga",
+    "createdTitle": "Vaga criada com sucesso!",
+    "updatedTitle": "Vaga actualizada!",
+    "redirecting": "A redirigir...",
+    "postingFallback": "Vaga",
+    "information": "Informações",
+    "preview": "Pré-visualização",
+    "saveDraft": "Guardar Rascunho",
+    "step": "Passo {step} de 2 — {label}",
+    "fields": {
+      "title": "Título da vaga",
+      "category": "Categoria",
+      "salaryRange": "Range salarial",
+      "jobType": "Tipo",
+      "description": "Descrição da vaga"
+    },
+    "placeholders": {
+      "title": "Ex: Engenheiro de Software Sénior",
+      "description": "Descreva as responsabilidades, requisitos e benefícios da vaga..."
+    },
+    "errors": {
+      "titleMin": "Título é obrigatório (mín. 2 caracteres)",
+      "titleRequired": "Título é obrigatório",
+      "categoryRequired": "Selecione uma categoria",
+      "salaryRangeRequired": "Selecione um range salarial",
+      "jobTypeRequired": "Selecione o tipo de trabalho",
+      "descriptionMin": "Descrição é obrigatória (mín. 10 caracteres)",
+      "descriptionRequired": "Descrição é obrigatória"
+    }
+  },
+  "roleSelect": {
+    "eyebrow": "Configuração inicial",
+    "title": "Escolha o seu perfil",
+    "description": "Esta é a primeira definição da sua conta. Depois de escolhida, a conta fica dedicada a um único perfil para evitar incoerências na plataforma.",
+    "candidateTitle": "Sou candidato",
+    "candidateDescription": "Quero procurar vagas, preparar CV, treinar entrevistas e acompanhar candidaturas.",
+    "recruiterTitle": "Sou recrutador",
+    "recruiterDescription": "Quero representar uma empresa, publicar vagas e gerir candidatos num pipeline de recrutamento.",
+    "notice": "Um utilizador pode ter apenas um perfil activo. Contas de recrutador não podem operar como candidato, e contas de candidato não podem operar como recrutador."
+  },
+  "recruiterCandidates": {
+    "tryAgain": "Tente novamente.",
+    "stageLabels": {
+      "RECEIVED": "Candidaturas Recebidas",
+      "REVIEWING": "Em Avaliação",
+      "INTERVIEW": "Entrevista",
+      "OFFER": "Oferta",
+      "REJECTED": "Rejeitado",
+      "ACCEPTED": "Aceite"
+    },
+    "focusType": {
+      "MIXED": "Misto",
+      "TECHNICAL": "Técnico",
+      "BEHAVIORAL": "Comportamental"
+    },
+    "analysis": {
+      "resumeLink": "CV",
+      "emptyTitle": "Análise IA ainda não disponível",
+      "emptyDescription": "A análise é processada em segundo plano após a candidatura.",
+      "fitScoreLabel": "Score de Compatibilidade",
+      "scoreSummaries": {
+        "high": "Excelente compatibilidade com a vaga. Este candidato alinha bem com os requisitos.",
+        "medium": "Compatibilidade razoável - vale a pena aprofundar na entrevista.",
+        "low": "Compatibilidade baixa - reveja os gaps identificados antes de avançar."
+      },
+      "stats": {
+        "skillsMatch": "Skills alinhadas",
+        "missingSkills": "Gaps identificados",
+        "recommendations": "Recomendações"
+      },
+      "skillsMatchTitle": "Skills Compatíveis",
+      "missingSkillsTitle": "Gaps Identificados",
+      "strengthsTitle": "Pontos Fortes",
+      "improvementsTitle": "Áreas de Melhoria",
+      "recommendationsTitle": "Recomendações",
+      "stageHistoryTitle": "Histórico de Fases"
+    },
+    "sessions": {
+      "title": "Sessões de entrevista IA",
+      "emptyTitle": "Sem sessões de entrevista",
+      "emptyDescription": "O candidato ainda não foi movido para uma fase de entrevista publicada.",
+      "status": {
+        "completed": "Concluído",
+        "inProgress": "Em progresso",
+        "pending": "Pendente"
+      },
+      "responseStatus": {
+        "analyzed": "Analisada",
+        "recorded": "Gravada",
+        "pending": "Pendente"
+      },
+      "aiEvaluationTitle": "Avaliação IA",
+      "strengthsTitle": "Pontos fortes",
+      "improvementsTitle": "Melhorias sugeridas",
+      "answeredCount": "{answered}/{total} respondidas",
+      "questionStatus": "Pergunta {index} · {status}",
+      "transcriptLabel": "Transcrição:"
+    },
+    "stageModal": {
+      "titleConfig": "Nova Fase de Entrevista",
+      "titleQuestions": "Rever Perguntas",
+      "titleDone": "Fase Publicada!",
+      "descriptionConfig": "Configure a fase - a IA irá gerar perguntas baseadas na descrição da vaga.",
+      "descriptionQuestions": "{count} perguntas geradas. Edite conforme necessário antes de publicar.",
+      "stageNameLabel": "Nome da fase",
+      "stageNamePlaceholder": "ex. Entrevista Técnica, Entrevista RH...",
+      "questionCountLabel": "Número de perguntas",
+      "questionCountOption": "{count} perguntas",
+      "focusTypeLabel": "Foco da entrevista",
+      "generating": "A gerar perguntas...",
+      "generateCta": "Gerar perguntas",
+      "regenerateCta": "Regenerar",
+      "publishing": "A publicar...",
+      "publishCta": "Publicar fase",
+      "doneTitle": "Fase publicada com sucesso!",
+      "doneDescription": "A nova coluna aparece no kanban. Mova candidatos para lá para enviar as perguntas.",
+      "toasts": {
+        "generateErrorTitle": "Erro ao gerar perguntas",
+        "regenerateSuccessTitle": "Perguntas regeneradas!",
+        "regenerateErrorTitle": "Erro ao regenerar",
+        "saveQuestionErrorTitle": "Erro ao guardar pergunta",
+        "reorderAfterDeleteWarning": "Pergunta eliminada, mas a reordenação pode não ter sido guardada.",
+        "deleteQuestionErrorTitle": "Erro ao eliminar pergunta",
+        "reorderErrorTitle": "Erro ao reordenar",
+        "reorderErrorDescription": "A ordem pode não ter sido guardada. Tente novamente.",
+        "lowQuestionCountTitle": "Atenção: menos perguntas que o configurado",
+        "lowQuestionCountDescription": "Esta fase tem {current} pergunta(s), mas foi configurada para {target}. Pode regenerar para atingir o total, ou publicar com as perguntas actuais.",
+        "publishSuccessTitle": "Fase publicada!",
+        "publishSuccessDescription": "A nova coluna de entrevista aparece agora no kanban.",
+        "publishErrorTitle": "Erro ao publicar"
+      }
+    },
+    "editableQuestion": {
+      "deleteDialogTitle": "Eliminar pergunta?",
+      "deleteDialogDescription": "Esta ação remove a pergunta desta fase de entrevista.",
+      "editedBadge": "Editada",
+      "moveUp": "Mover para cima",
+      "moveDown": "Mover para baixo"
+    },
+    "card": {
+      "dragCandidate": "Arrastar candidato",
+      "sessionLabel": "Sessão",
+      "sessionSummary": "{answered}/{total} respondidas · {analyzed} analisadas",
+      "responsesCta": "Respostas",
+      "transferTo": "Transferir para",
+      "interviewStages": "Fases de entrevista",
+      "rejectCandidate": "Rejeitar candidato",
+      "advanceCta": "Avançar"
+    },
+    "column": {
+      "dropHere": "Largar aqui",
+      "empty": "Sem candidatos nesta fase"
+    },
+    "page": {
+      "title": "Pipeline de Candidatos",
+      "description": "Gerencie e avalie os candidatos à vaga",
+      "postingFallback": "Vaga",
+      "backToPostings": "Voltar às publicações",
+      "viewPublicJob": "Ver vaga pública",
+      "newInterviewStage": "Fase de entrevista",
+      "emptyTitle": "Sem candidaturas ainda",
+      "emptyDescription": "Quando candidatos se candidatarem à sua vaga, aparecerão aqui organizados por fase.",
+      "stats": {
+        "candidates": "Candidatos",
+        "analyzed": "Analisados",
+        "averageScore": "Score médio"
+      }
+    },
+    "toasts": {
+      "moveErrorTitle": "Erro ao mover candidato"
+    }
   },
   "mockInterview": {
     "title": "Preparação para Entrevista",
@@ -453,6 +831,7 @@
     "course": "Curso de formação",
     "coursePlaceholder": "Pesquisar curso...",
     "courseNoResults": "Nenhum curso encontrado",
+    "noDegree": "Sem Formação Académica",
     "university": "Universidade",
     "universityPlaceholder": "Pesquisar universidade...",
     "universityNoResults": "Nenhuma universidade encontrada",
@@ -460,7 +839,32 @@
     "submit": "Concluir Cadastro",
     "submitting": "A guardar...",
     "required": "Este campo é obrigatório",
-    "success": "Perfil guardado com sucesso!"
+    "success": "Perfil guardado com sucesso!",
+    "errorSaving": "Erro ao guardar o perfil",
+    "errorConnecting": "Erro ao ligar ao servidor"
+  },
+  "profileSettings": {
+    "title": "Definições do Perfil",
+    "description": "Controle o idioma da sua conta e mantenha os detalhes do seu perfil actualizados.",
+    "languageTitle": "Idioma da plataforma",
+    "languageDescription": "Escolha um único idioma para toda a experiência do produto.",
+    "currentLanguage": "Actual",
+    "languageImpact": "Esta escolha passa a definir o idioma da navegação, dos rótulos, das orientações e de todas as respostas geradas por IA na sua conta.",
+    "languageSaved": "Idioma actualizado",
+    "languageSavedDescription": "A plataforma passou a seguir o idioma seleccionado em todo o sistema.",
+    "languageSaveError": "Não foi possível actualizar o idioma",
+    "languageSaveErrorDescription": "Tente novamente dentro de instantes.",
+    "candidateProfileTitle": "Perfil do candidato",
+    "candidateProfileDescription": "Reveja o seu CV, a função alvo e os dados do onboarding.",
+    "companyProfileTitle": "Perfil da empresa",
+    "companyProfileDescription": "Reveja os dados da sua empresa e a configuração de recrutador.",
+    "profileCtaDescription": "Use a área de perfil para actualizar as informações que alimentam a sua experiência.",
+    "openProfile": "Abrir perfil",
+    "localeHelp": {
+      "pt-MZ": "Português de Moçambique em toda a app e nas saídas da IA.",
+      "en-US": "Inglês americano em toda a app e nas saídas da IA.",
+      "en-GB": "Inglês britânico em toda a app e nas saídas da IA."
+    }
   },
   "audioMock": {
     "title": "Cenários de Trabalho",
@@ -610,7 +1014,38 @@
     "finalComment": "Comentário Final",
     "topPriorities": "Top 3 Prioridades",
     "readiness": "Nível de Prontidão",
-    "score": "Nota"
+    "score": "Nota",
+    "practiceTitle": "Prática de Entrevista",
+    "practiceDescription": "Todas as suas sessões de prática de entrevista, organizadas por candidatura",
+    "roleLabel": "Vaga:",
+    "companyFallback": "Empresa",
+    "costLabel": "Custo:",
+    "balanceLabel": "Saldo:",
+    "totalSessionsLabel": "Total de Sessões",
+    "questionsAnalyzedLabel": "Perguntas Analisadas",
+    "costPerSessionLabel": "Custo por sessão de entrevista",
+    "costChargedOnSuccess": "O custo só é cobrado quando a sessão é gerada com sucesso.",
+    "searchPlaceholder": "Pesquisar por título da vaga ou empresa...",
+    "goToApplications": "Ir para Candidaturas",
+    "noResults": "Sem resultados para",
+    "clearSearch": "Limpar pesquisa",
+    "untitledRole": "Vaga sem título",
+    "newSessionBtn": "Nova Sessão",
+    "companyInterviewBadge": "Entrevista da empresa",
+    "answeredList": "respondidas",
+    "analysedList": "analisadas",
+    "viewDetails": "Ver",
+    "continueBtn": "Continuar",
+    "completedBadge": "Concluída",
+    "inProgressBadge": "Em progresso",
+    "newBadge": "Nova",
+    "generationSteps": {
+      "analyzingJob": "A analisar a descrição da vaga...",
+      "reviewingProfile": "A rever o seu CV e perfil...",
+      "craftingBehavioral": "A criar perguntas comportamentais...",
+      "generatingSituational": "A gerar cenários situacionais...",
+      "finalizingSession": "A finalizar a sessão de entrevista..."
+    }
   },
   "applicationsPage": {
     "meta": {
@@ -697,6 +1132,14 @@
       "nextStepTitle": "Próximo passo",
       "nextStepInterview": "A candidatura já se encontra em entrevista. Podes praticar respostas antes da próxima etapa.",
       "nextStepGeneral": "Acompanha esta candidatura por aqui. Quando avançar para entrevista, mostramos ações de preparação neste painel."
+    },
+    "pipeline": {
+      "received": "Candidatura enviada",
+      "reviewing": "Em avaliação",
+      "interview": "Em entrevista",
+      "offer": "Oferta recebida",
+      "rejected": "Rejeitada",
+      "accepted": "Aceite"
     },
     "errors": {
       "deleteFailed": "Falha ao apagar candidatura"

@@ -2,10 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
+import { type Locale } from "@/i18n";
 
 export type UserRole = 'CANDIDATE' | 'RECRUITER';
 
 interface ProfileData {
+    locale: Locale;
     profileComplete: boolean;
     role: UserRole | null;
     hasCompany: boolean;
@@ -37,6 +39,7 @@ export function useProfile(options?: UseProfileOptions) {
         isLoading: query.isLoading,
         isProfileComplete: query.data?.profileComplete ?? false,
         role: query.data?.role ?? null,
+        locale: query.data?.locale ?? null,
         hasRole: query.data?.role != null,
         hasCompany: query.data?.hasCompany ?? false,
         hasCompanyLogo: query.data?.hasCompanyLogo ?? false,

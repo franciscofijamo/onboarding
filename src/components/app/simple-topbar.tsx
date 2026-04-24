@@ -4,8 +4,11 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AccountMenu } from "@/components/auth/account-menu";
+import { useLanguage } from "@/contexts/language";
 
 export function SimpleTopbar() {
+  const { t } = useLanguage();
+
   return (
     <header
       className={cn(
@@ -22,10 +25,10 @@ export function SimpleTopbar() {
           </SignedIn>
           <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              <Button variant="ghost" size="sm">{t("marketing.signIn")}</Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button size="sm">Sign Up</Button>
+              <Button size="sm">{t("marketing.register")}</Button>
             </SignUpButton>
           </SignedOut>
         </div>

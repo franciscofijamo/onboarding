@@ -42,23 +42,23 @@ export default function DashboardPage() {
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl space-y-2">
               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                Bem-vindo, {user?.firstName || "Recrutador"}!
+                {t("dashboard.recruiterHeroTitle", { name: user?.firstName || t("dashboard.recruiterDefaultUser") })}
               </h1>
               <p className="text-sm text-muted-foreground sm:text-base">
-                Publique vagas, receba candidaturas com pontuação IA e gira o seu pipeline de recrutamento.
+                {t("dashboard.recruiterHeroDescription")}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-3">
               <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
                 <Link href="/recruiter/postings/new">
                   <PlusCircle className="h-4 w-4 mr-2" />
-                  Nova vaga
+                  {t("dashboard.recruiterNewPosting")}
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
                 <Link href="/company/profile">
                   <Building2 className="h-4 w-4 mr-2" />
-                  Perfil da empresa
+                  {t("dashboard.recruiterCompanyProfile")}
                 </Link>
               </Button>
             </div>
@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
         <section>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            Funcionalidades
+            {t("dashboard.recruiterFeatures")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Link href="/recruiter/postings" className="block group">
@@ -80,14 +80,14 @@ export default function DashboardPage() {
                         <LayoutGrid className="h-6 w-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground">Publicações</h3>
-                        <p className="text-sm text-muted-foreground">Gerencie as suas vagas</p>
+                        <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recruiterPostingsTitle")}</h3>
+                        <p className="text-sm text-muted-foreground">{t("dashboard.recruiterPostingsSummary")}</p>
                       </div>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Crie e publique vagas com descrição detalhada. Receba candidaturas com pontuação IA automática.
+                    {t("dashboard.recruiterPostingsDescription")}
                   </p>
                 </div>
               </div>
@@ -103,14 +103,14 @@ export default function DashboardPage() {
                         <Building2 className="h-6 w-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-foreground">Perfil da Empresa</h3>
-                        <p className="text-sm text-muted-foreground">Actualizar informações</p>
+                        <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recruiterCompanyCardTitle")}</h3>
+                        <p className="text-sm text-muted-foreground">{t("dashboard.recruiterCompanyCardSummary")}</p>
                       </div>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Mantenha o perfil da sua empresa actualizado para atrair os melhores candidatos.
+                    {t("dashboard.recruiterCompanyCardDescription")}
                   </p>
                 </div>
               </div>

@@ -120,11 +120,6 @@ Rules:
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId: clerkId } = await auth()
-    if (!clerkId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
     const parsed = RequestSchema.safeParse(body)
     if (!parsed.success) {

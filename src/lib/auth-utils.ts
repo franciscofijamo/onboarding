@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { DEFAULT_LOCALE } from '@/i18n';
 
 
 export async function getUserFromClerkId(clerkId: string) {

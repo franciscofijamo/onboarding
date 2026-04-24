@@ -35,7 +35,11 @@
     "needsImprovement": "Needs Improvement",
     "saving": "Saving...",
     "saved": "Saved",
-    "savedAt": "Saved at"
+    "savedAt": "Saved at",
+    "details": "Details",
+    "actions": "Actions",
+    "candidate": "Candidate",
+    "warning": "Warning"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -83,7 +87,36 @@
     "planNotAvailable": "Credit plan not available at the moment.",
     "paymentError": "Error processing payment",
     "serverError": "Error connecting to server",
-    "packageDescription": "Credit package for full access to analysis and correction tools."
+    "packageDescription": "Credit package for full access to analysis and correction tools.",
+    "actionCostsTitle": "Costs per action",
+    "actionCostsDescription": "See how many credits each feature consumes.",
+    "autoUpdated": "Updated automatically",
+    "actionCosts": {
+      "cvAnalysis": "CV analysis",
+      "scenarioSimulation": "Interview session",
+      "interviewPrep": "Interview preparation",
+      "aiTextChat": "AI chat",
+      "aiImageGeneration": "Image generation"
+    }
+  },
+  "notifications": {
+    "ariaLabel": "Notifications",
+    "title": "Notifications",
+    "empty": "No notifications"
+  },
+  "richTextEditor": {
+    "placeholder": "Write the job description...",
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list",
+      "quote": "Quote",
+      "undo": "Undo",
+      "redo": "Redo"
+    }
   },
   "creditStatus": {
     "buyCredits": "Buy Credits",
@@ -170,6 +203,13 @@
     "ptMZ": "Português (MZ)",
     "enUS": "English (US)",
     "enGB": "English (UK)"
+  },
+  "accountMenu": {
+    "account": "Account",
+    "signOut": "Sign out"
+  },
+  "topbar": {
+    "openMenu": "Open menu"
   },
   "marketing": {
     "heroTagline": "Track, analyze, and land your next role",
@@ -372,8 +412,346 @@
     "boardTitle": "Applications Board",
     "boardSummary": "Kanban & AI Analysis",
     "boardDescription": "Track every job application, upload real job descriptions, and let AI analyze your resume's fit quality to improve your chances.",
+    "recruiterHeroTitle": "Welcome, {name}!",
+    "recruiterDefaultUser": "Recruiter",
+    "recruiterHeroDescription": "Publish jobs, receive AI-scored applications, and manage your recruitment pipeline in one place.",
+    "recruiterNewPosting": "New job",
+    "recruiterCompanyProfile": "Company profile",
+    "recruiterFeatures": "Features",
+    "recruiterPostingsTitle": "Postings",
+    "recruiterPostingsSummary": "Manage your job openings",
+    "recruiterPostingsDescription": "Create and publish detailed roles. Receive candidate applications with automatic AI scoring.",
+    "recruiterCompanyCardTitle": "Company Profile",
+    "recruiterCompanyCardSummary": "Update your information",
+    "recruiterCompanyCardDescription": "Keep your company profile current to attract stronger candidates.",
     "comingSoon": "Coming Soon",
     "soonBadge": "Soon"
+  },
+  "companyProfile": {
+    "title": "Company Profile",
+    "description": "Manage your company information",
+    "visualIdentity": "Visual identity",
+    "logoLabel": "Company logo",
+    "currentLogo": "Current logo",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Uploaded successfully",
+    "changeLogo": "Change",
+    "addLogo": "Add your company logo",
+    "addLogoHelp": "If no logo is available, the company initial will be used in the sidebar.",
+    "fileTypes": "PNG, JPG, SVG — up to 5 MB",
+    "nameLabel": "Company name",
+    "namePlaceholder": "e.g. Acme Mozambique, Ltd.",
+    "descriptionLabel": "Company description",
+    "descriptionPlaceholder": "Describe your company, sector, mission, and values...",
+    "locationLabel": "Location",
+    "locationPlaceholder": "e.g. Maputo, Mozambique",
+    "emailLabel": "Contact email",
+    "emailPlaceholder": "hr@company.co.mz",
+    "websiteLabel": "Website",
+    "websitePlaceholder": "https://www.company.co.mz",
+    "saving": "Saving...",
+    "saveChanges": "Save changes",
+    "saved": "Saved successfully",
+    "errors": {
+      "logoFileType": "The file must be an image (PNG, JPG, SVG, etc.)",
+      "logoFileSize": "Image too large (maximum 5 MB)",
+      "uploadFailed": "Upload failed",
+      "logoUpload": "Error uploading logo. Please try again.",
+      "logoRequired": "Company logo is required",
+      "nameRequired": "Company name is required",
+      "descriptionLength": "Description must be at least 10 characters",
+      "locationRequired": "Location is required",
+      "websiteInvalid": "URL must start with http:// or https://",
+      "emailRequired": "Contact email is required",
+      "emailInvalid": "Invalid email",
+      "saveFailed": "Error saving. Please try again."
+    }
+  },
+  "companyOnboarding": {
+    "title": "Company Profile",
+    "description": "Fill in your company details to start publishing jobs.",
+    "successTitle": "Profile created successfully!",
+    "successDescription": "Redirecting to the dashboard...",
+    "logoLabel": "Company logo",
+    "logoPreviewAlt": "Logo preview",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Uploaded successfully",
+    "logoDropTitle": "Click or drag the logo here",
+    "fileTypes": "PNG, JPG, SVG — up to 5 MB",
+    "nameLabel": "Company name",
+    "namePlaceholder": "e.g. Acme Mozambique, Ltd.",
+    "descriptionLabel": "Company description",
+    "descriptionPlaceholder": "Describe your company, sector, mission, and values...",
+    "locationLabel": "Location",
+    "locationPlaceholder": "e.g. Maputo, Mozambique",
+    "websiteLabel": "Website",
+    "websitePlaceholder": "https://www.company.co.mz",
+    "emailLabel": "Contact email",
+    "emailPlaceholder": "hr@company.co.mz",
+    "creating": "Creating profile...",
+    "submit": "Create profile and continue",
+    "errors": {
+      "logoFileType": "The file must be an image (PNG, JPG, SVG, etc.)",
+      "logoFileSize": "Image too large (maximum 5 MB)",
+      "uploadFailed": "Upload failed",
+      "logoUpload": "Error uploading logo. Please try again.",
+      "logoRequired": "Company logo is required",
+      "nameRequired": "Company name is required",
+      "descriptionLength": "Description must be at least 10 characters",
+      "locationRequired": "Location is required",
+      "websiteInvalid": "URL must start with http:// or https://",
+      "emailRequired": "Contact email is required",
+      "emailInvalid": "Invalid email",
+      "saveFailed": "Error saving. Please try again."
+    }
+  },
+  "recruiterPostings": {
+    "title": "Postings",
+    "description": "Manage your job openings",
+    "emptySummary": "You do not have published jobs yet.",
+    "total": "{count} job{suffix} total",
+    "emptyTitle": "No jobs created",
+    "emptyDescription": "Create your first job and start receiving applications.",
+    "emptyColumn": "No jobs here",
+    "actions": {
+      "new": "New Job",
+      "createFirst": "Create first job",
+      "publish": "Publish",
+      "pause": "Pause",
+      "resume": "Resume",
+      "reopenDraft": "Reopen as draft",
+      "reopenPublish": "Reopen and publish",
+      "close": "Close",
+      "candidates": "Candidates"
+    },
+    "toasts": {
+      "updateStatusError": "Could not update job status",
+      "updateStatusSuccess": "Job status updated",
+      "deleteSuccess": "Job deleted successfully",
+      "deleteError": "Could not delete job"
+    },
+    "deleteDialog": {
+      "title": "Delete job?",
+      "description": "This action is permanent and cannot be undone."
+    },
+    "closeDialog": {
+      "title": "Close job?",
+      "description": "This job will stop accepting new applications. You can reopen it later."
+    },
+    "categories": {
+      "TECHNOLOGY": "Technology",
+      "FINANCE": "Finance",
+      "HEALTHCARE": "Healthcare",
+      "EDUCATION": "Education",
+      "ENGINEERING": "Engineering",
+      "MARKETING": "Marketing",
+      "SALES": "Sales",
+      "HUMAN_RESOURCES": "Human Resources",
+      "LEGAL": "Legal",
+      "OPERATIONS": "Operations",
+      "LOGISTICS": "Logistics",
+      "HOSPITALITY": "Hospitality",
+      "CONSTRUCTION": "Construction",
+      "MEDIA": "Media",
+      "OTHER": "Other"
+    },
+    "jobTypes": {
+      "FULL_TIME": "Full Time",
+      "PART_TIME": "Part Time",
+      "CONTRACT": "Contract",
+      "INTERNSHIP": "Internship",
+      "REMOTE": "Remote",
+      "HYBRID": "Hybrid"
+    },
+    "salaryRanges": {
+      "UNDER_15K": "Up to 15,000 MZN",
+      "FROM_15K_TO_25K": "15,000 – 25,000 MZN",
+      "FROM_25K_TO_40K": "25,000 – 40,000 MZN",
+      "FROM_40K_TO_60K": "40,000 – 60,000 MZN",
+      "FROM_60K_TO_90K": "60,000 – 90,000 MZN",
+      "ABOVE_90K": "Above 90,000 MZN",
+      "NEGOTIABLE": "Negotiable"
+    },
+    "statuses": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "PAUSED": "Paused",
+      "CLOSED": "Closed"
+    }
+  },
+  "recruiterPostingForm": {
+    "newTitle": "New Job",
+    "editTitle": "Edit Job",
+    "createdTitle": "Job created successfully!",
+    "updatedTitle": "Job updated!",
+    "redirecting": "Redirecting...",
+    "postingFallback": "Job",
+    "information": "Information",
+    "preview": "Preview",
+    "saveDraft": "Save Draft",
+    "step": "Step {step} of 2 — {label}",
+    "fields": {
+      "title": "Job title",
+      "category": "Category",
+      "salaryRange": "Salary range",
+      "jobType": "Type",
+      "description": "Job description"
+    },
+    "placeholders": {
+      "title": "e.g. Senior Software Engineer",
+      "description": "Describe the responsibilities, requirements, and benefits of the role..."
+    },
+    "errors": {
+      "titleMin": "Title is required (min. 2 characters)",
+      "titleRequired": "Title is required",
+      "categoryRequired": "Select a category",
+      "salaryRangeRequired": "Select a salary range",
+      "jobTypeRequired": "Select the job type",
+      "descriptionMin": "Description is required (min. 10 characters)",
+      "descriptionRequired": "Description is required"
+    }
+  },
+  "roleSelect": {
+    "eyebrow": "Initial setup",
+    "title": "Choose your profile",
+    "description": "This is the first decision for your account. Once selected, the account stays dedicated to a single profile to avoid inconsistencies across the platform.",
+    "candidateTitle": "I am a candidate",
+    "candidateDescription": "I want to search for jobs, prepare my CV, practise interviews, and track applications.",
+    "recruiterTitle": "I am a recruiter",
+    "recruiterDescription": "I want to represent a company, publish jobs, and manage candidates in a recruitment pipeline.",
+    "notice": "A user can only have one active profile. Recruiter accounts cannot operate as candidates, and candidate accounts cannot operate as recruiters."
+  },
+  "recruiterCandidates": {
+    "tryAgain": "Please try again.",
+    "stageLabels": {
+      "RECEIVED": "Applications Received",
+      "REVIEWING": "Under Review",
+      "INTERVIEW": "Interview",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "ACCEPTED": "Accepted"
+    },
+    "focusType": {
+      "MIXED": "Mixed",
+      "TECHNICAL": "Technical",
+      "BEHAVIORAL": "Behavioral"
+    },
+    "analysis": {
+      "resumeLink": "Resume",
+      "emptyTitle": "AI analysis not available yet",
+      "emptyDescription": "The analysis is processed in the background after the application is submitted.",
+      "fitScoreLabel": "Compatibility score",
+      "scoreSummaries": {
+        "high": "Excellent fit for the role. This candidate aligns well with the requirements.",
+        "medium": "Reasonable fit. It is worth exploring further in the interview.",
+        "low": "Lower fit. Review the identified gaps before moving forward."
+      },
+      "stats": {
+        "skillsMatch": "Matched skills",
+        "missingSkills": "Identified gaps",
+        "recommendations": "Recommendations"
+      },
+      "skillsMatchTitle": "Matched Skills",
+      "missingSkillsTitle": "Identified Gaps",
+      "strengthsTitle": "Strengths",
+      "improvementsTitle": "Areas for Improvement",
+      "recommendationsTitle": "Recommendations",
+      "stageHistoryTitle": "Stage History"
+    },
+    "sessions": {
+      "title": "AI interview sessions",
+      "emptyTitle": "No interview sessions",
+      "emptyDescription": "The candidate has not yet been moved to a published interview stage.",
+      "status": {
+        "completed": "Completed",
+        "inProgress": "In progress",
+        "pending": "Pending"
+      },
+      "responseStatus": {
+        "analyzed": "Analyzed",
+        "recorded": "Recorded",
+        "pending": "Pending"
+      },
+      "aiEvaluationTitle": "AI evaluation",
+      "strengthsTitle": "Strengths",
+      "improvementsTitle": "Suggested improvements",
+      "answeredCount": "{answered}/{total} answered",
+      "questionStatus": "Question {index} · {status}",
+      "transcriptLabel": "Transcript:"
+    },
+    "stageModal": {
+      "titleConfig": "New Interview Stage",
+      "titleQuestions": "Review Questions",
+      "titleDone": "Stage Published!",
+      "descriptionConfig": "Configure the stage and AI will generate questions based on the job description.",
+      "descriptionQuestions": "{count} questions generated. Edit as needed before publishing.",
+      "stageNameLabel": "Stage name",
+      "stageNamePlaceholder": "e.g. Technical Interview, HR Interview...",
+      "questionCountLabel": "Number of questions",
+      "questionCountOption": "{count} questions",
+      "focusTypeLabel": "Interview focus",
+      "generating": "Generating questions...",
+      "generateCta": "Generate questions",
+      "regenerateCta": "Regenerate",
+      "publishing": "Publishing...",
+      "publishCta": "Publish stage",
+      "doneTitle": "Stage published successfully!",
+      "doneDescription": "The new column now appears in the kanban. Move candidates there to send the questions.",
+      "toasts": {
+        "generateErrorTitle": "Could not generate questions",
+        "regenerateSuccessTitle": "Questions regenerated!",
+        "regenerateErrorTitle": "Could not regenerate questions",
+        "saveQuestionErrorTitle": "Could not save question",
+        "reorderAfterDeleteWarning": "The question was deleted, but the new order may not have been saved.",
+        "deleteQuestionErrorTitle": "Could not delete question",
+        "reorderErrorTitle": "Could not reorder questions",
+        "reorderErrorDescription": "The order may not have been saved. Please try again.",
+        "lowQuestionCountTitle": "Warning: fewer questions than configured",
+        "lowQuestionCountDescription": "This stage has {current} question(s), but it was configured for {target}. You can regenerate to reach the target, or publish with the current questions.",
+        "publishSuccessTitle": "Stage published!",
+        "publishSuccessDescription": "The new interview column now appears in the kanban.",
+        "publishErrorTitle": "Could not publish stage"
+      }
+    },
+    "editableQuestion": {
+      "deleteDialogTitle": "Delete question?",
+      "deleteDialogDescription": "This action removes the question from this interview stage.",
+      "editedBadge": "Edited",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
+    },
+    "card": {
+      "dragCandidate": "Drag candidate",
+      "sessionLabel": "Session",
+      "sessionSummary": "{answered}/{total} answered · {analyzed} analyzed",
+      "responsesCta": "Responses",
+      "transferTo": "Move to",
+      "interviewStages": "Interview stages",
+      "rejectCandidate": "Reject candidate",
+      "advanceCta": "Advance"
+    },
+    "column": {
+      "dropHere": "Drop here",
+      "empty": "No candidates in this stage"
+    },
+    "page": {
+      "title": "Candidate Pipeline",
+      "description": "Manage and evaluate candidates for your job post",
+      "postingFallback": "Job",
+      "backToPostings": "Back to postings",
+      "viewPublicJob": "View public job",
+      "newInterviewStage": "Interview stage",
+      "emptyTitle": "No applications yet",
+      "emptyDescription": "When candidates apply for your job, they will appear here organized by stage.",
+      "stats": {
+        "candidates": "Candidates",
+        "analyzed": "Analyzed",
+        "averageScore": "Average score"
+      }
+    },
+    "toasts": {
+      "moveErrorTitle": "Could not move candidate"
+    }
   },
   "mockInterview": {
     "title": "Interview Prep",
@@ -453,6 +831,7 @@
     "course": "Academic degree",
     "coursePlaceholder": "Search degree...",
     "courseNoResults": "No degree found",
+    "noDegree": "No Academic Degree",
     "university": "University",
     "universityPlaceholder": "Search university...",
     "universityNoResults": "No university found",
@@ -460,7 +839,32 @@
     "submit": "Complete Registration",
     "submitting": "Saving...",
     "required": "This field is required",
-    "success": "Profile saved successfully!"
+    "success": "Profile saved successfully!",
+    "errorSaving": "Error saving profile",
+    "errorConnecting": "Error connecting to server"
+  },
+  "profileSettings": {
+    "title": "Profile Settings",
+    "description": "Control your account language and keep your profile details up to date.",
+    "languageTitle": "Platform language",
+    "languageDescription": "Choose one language for the full product experience.",
+    "currentLanguage": "Current",
+    "languageImpact": "This choice becomes the language for navigation, labels, guidance, and all AI-generated responses in your account.",
+    "languageSaved": "Language updated",
+    "languageSavedDescription": "The platform now follows your selected language across the system.",
+    "languageSaveError": "Could not update language",
+    "languageSaveErrorDescription": "Please try again in a moment.",
+    "candidateProfileTitle": "Candidate profile",
+    "candidateProfileDescription": "Review your CV, role target, and onboarding data.",
+    "companyProfileTitle": "Company profile",
+    "companyProfileDescription": "Review your company details and recruiter setup.",
+    "profileCtaDescription": "Use your profile area to update the information that powers your experience.",
+    "openProfile": "Open profile",
+    "localeHelp": {
+      "pt-MZ": "Mozambican Portuguese across the full app and AI outputs.",
+      "en-US": "American English across the full app and AI outputs.",
+      "en-GB": "British English across the full app and AI outputs."
+    }
   },
   "audioMock": {
     "title": "Workplace Scenarios",
@@ -610,7 +1014,38 @@
     "finalComment": "Final Comment",
     "topPriorities": "Top 3 Priorities",
     "readiness": "Readiness Level",
-    "score": "Score"
+    "score": "Score",
+    "practiceTitle": "Interview Practice",
+    "practiceDescription": "All your interview practice sessions, organized by job application",
+    "roleLabel": "Role:",
+    "companyFallback": "Company",
+    "costLabel": "Cost:",
+    "balanceLabel": "Balance:",
+    "totalSessionsLabel": "Total Sessions",
+    "questionsAnalyzedLabel": "Questions Analyzed",
+    "costPerSessionLabel": "Cost per interview session",
+    "costChargedOnSuccess": "The cost is only charged when the session is generated successfully.",
+    "searchPlaceholder": "Search by job title or company...",
+    "goToApplications": "Go to Applications",
+    "noResults": "No results for",
+    "clearSearch": "Clear search",
+    "untitledRole": "Untitled job",
+    "newSessionBtn": "New Session",
+    "companyInterviewBadge": "Company interview",
+    "answeredList": "answered",
+    "analysedList": "analyzed",
+    "viewDetails": "View",
+    "continueBtn": "Continue",
+    "completedBadge": "Completed",
+    "inProgressBadge": "In Progress",
+    "newBadge": "New",
+    "generationSteps": {
+      "analyzingJob": "Analyzing job description...",
+      "reviewingProfile": "Reviewing your CV and profile...",
+      "craftingBehavioral": "Crafting behavioral questions...",
+      "generatingSituational": "Generating situational scenarios...",
+      "finalizingSession": "Finalizing interview session..."
+    }
   },
   "applicationsPage": {
     "meta": {
@@ -697,6 +1132,14 @@
       "nextStepTitle": "Next step",
       "nextStepInterview": "This application is already in interview. You can practice your answers before the next stage.",
       "nextStepGeneral": "Track this application here. When it moves into interviews, we will show preparation actions in this panel."
+    },
+    "pipeline": {
+      "received": "Application submitted",
+      "reviewing": "Under review",
+      "interview": "In interview",
+      "offer": "Offer received",
+      "rejected": "Rejected",
+      "accepted": "Accepted"
     },
     "errors": {
       "deleteFailed": "Failed to delete application"

@@ -5,6 +5,7 @@ import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
@@ -14,12 +15,13 @@ interface PageHeaderProps {
 export function PageHeader({ className }: PageHeaderProps) {
   const pathname = usePathname();
   const { metadata } = usePageMetadata();
+  const { t } = useLanguage();
   
   // Auto-generate breadcrumbs if not provided
   const generateAutoBreadcrumbs = (): BreadcrumbItem[] => {
     const segments = pathname.split("/").filter(Boolean);
     const breadcrumbs: BreadcrumbItem[] = [
-      { label: "Home", href: "/dashboard" }
+      { label: t("nav.dashboard"), href: "/dashboard" }
     ];
 
     const isIdSegment = (segment: string) => segment.length >= 12 && /^[a-z0-9]+$/i.test(segment);
@@ -30,7 +32,7 @@ export function PageHeader({ className }: PageHeaderProps) {
 
       if (isIdSegment(segment)) {
         hasId = true;
-        breadcrumbs.push({ label: "Detalhes" });
+        breadcrumbs.push({ label: t("common.details") });
         return;
       }
 

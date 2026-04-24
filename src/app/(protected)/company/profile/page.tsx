@@ -22,6 +22,7 @@ import { api } from "@/lib/api-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn, withAssetVersion } from "@/lib/utils";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useLanguage } from "@/contexts/language";
 
 interface Company {
   id: string;
@@ -46,8 +47,9 @@ interface FormErrors {
 
 export default function CompanyProfilePage() {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
-  useSetPageMetadata({ title: "Company Profile", description: "Manage your company information" });
+  useSetPageMetadata({ title: t("companyProfile.title"), description: t("companyProfile.description") });
 
   const { data, isLoading } = useQuery<{ company: Company | null }>({
     queryKey: ["company-profile"],
@@ -103,11 +105,11 @@ export default function CompanyProfilePage() {
 
   const handleLogoChange = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setErrors((e) => ({ ...e, logo: "O ficheiro deve ser uma imagem (PNG, JPG, SVG, etc.)" }));
+      setErrors((e) => ({ ...e, logo: t("companyProfile.errors.logoFileType") }));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setErrors((e) => ({ ...e, logo: "Imagem demasiado grande (máximo 5 MB)" }));
+      setErrors((e) => ({ ...e, logo: t("companyProfile.errors.logoFileSize") }));
       return;
     }
 
@@ -123,12 +125,12 @@ export default function CompanyProfilePage() {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Upload falhou");
+      if (!res.ok) throw new Error(t("companyProfile.errors.uploadFailed"));
       const uploaded = await res.json();
       setLogoUrl(uploaded.url);
       setLogoPath(uploaded.pathname);
     } catch {
-      setErrors((e) => ({ ...e, logo: "Erro ao carregar logo. Tente novamente." }));
+      setErrors((e) => ({ ...e, logo: t("companyProfile.errors.logoUpload") }));
       setLogoFile(null);
       setLogoPreview(data?.company?.logoUrl ?? null);
       setLogoUrl(data?.company?.logoUrl ?? null);
@@ -155,19 +157,19 @@ export default function CompanyProfilePage() {
     setLogoPreview(null);
     setLogoUrl(null);
     setLogoPath(null);
-    setErrors((e) => ({ ...e, logo: "Logo da empresa é obrigatório" }));
+    setErrors((e) => ({ ...e, logo: t("companyProfile.errors.logoRequired") }));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const validate = (): boolean => {
     const errs: FormErrors = {};
-    if (!form.name.trim()) errs.name = "Nome da empresa é obrigatório";
-    if (!form.description.trim() || form.description.trim().length < 10) errs.description = "Descrição deve ter pelo menos 10 caracteres";
-    if (!form.location.trim()) errs.location = "Localização é obrigatória";
-    if (form.website && !/^https?:\/\/.+/.test(form.website)) errs.website = "URL deve começar com http:// ou https://";
-    if (!form.email.trim()) errs.email = "Email de contacto é obrigatório";
-    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) errs.email = "Email inválido";
-    if (!logoUrl) errs.logo = "Logo da empresa é obrigatório";
+    if (!form.name.trim()) errs.name = t("companyProfile.errors.nameRequired");
+    if (!form.description.trim() || form.description.trim().length < 10) errs.description = t("companyProfile.errors.descriptionLength");
+    if (!form.location.trim()) errs.location = t("companyProfile.errors.locationRequired");
+    if (form.website && !/^https?:\/\/.+/.test(form.website)) errs.website = t("companyProfile.errors.websiteInvalid");
+    if (!form.email.trim()) errs.email = t("companyProfile.errors.emailRequired");
+    else if (!/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) errs.email = t("companyProfile.errors.emailInvalid");
+    if (!logoUrl) errs.logo = t("companyProfile.errors.logoRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -196,7 +198,7 @@ export default function CompanyProfilePage() {
       setSaved(true);
     } catch (error: any) {
       console.error("Failed to save profile:", error);
-      const errorMessage = error instanceof Error ? error.message : "Erro ao guardar. Tente novamente.";
+      const errorMessage = error instanceof Error ? error.message : t("companyProfile.errors.saveFailed");
       setErrors((current) => ({ ...current, name: errorMessage }));
     } finally {
       setSaving(false);
@@ -217,13 +219,13 @@ export default function CompanyProfilePage() {
         <aside className="space-y-4">
           <div className="rounded-3xl border border-border/70 bg-card p-6 shadow-sm">
             <div className="mb-5">
-              <h2 className="text-xl font-semibold">Identidade visual</h2>
+              <h2 className="text-xl font-semibold">{t("companyProfile.visualIdentity")}</h2>
             </div>
 
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                Logo da empresa <span className="text-destructive">*</span>
+                {t("companyProfile.logoLabel")} <span className="text-destructive">*</span>
               </Label>
 
               {displayLogoSrc ? (
@@ -244,22 +246,22 @@ export default function CompanyProfilePage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{logoFile?.name ?? "Logo actual"}</p>
+                      <p className="truncate text-sm font-medium">{logoFile?.name ?? t("companyProfile.currentLogo")}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {logoUploading ? (
                           <span className="flex items-center gap-1.5 text-amber-600">
                             <Loader2 className="h-3 w-3 animate-spin" />
-                            A carregar...
+                            {t("companyProfile.uploading")}
                           </span>
                         ) : logoUrl ? (
-                          <span className="font-medium text-emerald-600">✓ Carregado com sucesso</span>
+                          <span className="font-medium text-emerald-600">{t("companyProfile.uploadSuccess")}</span>
                         ) : null}
                       </p>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={saving || logoUploading}>
-                      Trocar
+                      {t("companyProfile.changeLogo")}
                     </Button>
                     <button
                       type="button"
@@ -287,14 +289,14 @@ export default function CompanyProfilePage() {
                     {companyInitial}
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Adicione o logo da empresa</p>
+                    <p className="text-sm font-medium">{t("companyProfile.addLogo")}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Se não houver logo, a inicial da empresa será usada no sidebar.
+                      {t("companyProfile.addLogoHelp")}
                     </p>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
                     <Upload className="h-3.5 w-3.5" />
-                    PNG, JPG, SVG — máximo 5 MB
+                    {t("companyProfile.fileTypes")}
                   </div>
                 </div>
               )}
@@ -315,11 +317,11 @@ export default function CompanyProfilePage() {
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="name" className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                Nome da empresa <span className="text-destructive">*</span>
+                {t("companyProfile.nameLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="name"
-                placeholder="Ex: Acme Moçambique, Lda."
+                placeholder={t("companyProfile.namePlaceholder")}
                 value={form.name}
                 onChange={set("name")}
                 className={cn(errors.name && "border-destructive")}
@@ -331,11 +333,11 @@ export default function CompanyProfilePage() {
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="description" className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                Descrição da empresa <span className="text-destructive">*</span>
+                {t("companyProfile.descriptionLabel")} <span className="text-destructive">*</span>
               </Label>
               <Textarea
                 id="description"
-                placeholder="Descreva a sua empresa, sector de actividade, missão e valores..."
+                placeholder={t("companyProfile.descriptionPlaceholder")}
                 value={form.description}
                 onChange={set("description")}
                 rows={7}
@@ -348,11 +350,11 @@ export default function CompanyProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="location" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                Localização <span className="text-destructive">*</span>
+                {t("companyProfile.locationLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="location"
-                placeholder="Ex: Maputo, Moçambique"
+                placeholder={t("companyProfile.locationPlaceholder")}
                 value={form.location}
                 onChange={set("location")}
                 className={cn(errors.location && "border-destructive")}
@@ -364,12 +366,12 @@ export default function CompanyProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                Email de contacto <span className="text-destructive">*</span>
+                {t("companyProfile.emailLabel")} <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="rh@empresa.co.mz"
+                placeholder={t("companyProfile.emailPlaceholder")}
                 value={form.email}
                 onChange={set("email")}
                 className={cn(errors.email && "border-destructive")}
@@ -381,12 +383,12 @@ export default function CompanyProfilePage() {
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="website" className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                Website
+                {t("companyProfile.websiteLabel")}
               </Label>
               <Input
                 id="website"
                 type="url"
-                placeholder="https://www.empresa.co.mz"
+                placeholder={t("companyProfile.websitePlaceholder")}
                 value={form.website}
                 onChange={set("website")}
                 className={cn(errors.website && "border-destructive")}
@@ -401,19 +403,19 @@ export default function CompanyProfilePage() {
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  A guardar...
+                  {t("companyProfile.saving")}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  Guardar alterações
+                  {t("companyProfile.saveChanges")}
                 </>
               )}
             </Button>
             {saved && (
               <span className="flex items-center gap-1.5 text-sm text-emerald-600">
                 <CheckCircle className="h-4 w-4" />
-                Guardado com sucesso
+                {t("companyProfile.saved")}
               </span>
             )}
           </div>

@@ -22,6 +22,7 @@ This folder is the project context pack for the `standout` app. It is meant to g
 - `candidate-application-onboarding.md` documents the multi-step candidate onboarding wizard (resume, cover letter, job description, analysis/apply) including platform vs. private application modes and April 2026 UX refinements.
 - `ui-ux-audit.md` full UI/UX inconsistency audit for both candidate and recruiter flows — language mixing, navigation gaps, feedback problems, visual inconsistencies, accessibility issues, and missing features with severity ratings.
 - `ui-ux-remediation-plan.md` outlines the 4-phase execution roadmap to systematically fix all problems identified in the UI/UX audit.
+- `language-unification-sdd.md` captures the spec-driven rollout for account-level language persistence, global i18n consistency, and moving language control into profile settings.
 
 ## Maintenance Rule
 - When README links, onboarding copy, or environment checks point at a `.context/docs/*` file, keep that file updated in the same change.

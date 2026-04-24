@@ -127,7 +127,7 @@ export default function InterviewPrepPage() {
     });
 
     const generateMutation = useMutation({
-        mutationFn: () => api.post("/api/mock-interview/decks", { language: locale }),
+        mutationFn: () => api.post<{ flashcardsCount: number }>("/api/mock-interview/decks", { language: locale }),
         onSuccess: (data) => {
             setGenerating(false);
             setConfirmOpen(false);
