@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { cn, formatDate, withAssetVersion } from "@/lib/utils";
+import { site } from "@/lib/brand-config";
 import {
   ArrowRight,
   Briefcase,
@@ -133,6 +135,10 @@ async function fetchJobsPage({
 
 
 export default function JobBoardPage() {
+  if (!site.features.jobBoard) {
+    redirect("/");
+  }
+
   const { t, locale, categoryLabels, jobTypeLabels, salaryLabels } = useJobsI18n();
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");

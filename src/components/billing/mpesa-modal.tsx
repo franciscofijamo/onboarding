@@ -49,8 +49,19 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      if (isLoading) return
+      onOpenChange(nextOpen)
+    }}>
+      <DialogContent
+        className="sm:max-w-[525px]"
+        onEscapeKeyDown={(event) => {
+          if (isLoading) event.preventDefault()
+        }}
+        onInteractOutside={(event) => {
+          if (isLoading) event.preventDefault()
+        }}
+      >
         <div className="grid gap-4">
           <DialogHeader>
             <DialogTitle>M-Pesa Payment</DialogTitle>
@@ -72,9 +83,11 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
                       type="text"
                       inputMode="numeric"
                       maxLength={1}
+                      disabled={isLoading}
                       className="w-9 h-12 text-center text-lg font-bold p-0"
                       value={phone[index] || ''}
                       onChange={(e) => {
+                        if (isLoading) return
                         const val = e.target.value.replace(/\D/g, '')
                         if (!val && e.target.value !== '') return // prevent non-digit
 
@@ -91,6 +104,7 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
                         }
                       }}
                       onKeyDown={(e) => {
+                        if (isLoading) return
                         if (e.key === 'Backspace' && !phone[index] && index > 0) {
                           // Move back on backspace if empty
                           const prevInput = document.getElementById(`digit-${index - 1}`)
@@ -98,6 +112,10 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
                         }
                       }}
                       onPaste={(e) => {
+                        if (isLoading) {
+                          e.preventDefault()
+                          return
+                        }
                         e.preventDefault()
                         const pasted = e.clipboardData.getData('text').replace(/\D/g, '')
                         // If pasted includes 258 prefix, strip it maybe? 
@@ -128,6 +146,7 @@ export function MpesaModal({ open, onOpenChange, onConfirm, isLoading }: MpesaMo
               type="button"
               variant="destructive"
               className="text-white hover:bg-red-700 border-0"
+              disabled={isLoading}
               onClick={() => onOpenChange(false)}
             >
               Cancel

@@ -46,6 +46,9 @@ export const site = {
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_ID,
     facebookPixelId: process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID,
   } as AnalyticsConfig,
+  features: {
+    jobBoard: false,
+  },
 } as const
 
 export const siteMetadata: Metadata = {

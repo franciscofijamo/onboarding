@@ -40,6 +40,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { api } from "@/lib/api-client";
+import { site } from "@/lib/brand-config";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1763,17 +1764,19 @@ export default function RecruiterCandidatesPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl gap-2"
-                >
-                  <Link href={`/jobs/${postingId}`} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4" />
-                    {t("recruiterCandidates.page.viewPublicJob")}
-                  </Link>
-                </Button>
+                {site.features.jobBoard ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl gap-2"
+                  >
+                    <Link href={`/jobs/${postingId}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                      {t("recruiterCandidates.page.viewPublicJob")}
+                    </Link>
+                  </Button>
+                ) : null}
                 <div className="flex gap-3 text-sm">
                   <div className="rounded-2xl border border-border bg-background px-4 py-2 text-center">
                     <div className="text-xl font-bold">{totalCount}</div>

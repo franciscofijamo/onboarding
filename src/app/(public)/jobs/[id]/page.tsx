@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { cn, formatDate, withAssetVersion } from "@/lib/utils";
-import { useParams, useRouter } from "next/navigation";
+import { redirect, useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -24,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { RichTextViewer } from "@/components/editor/rich-text-editor";
 import { useProfile } from "@/hooks/use-profile";
 import { useLanguage } from "@/contexts/language";
+import { site } from "@/lib/brand-config";
 import {
   type JobPostingCategory,
   type JobType,
@@ -94,6 +95,10 @@ function useJobsI18n() {
 
 
 export default function JobDetailPage() {
+  if (!site.features.jobBoard) {
+    redirect("/");
+  }
+
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;

@@ -9,9 +9,7 @@ import {
   Home,
   CreditCard,
   Briefcase,
-  MessageSquare,
   Mic,
-  BrainCircuit,
   Building2,
   LayoutGrid,
   Users,
@@ -50,24 +48,36 @@ type CompanySidebarData = {
 
 export const candidateNavigationItems: NavItem[] = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
-  { nameKey: "nav.jobBoard", hintKey: "nav.jobBoard", href: "/jobs", icon: LayoutGrid },
   { nameKey: "nav.applications", hintKey: "nav.applications", href: "/applications", icon: Briefcase },
-  { nameKey: "nav.interviewPrep", hintKey: "nav.interviewPrep", href: "/interview-prep", icon: MessageSquare, disabled: true },
   { nameKey: "nav.scenarios", hintKey: "nav.scenarios", href: "/scenarios", icon: Mic },
-  { nameKey: "nav.aiCoach", hintKey: "nav.aiCoach", href: "/ai-chat", icon: BrainCircuit, disabled: true },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
   { nameKey: "nav.settings", hintKey: "nav.settings", href: "/settings/profile", icon: Settings },
 ];
 
 export const recruiterNavigationItems: NavItem[] = [
   { nameKey: "nav.dashboard", hintKey: "nav.dashboard", href: "/dashboard", icon: Home },
-  { nameKey: "nav.jobBoard", hintKey: "nav.jobBoard", href: "/jobs", icon: Briefcase },
   { nameKey: "nav.recruiterPostings", hintKey: "nav.recruiterPostings", href: "/recruiter/postings", icon: LayoutGrid },
   { nameKey: "nav.candidates", hintKey: "nav.candidates", href: "/recruiter/candidates", icon: Users, disabled: true },
   { nameKey: "nav.companyProfile", hintKey: "nav.companyProfile", href: "/company/profile", icon: Building2 },
   { nameKey: "nav.billing", hintKey: "nav.billing", href: "/billing", icon: CreditCard },
   { nameKey: "nav.settings", hintKey: "nav.settings", href: "/settings/profile", icon: Settings },
 ];
+
+if (site.features.jobBoard) {
+  candidateNavigationItems.splice(1, 0, {
+    nameKey: "nav.jobBoard",
+    hintKey: "nav.jobBoard",
+    href: "/jobs",
+    icon: LayoutGrid,
+  });
+
+  recruiterNavigationItems.splice(1, 0, {
+    nameKey: "nav.jobBoard",
+    hintKey: "nav.jobBoard",
+    href: "/jobs",
+    icon: Briefcase,
+  });
+}
 
 export const navigationItems = candidateNavigationItems;
 

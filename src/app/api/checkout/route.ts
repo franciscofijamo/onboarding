@@ -7,6 +7,7 @@ import { ASAAS_MIN_VALUE, ASAAS_CONFIG } from '@/lib/asaas/config';
 import { assertMpesaConfig, MPESA_CONFIG } from '@/lib/mpesa/config';
 import { mpesaC2BSingleStage } from '@/lib/mpesa/client';
 import { isValidVodacomMsisdn, normalizeMsisdn } from '@/lib/mpesa/validation';
+import { getMpesaCreditPackConfig, isMpesaCreditPackPlanId } from '@/lib/billing/mpesa-credit-pack';
 
 export const runtime = 'nodejs';
 export const maxDuration = 70;
@@ -22,11 +23,27 @@ export async function POST(request: NextRequest) {
 
         const { planId, period, cpfCnpj, billingType = 'UNDEFINED', phoneNumber } = await request.json();
 
+        const isMpesaCreditPack = isMpesaCreditPackPlanId(String(planId || ''));
+
         // Try to find in static plans first
         let plan: SubscriptionPlan | undefined = SUBSCRIPTION_PLANS[planId];
         let price = plan?.priceMonthly;
         let currency = 'brl';
         let priceCents: number | null = null;
+
+        if (isMpesaCreditPack) {
+            const pack = getMpesaCreditPackConfig();
+            plan = {
+                id: pack.id,
+                name: pack.name,
+                credits: pack.credits,
+                features: ['Instant credit top-up via M-Pesa'],
+                priceMonthly: pack.priceMzn,
+            };
+            price = pack.priceMzn;
+            priceCents = pack.priceMonthlyCents;
+            currency = 'mzn';
+        }
 
         // If not found, try to find in DB
         if (!plan) {
@@ -257,31 +274,52 @@ export async function POST(request: NextRequest) {
                 }, { status: 400 });
             }
 
-            const billingPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            if (isMpesaCreditPack) {
+                const existingBalance = await prisma.creditBalance.findUnique({
+                    where: { userId: dbUser.id },
+                    select: { creditsRemaining: true },
+                });
 
-            await prisma.creditBalance.upsert({
-                where: { userId: dbUser.id },
-                create: {
-                    userId: dbUser.id,
-                    clerkUserId: userId,
-                    creditsRemaining: plan.credits,
-                    lastSyncedAt: new Date(),
-                },
-                update: {
-                    creditsRemaining: plan.credits,
-                    lastSyncedAt: new Date(),
-                },
-            });
+                await prisma.creditBalance.upsert({
+                    where: { userId: dbUser.id },
+                    create: {
+                        userId: dbUser.id,
+                        clerkUserId: userId,
+                        creditsRemaining: plan.credits,
+                        lastSyncedAt: new Date(),
+                    },
+                    update: {
+                        creditsRemaining: (existingBalance?.creditsRemaining ?? 0) + plan.credits,
+                        lastSyncedAt: new Date(),
+                    },
+                });
+            } else {
+                const billingPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-            await prisma.user.update({
-                where: { id: dbUser.id },
-                data: {
-                    currentPlanId: plan.id,
-                    billingPeriodEnd: billingPeriodEnd,
-                    cancellationScheduled: false,
-                    cancellationDate: null,
-                }
-            });
+                await prisma.creditBalance.upsert({
+                    where: { userId: dbUser.id },
+                    create: {
+                        userId: dbUser.id,
+                        clerkUserId: userId,
+                        creditsRemaining: plan.credits,
+                        lastSyncedAt: new Date(),
+                    },
+                    update: {
+                        creditsRemaining: plan.credits,
+                        lastSyncedAt: new Date(),
+                    },
+                });
+
+                await prisma.user.update({
+                    where: { id: dbUser.id },
+                    data: {
+                        currentPlanId: plan.id,
+                        billingPeriodEnd: billingPeriodEnd,
+                        cancellationScheduled: false,
+                        cancellationDate: null,
+                    }
+                });
+            }
 
             return NextResponse.json({ success: true });
         }

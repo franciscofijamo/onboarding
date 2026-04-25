@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { site } from "@/lib/brand-config";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { Button } from "@/components/ui/button";
@@ -474,11 +475,13 @@ export default function ApplicationsPage() {
               </div>
 
               <SheetFooter className="border-t border-border pt-4">
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link href={`/jobs/${selectedPlatformApplication.jobPosting?.id}`}>
-                    {t("applicationsPage.actions.viewPosting")}
-                  </Link>
-                </Button>
+                {site.features.jobBoard ? (
+                  <Button asChild variant="outline" className="rounded-xl">
+                    <Link href={`/jobs/${selectedPlatformApplication.jobPosting?.id}`}>
+                      {t("applicationsPage.actions.viewPosting")}
+                    </Link>
+                  </Button>
+                ) : null}
                 {selectedPlatformApplication.pipelineEntry?.currentStage === "INTERVIEW" && (
                   <Button asChild className="rounded-xl">
                     <Link href={`/scenarios?jobApplicationId=${selectedPlatformApplication.id}`}>

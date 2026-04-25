@@ -16,14 +16,14 @@ const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {
 
 export function getLanguageInstruction(language?: string | null): string {
   if (!language || !SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
-    return LANGUAGE_INSTRUCTIONS['en-US']
+    return LANGUAGE_INSTRUCTIONS['pt-MZ']
   }
   return LANGUAGE_INSTRUCTIONS[language as SupportedLanguage]
 }
 
 export function getLanguageLabel(language?: string | null): string {
   if (!language || !SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
-    return LANGUAGE_LABELS['en-US']
+    return LANGUAGE_LABELS['pt-MZ']
   }
   return LANGUAGE_LABELS[language as SupportedLanguage]
 }

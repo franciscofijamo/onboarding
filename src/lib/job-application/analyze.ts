@@ -5,6 +5,7 @@ import { routeToSkill } from "@/lib/agents/orchestrator"
 import { AgentSkill, type UserContext } from "@/lib/agents/types"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import { generateText } from "ai"
+import { wrapPromptWithLanguage } from "@/lib/ai-language"
 
 const PROVIDER = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -46,6 +47,7 @@ function getInputHash(payload: {
   jobTitle?: string
   companyName?: string
   companyInfo?: string
+  language?: string | null
 }) {
   return createHash("sha256").update(JSON.stringify(payload)).digest("hex")
 }
@@ -255,6 +257,7 @@ async function runAnalysisCore(params: {
     jobTitle: jobApplication.jobTitle || undefined,
     companyName: jobApplication.companyName || undefined,
     companyInfo: jobApplication.companyInfo || undefined,
+    language: jobApplication.user.locale || undefined,
   })
 
   const latest = jobApplication.analyses[0]
@@ -334,10 +337,12 @@ async function runAnalysisCore(params: {
 
     const { text: analysisContent } = await generateText({
       model,
-      system: systemMessage,
-      prompt:
+      system: wrapPromptWithLanguage(systemMessage, jobApplication.user.locale),
+      prompt: wrapPromptWithLanguage(
         userPrompt +
-        "\n\nRespond ONLY with valid JSON. No markdown, no code fences, no explanations outside the JSON.",
+          "\n\nRespond ONLY with valid JSON. No markdown, no code fences, no explanations outside the JSON.",
+        jobApplication.user.locale
+      ),
       temperature: 0.7,
     })
 

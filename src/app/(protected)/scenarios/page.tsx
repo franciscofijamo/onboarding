@@ -166,9 +166,11 @@ function ScenariosContent() {
     },
     onError: (error: Error) => {
       setGenerating(false);
+      console.error("Scenario generation failed:", error);
+      queryClient.invalidateQueries({ queryKey: ["credits"] });
       toast({
         title: t("scenarios.errorGenerating"),
-        description: error.message || t("recruiterCandidates.tryAgain"),
+        description: t("scenarios.generationFailedDesc"),
         variant: "destructive",
       });
     },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/language";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LOCALES, type Locale } from "@/i18n";
 
 import { mozambiqueProvinces } from "@/lib/data/mozambique-provinces";
 import { courses } from "@/lib/data/courses";
@@ -46,12 +48,14 @@ interface ProfileCompletionModalProps {
 }
 
 export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionModalProps) {
-    const { t } = useLanguage();
+    const queryClient = useQueryClient();
+    const { t, locale, setLocale } = useLanguage();
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form state
+    const [selectedLocale, setSelectedLocale] = useState<Locale>(locale);
     const [province, setProvince] = useState("");
     const [birthYear, setBirthYear] = useState<number | null>(null);
     const [gender, setGender] = useState<"male" | "female" | "">("");
@@ -85,6 +89,7 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    locale: selectedLocale,
                     province,
                     birthYear,
                     gender,
@@ -96,6 +101,8 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
             const data = await response.json();
 
             if (response.ok && data.success) {
+                setLocale(selectedLocale);
+                await queryClient.invalidateQueries({ queryKey: ["profile"] });
                 toast.success(t("profileCompletion.success"));
                 onComplete();
                 router.refresh();
@@ -144,6 +151,25 @@ export function ProfileCompletionModal({ open, onComplete }: ProfileCompletionMo
                                 <p className="font-medium">{t("profileCompletion.profileStep")}</p>
                                 <p className="text-sm text-muted-foreground">{t("profileCompletion.profileStepDesc")}</p>
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>{t("profileCompletion.language")} *</Label>
+                            <Select
+                                value={selectedLocale}
+                                onValueChange={(value) => setSelectedLocale(value as Locale)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder={t("profileCompletion.languagePlaceholder")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {LOCALES.map((option) => (
+                                        <SelectItem key={option.code} value={option.code}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         {/* Province */}

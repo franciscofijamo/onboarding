@@ -33,6 +33,7 @@ function makeInputHash() {
         jobTitle: 'Engineer',
         companyName: 'Acme',
         companyInfo: undefined,
+        language: 'pt-MZ',
       })
     )
     .digest('hex')
@@ -48,7 +49,7 @@ function makeJobApplication(rawResponse?: string) {
     status: 'DRAFT',
     resume: { id: 'resume-1', content: 'Resume content' },
     coverLetter: null,
-    user: { careerPath: null, industry: null },
+    user: { careerPath: null, industry: null, locale: 'pt-MZ' },
     analyses: rawResponse
       ? [
           {
@@ -184,5 +185,30 @@ describe('runApplicationAnalysis', () => {
       where: { id: 'job-1', userId: 'user-1' },
       data: { status: 'DRAFT' },
     })
+  })
+
+  it('instructs the AI to respond in the user locale', async () => {
+    vi.mocked(db.jobApplication.findFirst).mockResolvedValue(makeJobApplication() as never)
+    vi.mocked(db.applicationAnalysisExecution.create).mockResolvedValue({
+      id: 'exec-1',
+      status: 'PENDING',
+      applicationAnalysisId: null,
+      creditsCharged: false,
+      creditsRefunded: false,
+    } as never)
+
+    await runApplicationAnalysis({
+      clerkId: 'clerk-1',
+      userId: 'user-1',
+      jobApplicationId: 'job-1',
+      idempotencyKey: 'idem-locale',
+    })
+
+    expect(generateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: expect.stringContaining('Responda inteiramente em português'),
+        prompt: expect.stringContaining('Responda inteiramente em português'),
+      })
+    )
   })
 })

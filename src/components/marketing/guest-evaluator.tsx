@@ -9,11 +9,9 @@ import {
   Link as LinkIcon, 
   FileText, 
   CheckCircle2, 
-  AlertCircle,
   Briefcase,
   ChevronRight,
   Sparkles,
-  AlignLeft,
   Search
 } from "lucide-react"
 
@@ -200,18 +198,15 @@ export function GuestEvaluator() {
   if (result) {
     const scoreVal = result.fitScore || 0
     let matchLabel = "Baixa Aderência"
-    let scoreColor = "text-rose-500"
     let strokeColor = "stroke-rose-500"
     let badgeBg = "bg-rose-500"
     
     if (scoreVal >= 75) {
       matchLabel = "Excelente Match"
-      scoreColor = "text-emerald-500"
       strokeColor = "stroke-emerald-500"
       badgeBg = "bg-emerald-500"
     } else if (scoreVal >= 50) {
       matchLabel = "Aderência Moderada"
-      scoreColor = "text-amber-500"
       strokeColor = "stroke-amber-500"
       badgeBg = "bg-amber-500"
     }
@@ -227,13 +222,10 @@ export function GuestEvaluator() {
     
     return (
       <div className="w-full max-w-5xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="p-[2px] rounded-[2.5rem] bg-gradient-to-br from-border via-transparent to-border relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 right-0 -m-20 w-80 h-80 bg-primary/20 rounded-full blur-[80px]" />
-          
-          <div className="bg-card/95 backdrop-blur-3xl rounded-[2.4rem] p-6 sm:p-8 md:p-10 relative z-10">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+          <div className="relative z-10 p-5 sm:p-6 md:p-8">
             
-            {/* NEW RESULT HEADER (From Screenshot) */}
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-card border shadow-sm rounded-[2rem] p-6 mb-12">
+            <div className="mb-10 flex flex-col items-center gap-6 rounded-2xl border bg-background/60 p-5 shadow-sm md:flex-row md:items-start md:p-6">
               <div className="shrink-0 relative flex items-center justify-center">
                 <svg width="120" height="120" className="-rotate-90">
                   <circle
@@ -259,15 +251,15 @@ export function GuestEvaluator() {
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black">{Math.round(scoreVal)}</span>
+                  <span className="text-3xl font-semibold">{Math.round(scoreVal)}</span>
                   <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest mt-0.5">/ 100</span>
                 </div>
               </div>
               
               <div className="flex-1 space-y-4 text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
-                  <h2 className="text-2xl font-bold">Match Score</h2>
-                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold text-white ${badgeBg}`}>
+                  <h2 className="text-2xl font-semibold">Match Score</h2>
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold text-white ${badgeBg}`}>
                     {matchLabel}
                   </span>
                 </div>
@@ -278,15 +270,15 @@ export function GuestEvaluator() {
                 
                 <div className="flex items-center justify-center md:justify-start gap-8 pt-2">
                   <div className="text-center">
-                    <div className="text-emerald-500 font-bold text-xl">{skillsCount}</div>
+                    <div className="text-xl font-semibold text-emerald-500">{skillsCount}</div>
                     <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Skills Match</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-amber-500 font-bold text-xl">{gapsCount}</div>
+                    <div className="text-xl font-semibold text-amber-500">{gapsCount}</div>
                     <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Gaps Found</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-foreground font-bold text-xl">{recsCount}</div>
+                    <div className="text-xl font-semibold text-foreground">{recsCount}</div>
                     <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Recommendations</div>
                   </div>
                 </div>
@@ -295,9 +287,9 @@ export function GuestEvaluator() {
 
             {/* Blurred detailed analysis */}
             <div className="relative group">
-              <div className="absolute inset-x-0 -top-12 bottom-0 z-20 flex flex-col items-center justify-center bg-background/50 backdrop-blur-md rounded-3xl border border-border/50 p-6 sm:p-12">
-                <div className="bg-card p-6 md:p-8 rounded-3xl border shadow-2xl max-w-md w-full text-center space-y-6">
-                  <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto ring-8 ring-primary/5">
+              <div className="absolute inset-x-0 -top-12 bottom-0 z-20 flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-background/70 p-6 backdrop-blur-md sm:p-12">
+                <div className="w-full max-w-md space-y-5 rounded-2xl border bg-card p-6 text-center shadow-lg md:p-8">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-primary">
                     <Search className="h-6 w-6" />
                   </div>
                   <div className="space-y-2">
@@ -308,7 +300,7 @@ export function GuestEvaluator() {
                   </div>
                   <button 
                     onClick={handleSignUpRedirect}
-                    className="w-full bg-foreground text-background hover:bg-foreground/90 h-12 rounded-xl font-semibold inline-flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-105 hover:shadow-xl"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
                   >
                     Criar Perfil Gratuitamente <ChevronRight className="h-4 w-4" />
                   </button>
@@ -316,8 +308,8 @@ export function GuestEvaluator() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 opacity-30 select-none pointer-events-none p-4 -mx-4 rounded-3xl overflow-hidden">
-                <div className="bg-muted p-6 rounded-3xl border-2 border-transparent">
+              <div className="-mx-4 grid select-none gap-4 overflow-hidden rounded-2xl p-4 opacity-30 pointer-events-none md:grid-cols-2">
+                <div className="rounded-2xl border bg-muted p-5">
                   <h4 className="font-semibold mb-4 flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-500"/> Pontos a Seu Favor</h4>
                   <ul className="space-y-3">
                     <li className="h-3 bg-foreground/20 rounded w-3/4"></li>
@@ -325,7 +317,7 @@ export function GuestEvaluator() {
                     <li className="h-3 bg-foreground/20 rounded w-4/5"></li>
                   </ul>
                 </div>
-                <div className="bg-muted p-6 rounded-3xl border-2 border-transparent">
+                <div className="rounded-2xl border bg-muted p-5">
                   <h4 className="font-semibold mb-4 flex items-center gap-2"><FileText className="h-5 w-5 text-blue-500"/> Oportunidades</h4>
                   <ul className="space-y-3">
                     <li className="h-3 bg-foreground/20 rounded w-2/3"></li>
@@ -333,7 +325,7 @@ export function GuestEvaluator() {
                     <li className="h-3 bg-foreground/20 rounded w-3/4"></li>
                   </ul>
                 </div>
-                <div className="md:col-span-2 bg-muted p-6 rounded-3xl border-2 border-transparent">
+                <div className="rounded-2xl border bg-muted p-5 md:col-span-2">
                    <h4 className="font-semibold mb-4 flex items-center gap-2">Resumo da Avaliação Geral</h4>
                    <div className="space-y-3">
                       <div className="h-3 bg-foreground/20 rounded w-full"></div>
@@ -352,26 +344,26 @@ export function GuestEvaluator() {
   const isFormReady = Boolean(cvText.trim() && jobText.trim())
 
   return (
-    <div className="w-full max-w-5xl mx-auto mt-4 p-[2px] rounded-[3rem] bg-gradient-to-br from-primary/20 via-transparent to-muted/30 shadow-2xl relative">
-      <div className="bg-card/90 backdrop-blur-2xl rounded-[2.9rem] p-6 md:p-10 border border-border/50">
+    <div className="relative mx-auto mt-4 w-full max-w-5xl rounded-2xl border border-border bg-card shadow-lg">
+      <div className="p-4 sm:p-6 md:p-8">
         
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-10">
+        <div className="mb-8 grid gap-5 lg:grid-cols-2">
           {/* Currículo Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3 ml-2">
-              <div className="h-8 w-8 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                <span className="font-bold text-sm">1</span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border bg-background text-xs font-semibold text-muted-foreground">
+                <span>1</span>
               </div>
-              <h3 className="font-bold text-lg">O seu Currículo</h3>
+              <h3 className="text-base font-semibold">O seu Currículo</h3>
             </div>
             
             {!cvText ? (
               <div 
-                className="relative flex flex-col items-center justify-center h-[280px] rounded-3xl border-2 border-dashed border-muted-foreground/20 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group px-6 text-center"
+                className="group relative flex h-[280px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background/60 px-6 text-center transition-colors hover:border-primary/40 hover:bg-muted/40"
                 onClick={() => !isExtractingResume && fileInputRef.current?.click()}
               >
                 {isExtractingResume ? (
-                  <div className="flex flex-col items-center gap-4 text-emerald-500">
+                  <div className="flex flex-col items-center gap-4 text-primary">
                     <Loader2 className="h-10 w-10 animate-spin" />
                     <div className="space-y-1">
                       <p className="font-medium animate-pulse">{LOADING_MESSAGES_CV[cvLoadingIndex]}</p>
@@ -380,11 +372,13 @@ export function GuestEvaluator() {
                   </div>
                 ) : (
                   <>
-                    <UploadCloud className="h-12 w-12 text-muted-foreground/50 mb-4 group-hover:scale-110 group-hover:text-emerald-500 transition-all duration-300" />
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border bg-card text-muted-foreground transition-colors group-hover:text-primary">
+                      <UploadCloud className="h-6 w-6" />
+                    </div>
                     <p className="font-semibold text-foreground">Clique para adicionar o seu ficheiro PDF ou Word</p>
                     <p className="text-sm text-muted-foreground mt-1">Carregamento seguro e privado</p>
                     {resumeUploadError && (
-                      <p className="text-xs font-medium text-rose-500 mt-4 px-4 py-2 bg-rose-500/10 rounded-xl">{resumeUploadError}</p>
+                      <p className="mt-4 rounded-lg bg-rose-500/10 px-4 py-2 text-xs font-medium text-rose-600">{resumeUploadError}</p>
                     )}
                   </>
                 )}
@@ -397,18 +391,18 @@ export function GuestEvaluator() {
                 />
               </div>
             ) : (
-              <div className="relative flex flex-col justify-center h-[280px] rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-6 animate-in zoom-in-95 duration-500 shadow-inner">
-                <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
+              <div className="relative flex h-[280px] animate-in flex-col justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 duration-500 zoom-in-95">
+                <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
-                <div className="h-16 w-16 bg-card rounded-2xl flex items-center justify-center shadow-lg border mb-4">
-                  <FileText className="h-8 w-8 text-emerald-500" />
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border bg-card text-emerald-600 shadow-sm">
+                  <FileText className="h-7 w-7" />
                 </div>
-                <h4 className="font-bold text-lg line-clamp-1">{cvName || "Currículo Anexado"}</h4>
+                <h4 className="line-clamp-1 text-lg font-semibold">{cvName || "Currículo Anexado"}</h4>
                 <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
                   Documento Lido e Pronto
                 </p>
-                <div className="mt-6 pt-4 border-t border-emerald-500/20">
+                <div className="mt-6 border-t border-emerald-500/20 pt-4">
                   <button onClick={resetCv} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hover:underline">
                     Deseja trocar o ficheiro?
                   </button>
@@ -419,18 +413,18 @@ export function GuestEvaluator() {
 
           {/* Vaga Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3 ml-2">
-              <div className="h-8 w-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
-                <span className="font-bold text-sm">2</span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border bg-background text-xs font-semibold text-muted-foreground">
+                <span>2</span>
               </div>
-              <h3 className="font-bold text-lg">A Vaga Desejada</h3>
+              <h3 className="text-base font-semibold">A Vaga Desejada</h3>
             </div>
             
             {!jobText ? (
-              <div className="flex flex-col h-[280px] rounded-3xl border border-border/80 bg-background/50 shadow-sm overflow-hidden relative">
+              <div className="relative flex h-[280px] flex-col overflow-hidden rounded-2xl border border-border bg-background/60">
                 
                 {isCrawling && (
-                  <div className="absolute inset-0 z-20 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center text-blue-500 gap-4">
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-background/90 text-primary backdrop-blur-sm">
                     <Loader2 className="h-10 w-10 animate-spin" />
                     <div className="space-y-1 text-center">
                       <p className="font-medium animate-pulse">{LOADING_MESSAGES_JOB[jobLoadingIndex]}</p>
@@ -439,16 +433,16 @@ export function GuestEvaluator() {
                   </div>
                 )}
 
-                <div className="flex border-b border-border text-sm font-medium">
+                <div className="flex border-b border-border bg-muted/40 p-1 text-sm font-medium">
                   <button 
                     onClick={() => setJobInputMode("url")} 
-                    className={`flex-1 py-3 transition-colors ${jobInputMode === "url" ? "bg-card text-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    className={`flex-1 rounded-lg py-2.5 transition-colors ${jobInputMode === "url" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     Usar Link
                   </button>
                   <button 
                     onClick={() => setJobInputMode("text")} 
-                    className={`flex-1 py-3 transition-colors ${jobInputMode === "text" ? "bg-card text-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    className={`flex-1 rounded-lg py-2.5 transition-colors ${jobInputMode === "text" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     Colar Texto
                   </button>
@@ -457,7 +451,7 @@ export function GuestEvaluator() {
                 <div className="flex-1 p-6 flex flex-col justify-center relative">
                   {jobInputMode === "url" ? (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 bg-muted p-4 rounded-2xl border mb-2">
+                      <div className="mb-2 flex items-center gap-3 rounded-xl border bg-card p-3">
                         <LinkIcon className="h-5 w-5 text-muted-foreground shrink-0" />
                         <input
                           type="url"
@@ -471,7 +465,7 @@ export function GuestEvaluator() {
                       <button 
                         onClick={handleCrawlUrl}
                         disabled={!jobUrl.trim()}
-                        className="w-full bg-foreground text-background font-semibold py-3 rounded-xl disabled:opacity-50 transition-transform active:scale-[0.98]"
+                        className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
                       >
                         Encontrar Vaga
                       </button>
@@ -483,12 +477,12 @@ export function GuestEvaluator() {
                           value={tempJobText}
                           onChange={(e) => setTempJobText(e.target.value)}
                           placeholder="Cole o texto da vaga aqui..."
-                          className="flex-1 w-full bg-muted/30 border border-border p-4 rounded-xl resize-none text-sm focus:bg-background focus:ring-1 focus:ring-primary mb-3"
+                          className="mb-3 w-full flex-1 resize-none rounded-xl border border-border bg-card p-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:bg-background focus:ring-2 focus:ring-ring/20"
                        />
                        <button 
                         onClick={submitJobTextForm}
                         disabled={!tempJobText.trim()}
-                        className="w-full bg-foreground text-background font-semibold py-3 rounded-xl disabled:opacity-50"
+                        className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50"
                       >
                         Confirmar Texto
                       </button>
@@ -497,18 +491,18 @@ export function GuestEvaluator() {
                 </div>
               </div>
             ) : (
-              <div className="relative flex flex-col justify-center h-[280px] rounded-3xl border border-blue-500/30 bg-blue-500/5 p-6 animate-in zoom-in-95 duration-500 shadow-inner">
-                <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-blue-500/20 text-blue-600 flex items-center justify-center">
+              <div className="relative flex h-[280px] animate-in flex-col justify-center rounded-2xl border border-primary/20 bg-primary/5 p-6 duration-500 zoom-in-95">
+                <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
-                <div className="h-16 w-16 bg-card rounded-2xl flex items-center justify-center shadow-lg border mb-4">
-                  <Briefcase className="h-8 w-8 text-blue-500" />
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border bg-card text-primary shadow-sm">
+                  <Briefcase className="h-7 w-7" />
                 </div>
-                <h4 className="font-bold text-lg line-clamp-1">{jobName}</h4>
+                <h4 className="line-clamp-1 text-lg font-semibold">{jobName}</h4>
                 <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
                   Requisitos Identificados
                 </p>
-                <div className="mt-6 pt-4 border-t border-blue-500/20">
+                <div className="mt-6 border-t border-primary/20 pt-4">
                   <button onClick={resetJob} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hover:underline">
                     Deseja trocar de vaga?
                   </button>
@@ -519,12 +513,12 @@ export function GuestEvaluator() {
         </div>
         
         {/* Call to Action Bar */}
-        <div className={`p-8 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-700 ${isFormReady ? "bg-foreground text-background shadow-xl" : "bg-muted/50 border border-transparent"}`}>
+        <div className={`flex flex-col items-center justify-between gap-5 rounded-2xl border p-5 transition-all duration-300 md:flex-row md:p-6 ${isFormReady ? "border-primary bg-primary text-primary-foreground shadow-md" : "border-border bg-muted/40"}`}>
           <div className="space-y-1 text-center md:text-left">
-            <h3 className={`text-xl font-bold ${isFormReady ? "text-background" : "text-muted-foreground"}`}>
+            <h3 className={`text-lg font-semibold ${isFormReady ? "text-primary-foreground" : "text-foreground"}`}>
               {isFormReady ? "Tudo Pronto!" : "Estamos à espera dos seus dados..."}
             </h3>
-            <p className={`text-sm ${isFormReady ? "text-background/70" : "text-muted-foreground/60"} max-w-sm`}>
+            <p className={`max-w-sm text-sm ${isFormReady ? "text-primary-foreground/75" : "text-muted-foreground"}`}>
               {isFormReady 
                 ? "Clique em Iniciar Inteligência Artificial para descobrir a sua probabilidade estatística de avanço." 
                 : "Preencha os dois quadros acima com o seu CV e uma vaga."}
@@ -534,8 +528,8 @@ export function GuestEvaluator() {
             onClick={handleAnalyze}
             disabled={!isFormReady || isAnalyzing}
             className={`
-              relative h-16 px-10 rounded-2xl font-bold text-lg flex items-center gap-3 overflow-hidden transition-all duration-500 group
-              ${isFormReady && !isAnalyzing ? "bg-background text-foreground hover:scale-105 active:scale-95 shadow-xl hover:shadow-2xl" : "bg-muted-foreground/20 text-muted-foreground cursor-not-allowed"}
+              group relative flex h-12 w-full items-center justify-center gap-3 overflow-hidden rounded-xl px-6 text-sm font-semibold transition-colors md:w-auto
+              ${isFormReady && !isAnalyzing ? "bg-card text-foreground shadow-sm hover:bg-card/90" : "bg-muted-foreground/15 text-muted-foreground cursor-not-allowed"}
             `}
           >
             {isAnalyzing ? (

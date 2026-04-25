@@ -36,7 +36,7 @@ describe("i18n dictionaries", () => {
   });
 
   it("falls back to the default locale for missing keys", () => {
-    expect(DEFAULT_LOCALE).toBe("en-US");
+    expect(DEFAULT_LOCALE).toBe("pt-MZ");
     expect(translate("pt-MZ", "missing.key")).toBe("missing.key");
     expect(translate("en-GB", "common.save")).toBe("Save");
   });

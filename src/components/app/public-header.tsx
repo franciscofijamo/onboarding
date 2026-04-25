@@ -27,7 +27,7 @@ export function PublicHeader() {
     setMenuOpen(false)
   }, [pathname])
 
-  const isJobsActive = pathname.startsWith('/jobs')
+  const isJobsActive = site.features.jobBoard && pathname.startsWith('/jobs')
 
   return (
     <header>
@@ -48,19 +48,20 @@ export function PublicHeader() {
             </Link>
 
             <div className="hidden sm:flex items-center gap-6">
-              <Link
-                href="/jobs"
-                className={cn(
-                  "flex items-center gap-1.5 text-sm font-medium transition-colors",
-                  isJobsActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Briefcase className="h-3.5 w-3.5" />
-                {t("nav.jobBoard")}
-              </Link>
-
+              {site.features.jobBoard ? (
+                <Link
+                  href="/jobs"
+                  className={cn(
+                    "flex items-center gap-1.5 text-sm font-medium transition-colors",
+                    isJobsActive
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Briefcase className="h-3.5 w-3.5" />
+                  {t("nav.jobBoard")}
+                </Link>
+              ) : null}
               {isLoaded && (
                 isSignedIn ? (
                   <Button asChild variant="outline" size="sm" className="rounded-xl">
@@ -90,16 +91,18 @@ export function PublicHeader() {
 
           {menuOpen && (
             <div className="sm:hidden pb-4 space-y-2 border-t border-border pt-3">
-              <Link
-                href="/jobs"
-                className={cn(
-                  "flex items-center gap-2 px-2 py-2 rounded-xl text-sm font-medium transition-colors",
-                  isJobsActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                )}
-              >
-                <Briefcase className="h-4 w-4" />
-                {t("nav.jobBoard")}
-              </Link>
+              {site.features.jobBoard ? (
+                <Link
+                  href="/jobs"
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-2 rounded-xl text-sm font-medium transition-colors",
+                    isJobsActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  <Briefcase className="h-4 w-4" />
+                  {t("nav.jobBoard")}
+                </Link>
+              ) : null}
               {isLoaded && (
                 isSignedIn ? (
                   <Button asChild variant="outline" className="w-full rounded-xl">

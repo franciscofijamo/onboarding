@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
@@ -246,7 +247,7 @@ export default function OnboardingPage() {
   const startFresh = searchParams.get("new") === "1";
   const jobPostingId = searchParams.get("jobPostingId");
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t, tArray } = useLanguage();
   const { credits, refresh: refreshCredits } = useCredits();
 
   useSetPageMetadata({
@@ -291,6 +292,20 @@ export default function OnboardingPage() {
   const [platformAppError, setPlatformAppError] = React.useState<string | null>(null);
   const [expandedVaga, setExpandedVaga] = React.useState(false);
   const [expandedCV, setExpandedCV] = React.useState(false);
+  const [analysisProgressIndex, setAnalysisProgressIndex] = React.useState(0);
+
+  const analysisProgressSteps = React.useMemo(() => {
+    const steps = tArray("onboarding.analysisSteps");
+    return steps.length > 0
+      ? steps
+      : [
+          "Parsing your CV and extracting key information...",
+          "Analyzing job description requirements...",
+          "Comparing skills and experience...",
+          "Evaluating cultural and role fit...",
+          "Generating personalized recommendations...",
+        ];
+  }, [tArray]);
 
   const isPublicApplication = Boolean(jobPostingId);
 
@@ -882,6 +897,25 @@ export default function OnboardingPage() {
 
   const isLoading =
     loadingResumes || loadingCoverLetters || loadingJobApplications || (isPublicApplication && loadingJobPosting);
+
+  React.useEffect(() => {
+    if (!(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting)) {
+      setAnalysisProgressIndex(0);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setAnalysisProgressIndex((current) =>
+        current < analysisProgressSteps.length - 1 ? current + 1 : current
+      );
+    }, 2200);
+
+    return () => window.clearInterval(interval);
+  }, [
+    analyzeExistingJobApplicationMutation.isPending,
+    isAnalyzingExisting,
+    analysisProgressSteps.length,
+  ]);
 
   if (isLoading) {
     return (
@@ -1567,22 +1601,70 @@ export default function OnboardingPage() {
       {currentStep === "analysis" && !isPublicApplication && (
         <div className="space-y-6">
           {(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) && (
-            <div className="bg-card rounded-2xl border border-border p-12 flex flex-col items-center justify-center text-center">
-              <div className="relative mb-6">
-                <div className="h-20 w-20 rounded-full border-4 border-primary/20 flex items-center justify-center">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                </div>
+            <div className="px-1 py-2">
+              <div className="mb-5">
+                <h3 className="text-xl font-semibold text-foreground">
+                  {t("onboarding.analyzing")}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  This usually finishes in under 30 seconds.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold">
-                Analyzing Your Application...
-              </h3>
-              <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                Our AI is comparing your resume against the job description. This may take up to 30 seconds.
-              </p>
-              <div className="flex gap-4 mt-6 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><Target className="h-3 w-3" /> Matching skills</span>
-                <span className="flex items-center gap-1"><Search className="h-3 w-3" /> Finding gaps</span>
-                <span className="flex items-center gap-1"><Lightbulb className="h-3 w-3" /> Building recommendations</span>
+
+              <div className="space-y-1">
+                {analysisProgressSteps.map((step, index) => {
+                  const isComplete = index < analysisProgressIndex;
+                  const isActive = index === analysisProgressIndex;
+
+                  return (
+                    <motion.div
+                      key={step}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: isActive || isComplete ? 1 : 0.32, y: 0 }}
+                      transition={{ duration: 0.24, ease: "easeOut" }}
+                      className="flex items-center gap-4 rounded-lg px-1 py-2.5"
+                    >
+                      <div
+                        className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
+                          isComplete
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : isActive
+                            ? "border-foreground text-foreground"
+                            : "border-muted-foreground/35 text-transparent"
+                        }`}
+                      >
+                        {isComplete ? (
+                          <CheckCircle2 className="h-4 w-4" />
+                        ) : isActive ? (
+                          <>
+                            <motion.span
+                              className="absolute inset-0 rounded-full border border-foreground/40"
+                              animate={{ scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
+                              transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                            />
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                            >
+                              <Loader2 className="h-4 w-4" />
+                            </motion.div>
+                          </>
+                        ) : (
+                          <span className="h-3 w-3 rounded-full border border-muted-foreground/25" />
+                        )}
+                      </div>
+                      <p
+                        className={`min-w-0 truncate text-base transition-colors ${
+                          isActive || isComplete
+                            ? "text-foreground"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {step}
+                      </p>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           )}

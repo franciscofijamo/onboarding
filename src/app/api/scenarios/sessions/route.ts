@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
-import { deductCreditsForFeature, refundCreditsForFeature } from '@/lib/credits/deduct'
 import { InsufficientCreditsError } from '@/lib/credits/errors'
+import { toPrismaOperationType } from '@/lib/credits/feature-config'
+import { getFeatureCost, getPlanCredits } from '@/lib/credits/settings'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { generateText } from 'ai'
 import { wrapPromptWithLanguage } from '@/lib/ai-language'
@@ -15,6 +16,9 @@ const PROVIDER = createOpenRouter({
 })
 
 const GENERATION_STEPS_COUNT = 5
+const SCENARIO_FEATURE = 'scenario_simulation'
+const GENERATION_FAILED_CODE = 'SCENARIO_GENERATION_FAILED'
+const INSUFFICIENT_UNIQUE_CODE = 'SCENARIO_GENERATION_INSUFFICIENT_UNIQUE'
 
 export async function GET(request: NextRequest) {
   try {
@@ -162,23 +166,16 @@ export async function POST(request: NextRequest) {
     })
     const existingPrompts = existingSessions.flatMap(s => s.responses.map(r => r.prompt))
 
-    let creditsDeducted = false
-    try {
-      await deductCreditsForFeature({
-        clerkUserId: clerkId,
-        feature: 'scenario_simulation',
-        details: { userId: user.id, jobApplicationId, action: 'generate_interview_scenarios' },
-      })
-      creditsDeducted = true
-    } catch (deductErr) {
-      if (deductErr instanceof InsufficientCreditsError) {
-        return NextResponse.json({
-          error: 'Insufficient credits',
-          required: deductErr.required,
-          available: deductErr.available,
-        }, { status: 402 })
-      }
-      throw deductErr
+    const scenarioCreditCost = await getFeatureCost(SCENARIO_FEATURE)
+    const currentBalance = await db.creditBalance.findUnique({ where: { userId: user.id } })
+    const availableCredits = currentBalance?.creditsRemaining ?? await getPlanCredits('free')
+
+    if (availableCredits < scenarioCreditCost) {
+      return NextResponse.json({
+        error: 'Insufficient credits',
+        required: scenarioCreditCost,
+        available: availableCredits,
+      }, { status: 402 })
     }
 
     const basePrompt = buildInterviewPrompt(
@@ -206,18 +203,17 @@ export async function POST(request: NextRequest) {
         throw new Error('AI generated less than 5 interview questions')
       }
     } catch (aiError) {
-      console.error('AI interview generation error:', aiError)
-      if (creditsDeducted) {
-        await refundCreditsForFeature({
-          clerkUserId: clerkId,
-          feature: 'scenario_simulation',
-          quantity: 1,
-          reason: aiError instanceof Error ? aiError.message : 'ai_generation_error',
-          details: { userId: user.id },
-        }).catch(e => console.error('Refund failed:', e))
-      }
+      console.error('[Scenario Generation] AI interview generation failed before charging credits:', {
+        code: GENERATION_FAILED_CODE,
+        userId: user.id,
+        jobApplicationId,
+        language,
+        existingPromptCount: existingPrompts.length,
+        reason: aiError instanceof Error ? aiError.message : String(aiError),
+      })
       return NextResponse.json({
-        error: 'Error generating interview questions. Your credits have been refunded.',
+        error: GENERATION_FAILED_CODE,
+        code: GENERATION_FAILED_CODE,
       }, { status: 502 })
     }
 
@@ -229,28 +225,108 @@ export async function POST(request: NextRequest) {
       )
       .slice(0, 5)
 
+    if (uniqueScenarios.length < GENERATION_STEPS_COUNT) {
+      console.error('[Scenario Generation] Not enough unique scenarios generated before charging credits:', {
+        code: INSUFFICIENT_UNIQUE_CODE,
+        userId: user.id,
+        jobApplicationId,
+        generatedCount: scenariosData.scenarios.length,
+        uniqueCount: uniqueScenarios.length,
+        existingPromptCount: existingPrompts.length,
+      })
+      return NextResponse.json({
+        error: INSUFFICIENT_UNIQUE_CODE,
+        code: INSUFFICIENT_UNIQUE_CODE,
+      }, { status: 502 })
+    }
+
     const sessionNumber = existingSessions.length + 1
     const jobLabel = jobApplication.jobTitle && jobApplication.companyName
       ? `${jobApplication.jobTitle} @ ${jobApplication.companyName}`
       : jobApplication.jobTitle || jobApplication.companyName || 'Job Application'
 
-    const session = await db.workplaceScenarioSession.create({
-      data: {
-        userId: user.id,
-        jobApplicationId,
-        name: `Interview Practice #${sessionNumber} — ${jobLabel}`,
-        totalQuestions: uniqueScenarios.length,
-        responses: {
-          create: uniqueScenarios.map((s, index) => ({
-            questionIndex: index,
-            prompt: s.prompt,
-          })),
-        },
-      },
-      include: {
-        responses: { orderBy: { questionIndex: 'asc' } },
-      },
-    })
+    let session: {
+      id: string
+      name: string
+      jobApplicationId: string | null
+      totalQuestions: number
+      createdAt: Date
+      responses: Array<{
+        id: string
+        questionIndex: number
+        prompt: string
+        status: string
+      }>
+    }
+    try {
+      session = await db.$transaction(async (tx) => {
+        let creditBalance = await tx.creditBalance.findUnique({ where: { userId: user.id } })
+
+        if (!creditBalance) {
+          creditBalance = await tx.creditBalance.create({
+            data: {
+              userId: user.id,
+              clerkUserId: clerkId,
+              creditsRemaining: await getPlanCredits('free'),
+            },
+          })
+        }
+
+        const updated = await tx.creditBalance.updateMany({
+          where: { id: creditBalance.id, creditsRemaining: { gte: scenarioCreditCost } },
+          data: {
+            creditsRemaining: { decrement: scenarioCreditCost },
+            lastSyncedAt: new Date(),
+          },
+        })
+
+        if (updated.count === 0) {
+          throw new InsufficientCreditsError(scenarioCreditCost, creditBalance.creditsRemaining)
+        }
+
+        await tx.usageHistory.create({
+          data: {
+            userId: user.id,
+            creditBalanceId: creditBalance.id,
+            operationType: toPrismaOperationType(SCENARIO_FEATURE),
+            creditsUsed: scenarioCreditCost,
+            details: {
+              userId: user.id,
+              jobApplicationId,
+              action: 'generate_interview_scenarios',
+            },
+          },
+        })
+
+        return tx.workplaceScenarioSession.create({
+          data: {
+            userId: user.id,
+            jobApplicationId,
+            name: `Interview Practice #${sessionNumber} — ${jobLabel}`,
+            totalQuestions: uniqueScenarios.length,
+            responses: {
+              create: uniqueScenarios.map((s, index) => ({
+                questionIndex: index,
+                prompt: s.prompt,
+              })),
+            },
+          },
+          include: {
+            responses: { orderBy: { questionIndex: 'asc' } },
+          },
+        })
+      })
+    } catch (transactionError) {
+      if (transactionError instanceof InsufficientCreditsError) {
+        return NextResponse.json({
+          error: 'Insufficient credits',
+          required: transactionError.required,
+          available: transactionError.available,
+        }, { status: 402 })
+      }
+
+      throw transactionError
+    }
 
     return NextResponse.json({
       session: {

@@ -10,7 +10,7 @@ export const LOCALES: { code: Locale; label: string; flag: string }[] = [
   { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
 ]
 
-export const DEFAULT_LOCALE: Locale = 'en-US'
+export const DEFAULT_LOCALE: Locale = 'pt-MZ'
 
 const dictionaries: Record<Locale, Record<string, unknown>> = {
   'pt-MZ': ptMZ,

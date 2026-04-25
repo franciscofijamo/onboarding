@@ -8,12 +8,15 @@ import { GuestEvaluator } from "@/components/marketing/guest-evaluator"
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col items-center justify-center pt-20 pb-16 px-4">
-      <div className="text-center space-y-6 max-w-3xl mb-12">
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+    <div className="flex flex-col items-center justify-center px-4 pb-16 pt-16 sm:pt-20">
+      <div className="mb-10 max-w-3xl space-y-4 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          AI career fit check
+        </p>
+        <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-6xl">
           StandOut
         </h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
           Descubra o seu Match e consiga aquela vaga dos sonhos com ajuda da IA.
         </p>
       </div>

@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import { MpesaModal } from "@/components/billing/mpesa-modal";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { selectMpesaCreditPlan } from "@/lib/billing/select-mpesa-plan";
+import { getMpesaCreditPackPlan } from "@/lib/billing/mpesa-credit-pack";
+import { isLikelyMpesaDismissal, postCheckoutWithTimeout } from "@/lib/billing/mpesa-feedback";
 
 export default function BillingPage() {
   const { user, isLoaded } = useUser();
@@ -46,7 +49,10 @@ export default function BillingPage() {
     });
   }, [plansData]);
 
-  const creditPlan = creditPlans[0] || null;
+  const creditPlan = useMemo(
+    () => selectMpesaCreditPlan(creditPlans) ?? getMpesaCreditPackPlan(),
+    [creditPlans]
+  );
 
   const handleBuyCredits = () => {
     if (!creditPlan) {
@@ -213,26 +219,19 @@ export default function BillingPage() {
       </section>
 
       <section className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">{t("billing.actionCostsTitle")}</h2>
-            <p className="text-sm text-muted-foreground">{t("billing.actionCostsDescription")}</p>
-          </div>
-          <Badge variant="outline">{t("billing.autoUpdated")}</Badge>
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">{t("billing.actionCostsTitle")}</h2>
         </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
+        <div className="mt-5 flex flex-col gap-3">
           {([
             { key: "cv_analysis", label: t("billing.actionCosts.cvAnalysis") },
             { key: "scenario_simulation", label: t("billing.actionCosts.scenarioSimulation") },
-            { key: "interview_prep", label: t("billing.actionCosts.interviewPrep") },
-            { key: "ai_text_chat", label: t("billing.actionCosts.aiTextChat") },
-            { key: "ai_image_generation", label: t("billing.actionCosts.aiImageGeneration") },
           ] as const).map((item) => {
-            const cost = creditSettings?.featureCosts?.[item.key] ?? (item.key === "scenario_simulation" ? 15 : item.key === "cv_analysis" ? 10 : item.key === "interview_prep" ? 15 : item.key === "ai_text_chat" ? 1 : 5);
+            const cost = creditSettings?.featureCosts?.[item.key] ?? (item.key === "scenario_simulation" ? 15 : 10);
             return (
               <div key={item.key} className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
-                <span className="text-sm font-medium text-foreground">{item.label}</span>
-                <span className="text-sm text-muted-foreground">{cost} {t("common.credits")}</span>
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">{item.label}</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">{cost} {t("common.credits")}</span>
               </div>
             );
           })}
@@ -248,27 +247,29 @@ export default function BillingPage() {
 
           setIsLoadingPayment(true);
           try {
-            const response = await fetch('/api/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+            const { response, data } = await postCheckoutWithTimeout({
                 planId: pendingCheckout.planId,
                 period: pendingCheckout.period,
                 phoneNumber: msisdn,
-              }),
             });
-
-            const data = await response.json();
 
             if (data.url) {
               window.location.href = data.url;
             } else if (data.success) {
               window.location.reload();
+            } else if (isLikelyMpesaDismissal(data)) {
+              toast.error(t("billing.paymentDismissed"));
+            } else if (!response.ok) {
+              toast.error(data.error || t("billing.paymentError"));
             } else {
               toast.error(data.error || t("billing.paymentError"));
             }
           } catch (error) {
-            toast.error(t("billing.serverError"));
+            const isAbort =
+              error instanceof DOMException && error.name === "AbortError";
+            toast.error(
+              isAbort ? t("billing.paymentDismissed") : t("billing.serverError")
+            );
           } finally {
             setIsLoadingPayment(false);
             setMpesaModalOpen(false);

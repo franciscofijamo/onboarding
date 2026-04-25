@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CpfModal, BillingType } from '@/components/billing/cpf-modal'
 import { MpesaModal } from '@/components/billing/mpesa-modal'
 import { cn } from '@/lib/utils'
+import { postCheckoutWithTimeout } from '@/lib/billing/mpesa-feedback'
 
 type PlanGridProps = {
   plans: PlanDisplay[]
@@ -164,17 +165,11 @@ export function PlanGrid({ plans, currentPlanId }: PlanGridProps) {
 
         setIsLoading(true)
         try {
-          const response = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planId: pendingCheckout.planId,
-              period: pendingCheckout.period,
-              phoneNumber: msisdn,
-            }),
+          const { response, data } = await postCheckoutWithTimeout({
+            planId: pendingCheckout.planId,
+            period: pendingCheckout.period,
+            phoneNumber: msisdn,
           })
-
-          const data = await response.json()
 
           if (data.url) {
             window.location.href = data.url
