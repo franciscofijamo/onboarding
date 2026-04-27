@@ -54,7 +54,13 @@ const resultHighlights = [
   },
 ];
 
-const LOOP_DURATION = "7.2s";
+const LOOP_DURATION = "10s";
+const STEP_COLORS = [
+  "hsl(45, 93%, 47%)", // Amarelo claro
+  "hsl(35, 92%, 50%)", // Amarelo escuro
+  "hsl(142, 71%, 45%)", // Verde leve
+  "hsl(142, 76%, 36%)", // Verde escuro
+];
 
 export default function HomePage() {
   return (
@@ -138,10 +144,12 @@ export default function HomePage() {
                     return (
                       <div
                         key={point.title}
-                        className="group relative flex items-center gap-3 rounded-xl border border-border bg-background/80 p-3 transition-colors hover:bg-muted/50"
+                        className="group relative flex items-center gap-3 rounded-xl border border-border bg-background/80 p-3 transition-colors"
                         style={{
                           animation: `step-focus ${LOOP_DURATION} ease-in-out infinite`,
                           animationDelay,
+                          // @ts-ignore
+                          "--active-bg": STEP_COLORS[index],
                         }}
                       >
                         <div
@@ -164,10 +172,22 @@ export default function HomePage() {
                           <Icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
+                          <p
+                            className="text-sm font-semibold text-foreground"
+                            style={{
+                              animation: `step-text ${LOOP_DURATION} ease-in-out infinite`,
+                              animationDelay,
+                            }}
+                          >
                             {point.title}
                           </p>
-                          <p className="text-xs leading-5 text-muted-foreground">
+                          <p
+                            className="text-xs leading-5 text-muted-foreground"
+                            style={{
+                              animation: `step-text ${LOOP_DURATION} ease-in-out infinite`,
+                              animationDelay,
+                            }}
+                          >
                             {point.description}
                           </p>
                         </div>
@@ -177,7 +197,12 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-5 rounded-xl border border-border bg-background/70 p-4">
+              <div
+                className="mt-5 rounded-xl border border-border bg-background/70 p-4 opacity-0"
+                style={{
+                  animation: `score-box ${LOOP_DURATION} ease-in-out infinite`,
+                }}
+              >
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
@@ -185,15 +210,41 @@ export default function HomePage() {
                     </p>
                     <p className="text-sm font-semibold">Match Score</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-semibold">82</p>
+                  <div className="flex flex-col items-end">
+                    <div className="flex h-8 overflow-hidden text-2xl font-bold leading-8 text-foreground">
+                      <div
+                        className="flex flex-col transition-transform"
+                        style={{
+                          animation: `count-tens ${LOOP_DURATION} cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite`,
+                        }}
+                      >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                          <span key={n}>{n}</span>
+                        ))}
+                      </div>
+                      <div
+                        className="flex flex-col transition-transform"
+                        style={{
+                          animation: `count-units ${LOOP_DURATION} cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite`,
+                        }}
+                      >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2].map((n, i) => (
+                          <span key={i}>{n}</span>
+                        ))}
+                      </div>
+                    </div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                       / 100
                     </p>
                   </div>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full w-[82%] rounded-full bg-primary" />
+                  <div
+                    className="h-full rounded-full bg-emerald-500"
+                    style={{
+                      animation: `score-bar ${LOOP_DURATION} cubic-bezier(0.65, 0, 0.35, 1) infinite`,
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -249,46 +300,58 @@ export default function HomePage() {
       <style jsx>{`
         @keyframes step-focus {
           0%,
-          18%,
+          13%,
           100% {
             transform: translateX(0);
             border-color: hsl(var(--border));
             background: hsl(var(--background) / 0.8);
             box-shadow: none;
           }
-          7%,
-          11% {
+          5%,
+          8% {
             transform: translateX(4px);
-            border-color: hsl(var(--primary) / 0.35);
-            background: hsl(var(--muted) / 0.55);
-            box-shadow: 0 12px 30px -22px hsl(var(--primary) / 0.55);
+            border-color: var(--active-bg);
+            background: var(--active-bg);
+            box-shadow: 0 12px 30px -15px var(--active-bg);
+          }
+        }
+
+        @keyframes step-text {
+          0%,
+          13%,
+          100% {
+            color: inherit;
+          }
+          5%,
+          8% {
+            color: white;
           }
         }
 
         @keyframes step-icon {
           0%,
-          18%,
+          13%,
           100% {
             transform: scale(1);
           }
-          7%,
-          11% {
+          5%,
+          8% {
             transform: scale(1.08);
           }
         }
 
         @keyframes step-ring {
           0%,
-          18%,
+          13%,
           100% {
             opacity: 0;
             transform: scale(1);
           }
-          7% {
+          5% {
             opacity: 0.7;
             transform: scale(1);
           }
-          14% {
+          10% {
             opacity: 0;
             transform: scale(1.55);
           }
@@ -298,8 +361,68 @@ export default function HomePage() {
           0% {
             transform: translateY(-100%);
           }
+          65%,
           100% {
             transform: translateY(420%);
+          }
+        }
+        @keyframes score-box {
+          0%,
+          65% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          68%,
+          95% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          98%,
+          100% {
+            opacity: 0;
+            transform: translateY(-5px);
+          }
+        }
+
+        @keyframes score-bar {
+          0%,
+          65% {
+            width: 0;
+          }
+          72%,
+          95% {
+            width: 82%;
+          }
+          100% {
+            width: 82%;
+          }
+        }
+
+        @keyframes count-tens {
+          0%,
+          65% {
+            transform: translateY(0);
+          }
+          72%,
+          95% {
+            transform: translateY(-800%);
+          }
+          100% {
+            transform: translateY(-800%);
+          }
+        }
+
+        @keyframes count-units {
+          0%,
+          65% {
+            transform: translateY(0);
+          }
+          72%,
+          95% {
+            transform: translateY(-1200%);
+          }
+          100% {
+            transform: translateY(-1200%);
           }
         }
       `}</style>
