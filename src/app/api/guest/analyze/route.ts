@@ -60,6 +60,10 @@ export async function POST(request: Request) {
         userPrompt +
         "\n\nRespond ONLY with valid JSON. No markdown, no code fences, no explanations outside the JSON.",
       temperature: 0.7,
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'guest-analysis',
+      },
     })
 
     const analysisResult = parseAnalysisJson(analysisContent)

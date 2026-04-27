@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { db } from "@/lib/db";
 import { withApiLogging } from '@/lib/logging/api';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 async function handleClerkWebhook(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
@@ -72,6 +73,24 @@ async function handleClerkWebhook(req: Request) {
       });
 
       console.log(`User created with ${freeCredits} free credits`);
+
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: id,
+        event: 'user_signed_up',
+        properties: {
+          email: primaryEmail?.email_address || null,
+          name: `${first_name || ''} ${last_name || ''}`.trim() || null,
+          free_credits: freeCredits,
+        },
+      });
+      posthog.identify({
+        distinctId: id,
+        properties: {
+          email: primaryEmail?.email_address || null,
+          name: `${first_name || ''} ${last_name || ''}`.trim() || null,
+        },
+      });
     } catch (error) {
       console.error('Error creating user:', error);
       return new Response('Error creating user', { status: 500 });

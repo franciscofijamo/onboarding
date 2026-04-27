@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlanGrid } from "@/components/billing/plan-grid";
 import { usePublicPlans } from "@/hooks/use-public-plans";
@@ -13,6 +14,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function SubscribePage() {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
+
+  React.useEffect(() => {
+    posthog.capture("subscribe_page_viewed");
+  }, []);
 
   React.useEffect(() => {
     if (isLoaded && !isSignedIn) {

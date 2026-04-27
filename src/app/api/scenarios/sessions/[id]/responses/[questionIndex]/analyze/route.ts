@@ -306,6 +306,11 @@ export async function POST(
         ),
         temperature: 0.3,
         maxOutputTokens: 4000,
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: 'scenario-analysis',
+          metadata: { posthog_distinct_id: clerkId },
+        },
       })
 
       const analysisText = analysisResult.text.trim()

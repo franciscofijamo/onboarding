@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { getOutcomeLabel, getStatusLabel, mapStatusToKanbanStage, type JobApplicationStatus } from "@/lib/job-application/kanban";
+import posthog from "posthog-js";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { useCredits } from "@/hooks/use-credits";
@@ -851,6 +852,11 @@ export default function OnboardingPage() {
 
   const handleSubmitJobApplication = async () => {
     if (!jobDescription.trim() || !savedResumeId) return;
+
+    posthog.capture("onboarding_analysis_submitted", {
+      has_job_description: Boolean(jobDescription.trim()),
+      has_resume: Boolean(savedResumeId),
+    });
 
     setCurrentStep("analysis");
     setIsAnalyzingExisting(true);

@@ -155,6 +155,11 @@ export async function POST(request: NextRequest) {
                 prompt,
                 temperature: 0.4,
                 maxOutputTokens: 8000,
+                experimental_telemetry: {
+                    isEnabled: true,
+                    functionId: 'mock-interview-deck-generation',
+                    metadata: { posthog_distinct_id: clerkId },
+                },
             })
 
             const text = result.text.trim()

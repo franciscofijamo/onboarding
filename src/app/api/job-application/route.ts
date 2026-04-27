@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { runApplicationAnalysis } from '@/lib/job-application/analyze'
+import { getPostHogClient } from '@/lib/posthog-server'
 
 const CreateJobApplicationSchema = z.object({
   resumeId: z.string().optional(),
@@ -177,8 +178,34 @@ export async function POST(request: NextRequest) {
           })
       }
 
+      const posthogPlatform = getPostHogClient()
+      posthogPlatform.capture({
+        distinctId: clerkId,
+        event: 'job_application_created',
+        properties: {
+          job_title: jobPosting.title,
+          company_name: jobPosting.company.name,
+          is_public_application: true,
+          job_posting_id: jobPosting.id,
+        },
+      })
+
       return NextResponse.json({ jobApplication }, { status: 201 })
     }
+
+    const posthog = getPostHogClient()
+    posthog.capture({
+      distinctId: clerkId,
+      event: 'job_application_created',
+      properties: {
+        job_title: jobTitle || null,
+        company_name: companyName || null,
+        is_public_application: false,
+        has_resume: Boolean(resumeId),
+        has_cover_letter: Boolean(coverLetterId),
+        trigger_analysis: triggerAnalysis,
+      },
+    })
 
     if (triggerAnalysis) {
       try {

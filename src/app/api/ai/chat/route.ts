@@ -103,6 +103,11 @@ async function handleChatPost(req: Request) {
           model: PROVIDER(model),
           messages: modelMessages,
           temperature,
+          experimental_telemetry: {
+            isEnabled: true,
+            functionId: 'ai-chat',
+            metadata: { posthog_distinct_id: userId },
+          },
         })
         return result.toUIMessageStreamResponse({ originalMessages: messages as UIMessage[] })
       } catch (providerErr: unknown) {

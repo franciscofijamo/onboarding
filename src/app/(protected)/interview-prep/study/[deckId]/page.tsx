@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -134,8 +135,13 @@ export default function StudyPage({ params }: { params: Promise<{ deckId: string
         if (currentCard && !isFlipped && !currentCard.studied) {
             studiedCardsRef.current.add(currentCard.id);
             flipMutation.mutate(currentCard.id);
+            posthog.capture("flashcard_studied", {
+                card_id: currentCard.id,
+                card_category: currentCard.category,
+                deck_id: deckId,
+            });
         }
-    }, [currentCard, isFlipped, flipMutation]);
+    }, [currentCard, isFlipped, flipMutation, deckId]);
 
     const handlePrev = useCallback(() => {
         if (currentIndex > 0) {

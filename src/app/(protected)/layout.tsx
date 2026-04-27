@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/app/sidebar";
 import { Topbar } from "@/components/app/topbar";
@@ -21,7 +22,8 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = React.useState(false);
@@ -74,6 +76,15 @@ export default function ProtectedLayout({
     setShowProfileModal(false);
     refetchProfile();
   };
+
+  React.useEffect(() => {
+    if (isSignedIn && userId && user) {
+      posthog.identify(userId, {
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName,
+      });
+    }
+  }, [isSignedIn, userId, user]);
 
   React.useEffect(() => {
     setMounted(true);

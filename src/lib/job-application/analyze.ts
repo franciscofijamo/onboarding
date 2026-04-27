@@ -344,6 +344,11 @@ async function runAnalysisCore(params: {
         jobApplication.user.locale
       ),
       temperature: 0.7,
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'job-application-analysis',
+        metadata: { posthog_distinct_id: clerkId },
+      },
     })
 
     const analysisResult = parseAnalysisJson(analysisContent)

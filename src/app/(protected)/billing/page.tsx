@@ -7,8 +7,9 @@ import { useCredits } from "@/hooks/use-credits";
 import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { Coins, Check, Zap, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { MpesaModal } from "@/components/billing/mpesa-modal";
 import { toast } from "sonner";
@@ -40,6 +41,10 @@ export default function BillingPage() {
     ]
   });
 
+  useEffect(() => {
+    posthog.capture("billing_page_viewed");
+  }, []);
+
   const creditPlans = useMemo(() => {
     if (!plansData?.plans) return [];
 
@@ -59,6 +64,13 @@ export default function BillingPage() {
       toast.error(t("billing.planNotAvailable"));
       return;
     }
+
+    posthog.capture("credit_purchase_initiated", {
+      plan_id: creditPlan.id,
+      plan_name: creditPlan.name,
+      credits: creditPlan.credits,
+      price_cents: creditPlan.priceMonthlyCents || creditPlan.priceYearlyCents || 0,
+    });
 
     setPendingCheckout({ planId: creditPlan.id, period: 'MONTHLY' });
     setMpesaModalOpen(true);

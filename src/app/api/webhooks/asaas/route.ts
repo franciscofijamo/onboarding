@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
 import { asaasClient } from '@/lib/asaas/client';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -126,6 +127,20 @@ export async function POST(request: NextRequest) {
                     });
 
                     console.log(`[Webhook] Credits updated: ${user.email} -> ${dbPlan.credits} credits from ${dbPlan.name}`);
+
+                    const posthog = getPostHogClient();
+                    posthog.capture({
+                        distinctId: user.clerkId,
+                        event: 'subscription_payment_confirmed',
+                        properties: {
+                            plan_name: dbPlan.name,
+                            plan_id: dbPlan.id,
+                            credits_granted: dbPlan.credits,
+                            payment_value: payment.value,
+                            billing_type: payment.billingType,
+                            asaas_event: event,
+                        },
+                    });
                 } else {
                     console.warn(`[Webhook] Plan not found: ${planId}`);
                 }

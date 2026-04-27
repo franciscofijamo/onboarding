@@ -8,6 +8,7 @@ import { useSetPageMetadata } from "@/contexts/page-metadata";
 import { useLanguage } from "@/contexts/language";
 import { useCredits } from "@/hooks/use-credits";
 import { toast } from "@/hooks/use-toast";
+import posthog from "posthog-js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -288,6 +289,13 @@ export default function ScenarioSessionPage() {
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       setExpandedFeedback(activeQuestion);
 
+      posthog.capture("scenario_response_analyzed", {
+        session_id: sessionId,
+        question_index: currentResponse.questionIndex,
+        recording_duration_seconds: recordingTime,
+        scenario_type: session?.scenarioType || null,
+      });
+
       toast({
         title: t("scenarios.analysisComplete") || "Analysis complete!",
         description: t("scenarios.analysisCompleteDesc") || "View detailed feedback below.",
@@ -322,6 +330,13 @@ export default function ScenarioSessionPage() {
       queryClient.invalidateQueries({ queryKey: ["scenario-session", sessionId] });
       queryClient.invalidateQueries({ queryKey: ["credits"] });
       setExpandedFeedback(activeQuestion);
+
+      posthog.capture("scenario_response_analyzed", {
+        session_id: sessionId,
+        question_index: currentResponse.questionIndex,
+        scenario_type: session?.scenarioType || null,
+        re_analyzed: true,
+      });
 
       toast({
         title: t("scenarios.analysisComplete") || "Analysis complete!",

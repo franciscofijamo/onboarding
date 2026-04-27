@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { asaasClient } from '@/lib/asaas/client';
 import { ASAAS_CONFIG } from '@/lib/asaas/config';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export async function POST() {
     try {
@@ -67,6 +68,17 @@ export async function POST() {
                         previousPlan: currentPlan?.name || '',
                         provider: 'mpesa',
                     },
+                },
+            });
+
+            const posthogMpesa = getPostHogClient();
+            posthogMpesa.capture({
+                distinctId: userId,
+                event: 'subscription_cancelled',
+                properties: {
+                    plan_name: currentPlan?.name || null,
+                    provider: 'mpesa',
+                    effective_until: user.billingPeriodEnd?.toISOString() || null,
                 },
             });
 
@@ -178,6 +190,18 @@ export async function POST() {
         });
 
         console.log(`[Cancel] Subscription cancelled for user ${userId}. Access until: ${user.billingPeriodEnd}`);
+
+        const posthog = getPostHogClient();
+        posthog.capture({
+            distinctId: userId,
+            event: 'subscription_cancelled',
+            properties: {
+                plan_name: currentPlan?.name || null,
+                provider: 'asaas',
+                effective_until: user.billingPeriodEnd?.toISOString() || null,
+                asaas_subscription_id: cancelledSubscriptionId,
+            },
+        });
 
         return NextResponse.json({
             success: true,

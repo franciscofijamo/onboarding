@@ -14,6 +14,12 @@ import {
   Sparkles,
   Search,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { GlowingEffect } from "@/components/ui/glowing-effect";
+import { cn } from "@/lib/utils";
 
 const LOADING_MESSAGES_CV = [
   "Lendo o seu documento...",
@@ -263,10 +269,10 @@ export function GuestEvaluator() {
       : Object.keys(result.recommendations || {}).length || 0;
 
     return (
-      <div className="w-full max-w-4xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-border/40 bg-card shadow-2xl shadow-primary/5">
-          <div className="relative z-10 p-4 sm:p-6 md:p-8">
-            <div className="mb-8 flex flex-col items-center gap-6 rounded-2xl border-2 border-border/20 bg-muted/20 p-5 md:flex-row md:items-start">
+      <div className="w-full max-w-5xl mx-auto mt-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="relative overflow-hidden rounded-xl border-2 border-border/60 bg-card shadow-2xl shadow-primary/5 font-sans">
+          <div className="relative z-10 p-5 sm:p-6 md:p-10">
+            <div className="mb-10 flex flex-col items-center gap-8 rounded-xl border-2 border-border/20 bg-muted/20 p-6 md:flex-row md:items-start">
               <div className="shrink-0 relative flex items-center justify-center">
                 <svg width="100" height="100" className="-rotate-90">
                   <circle
@@ -334,39 +340,39 @@ export function GuestEvaluator() {
 
             {/* Blurred detailed analysis */}
             <div className="relative">
-              <div className="absolute inset-x-0 -top-6 bottom-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-border/40 bg-background/80 p-6 backdrop-blur-md">
-                <div className="w-full max-w-sm space-y-4 rounded-2xl border-2 border-border bg-card p-6 text-center shadow-xl">
-                  <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Sparkles className="h-5 w-5" />
+              <div className="absolute inset-x-0 -top-6 bottom-0 z-20 flex flex-col items-center justify-center rounded-xl border-2 border-border/40 bg-background/80 p-8 backdrop-blur-md">
+                <div className="w-full max-w-md space-y-6 rounded-xl border-2 border-border bg-card p-8 text-center shadow-2xl">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Sparkles className="h-6 w-6" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-bold">Análise Detalhada</h3>
-                    <p className="text-muted-foreground text-[10px] leading-relaxed">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-bold">Análise Detalhada</h3>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
                       Descubra as lacunas do seu CV e saiba exactamente o que ajustar para garantir a sua entrevista.
                     </p>
                   </div>
                   <button
                     onClick={handleSignUpRedirect}
-                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95"
                   >
-                    Ver Análise Completa <ChevronRight className="h-4 w-4" />
+                    Ver Análise Completa <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="grid select-none gap-3 opacity-20 pointer-events-none md:grid-cols-2">
-                <div className="rounded-2xl border-2 border-border bg-muted/40 p-4">
-                  <div className="h-4 bg-foreground/10 rounded w-1/2 mb-3" />
-                  <div className="space-y-2">
-                    <div className="h-2 bg-foreground/5 rounded w-full" />
-                    <div className="h-2 bg-foreground/5 rounded w-5/6" />
+              <div className="grid select-none gap-4 opacity-20 pointer-events-none md:grid-cols-2">
+                <div className="rounded-xl border-2 border-border bg-muted/40 p-6">
+                  <div className="h-6 bg-foreground/10 rounded w-1/2 mb-4" />
+                  <div className="space-y-3">
+                    <div className="h-3 bg-foreground/5 rounded w-full" />
+                    <div className="h-3 bg-foreground/5 rounded w-5/6" />
                   </div>
                 </div>
-                <div className="rounded-2xl border-2 border-border bg-muted/40 p-4">
-                  <div className="h-4 bg-foreground/10 rounded w-1/2 mb-3" />
-                  <div className="space-y-2">
-                    <div className="h-2 bg-foreground/5 rounded w-full" />
-                    <div className="h-2 bg-foreground/5 rounded w-5/6" />
+                <div className="rounded-xl border-2 border-border bg-muted/40 p-6">
+                  <div className="h-6 bg-foreground/10 rounded w-1/2 mb-4" />
+                  <div className="space-y-3">
+                    <div className="h-3 bg-foreground/5 rounded w-full" />
+                    <div className="h-3 bg-foreground/5 rounded w-5/6" />
                   </div>
                 </div>
               </div>
@@ -380,64 +386,82 @@ export function GuestEvaluator() {
   const isFormReady = Boolean(cvText.trim() && jobText.trim());
 
   return (
-    <div className="relative mx-auto mt-4 w-full max-w-4xl rounded-3xl border-2 border-border/40 bg-card shadow-2xl shadow-primary/5 font-sans">
-      <div className="p-4 sm:p-6">
-        <div className="mb-6 grid gap-4 lg:grid-cols-2">
+    <div className="relative mx-auto mt-4 w-full max-w-5xl rounded-xl border-2 border-border bg-card shadow-2xl shadow-primary/5 font-sans">
+      <div className="p-6 sm:p-8">
+        <div className="mb-8 grid gap-6 lg:grid-cols-2">
           {/* Currículo Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                 1
               </div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">O seu Currículo</h3>
             </div>
 
             {!cvText ? (
-              <div
-                className="group relative flex h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 px-6 text-center transition-all hover:border-primary hover:bg-primary/5"
-                onClick={() =>
-                  !isExtractingResume && fileInputRef.current?.click()
-                }
-              >
-                {isExtractingResume ? (
-                  <div className="flex flex-col items-center gap-3 text-primary">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p className="text-xs font-bold animate-pulse">
-                      {LOADING_MESSAGES_CV[cvLoadingIndex]}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border-2 border-border bg-card text-muted-foreground transition-colors group-hover:border-primary group-hover:text-primary">
-                      <UploadCloud className="h-5 w-5" />
+              <>
+                <div
+                  className="group relative flex h-[220px] cursor-pointer flex-col items-center justify-start rounded-2xl border border-dashed border-border/70 bg-gradient-to-br from-background to-muted/30 px-8 pt-12 text-center transition-all hover:border-primary/60 hover:bg-primary/5"
+                  onClick={() =>
+                    !isExtractingResume && fileInputRef.current?.click()
+                  }
+                >
+                  <GlowingEffect
+                    disabled={false}
+                    proximity={72}
+                    spread={28}
+                    blur={0}
+                    borderWidth={1}
+                    className="rounded-2xl"
+                  />
+                  {isExtractingResume ? (
+                    <div className="flex flex-col items-center gap-4 text-primary">
+                      <Loader2 className="h-10 w-10 animate-spin" />
+                      <p className="text-sm font-bold animate-pulse">
+                        {LOADING_MESSAGES_CV[cvLoadingIndex]}
+                      </p>
                     </div>
-                    <p className="text-sm font-bold text-foreground">
-                      Carregar PDF ou Word
-                    </p>
-                  </>
-                )}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleExtractResumeFromFile}
-                />
-              </div>
+                  ) : (
+                    <>
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors group-hover:border-primary/40 group-hover:text-primary">
+                        <UploadCloud className="h-6 w-6" />
+                      </div>
+                      <p className="text-lg font-semibold tracking-[-0.02em] text-foreground">
+                        Carregar PDF ou Word
+                      </p>
+                      <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
+                        Extraímos os pontos principais do seu CV para comparar com a vaga.
+                      </p>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleExtractResumeFromFile}
+                  />
+                </div>
+                {resumeUploadError ? (
+                  <p className="text-sm font-medium text-rose-600">
+                    {resumeUploadError}
+                  </p>
+                ) : null}
+              </>
             ) : (
-              <div className="relative flex h-[200px] animate-in flex-col justify-center rounded-2xl border-2 border-emerald-500/30 bg-emerald-500/5 p-6 duration-500 zoom-in-95">
-                <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
+              <div className="relative flex h-[220px] animate-in flex-col justify-center rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.07] to-background p-7 duration-500 zoom-in-95">
+                <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-emerald-500/20 bg-card text-emerald-600 shadow-sm">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-background text-emerald-600 shadow-sm">
                   <FileText className="h-6 w-6" />
                 </div>
-                <h4 className="line-clamp-1 text-base font-bold">
+                <h4 className="line-clamp-1 text-xl font-semibold tracking-[-0.02em]">
                   {cvName || "Currículo Pronto"}
                 </h4>
                 <button
                   onClick={resetCv}
-                  className="mt-3 w-fit text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
+                  className="mt-4 w-fit text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
                 >
                   Trocar ficheiro
                 </button>
@@ -446,46 +470,72 @@ export function GuestEvaluator() {
           </div>
 
           {/* Vaga Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                 2
               </div>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">A Vaga Desejada</h3>
             </div>
 
             {!jobText ? (
-              <div className="relative flex h-[200px] flex-col overflow-hidden rounded-2xl border-2 border-border bg-muted/20">
+              <div className="relative flex min-h-[220px] flex-col overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-background to-muted/25">
+                <GlowingEffect
+                  disabled={false}
+                  proximity={64}
+                  spread={24}
+                  blur={0}
+                  borderWidth={1}
+                  className="rounded-2xl"
+                />
                 {isCrawling && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background/90 text-primary backdrop-blur-sm">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                    <p className="text-xs font-bold animate-pulse">
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-background/90 text-primary backdrop-blur-sm">
+                    <Loader2 className="h-10 w-10 animate-spin" />
+                    <p className="text-sm font-semibold animate-pulse">
                       {LOADING_MESSAGES_JOB[jobLoadingIndex]}
                     </p>
                   </div>
                 )}
 
-                <div className="flex border-b-2 border-border bg-muted/40 p-1 text-[10px] font-bold uppercase tracking-wider">
-                  <button
-                    onClick={() => setJobInputMode("url")}
-                    className={`flex-1 rounded-lg py-1.5 transition-all ${jobInputMode === "url" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                <div className="border-b border-border/60 px-5 pt-4">
+                  <Tabs
+                    value={jobInputMode}
+                    onValueChange={(value) =>
+                      setJobInputMode(value as "url" | "text")
+                    }
+                    className="w-full"
                   >
-                    Link
-                  </button>
-                  <button
-                    onClick={() => setJobInputMode("text")}
-                    className={`flex-1 rounded-lg py-1.5 transition-all ${jobInputMode === "text" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    Texto
-                  </button>
+                    <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl bg-muted/60 p-1">
+                      <TabsTrigger
+                        value="url"
+                        className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                      >
+                        Link
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="text"
+                        className="rounded-lg text-sm font-semibold data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                      >
+                        Texto
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
 
-                <div className="flex-1 p-4 flex flex-col justify-center font-sans">
+                <div className="flex flex-1 flex-col justify-center p-5 sm:p-6 font-sans">
                   {jobInputMode === "url" ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 rounded-xl border-2 border-border bg-card p-2.5 transition-all focus-within:border-primary">
-                        <LinkIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                        <input
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
+                          Insira o link da vaga
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          Funciona melhor com páginas de emprego públicas e completas.
+                        </p>
+                      </div>
+                      <div className="relative">
+                        <LinkIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
                           type="url"
                           value={jobUrl}
                           onChange={(e) => setJobUrl(e.target.value)}
@@ -493,50 +543,67 @@ export function GuestEvaluator() {
                             e.key === "Enter" && handleCrawlUrl()
                           }
                           placeholder="linkedin.com/jobs/..."
-                          className="flex-1 bg-transparent border-0 p-0 text-xs focus:ring-0 placeholder:text-muted-foreground/60 outline-none font-medium"
+                          className="h-12 rounded-xl border-border/70 bg-background pl-11 pr-4 text-[15px] font-medium shadow-none focus-visible:ring-2"
                         />
                       </div>
-                      <button
+                      <Button
                         onClick={handleCrawlUrl}
                         disabled={!jobUrl.trim()}
-                        className="w-full rounded-xl bg-primary py-2.5 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                        size="lg"
+                        className="h-12 w-full rounded-xl text-[15px] font-semibold shadow-md shadow-primary/15"
                       >
-                        Localizar Vaga
-                      </button>
+                        <Search className="h-4 w-4" />
+                        Localizar vaga
+                      </Button>
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col h-full space-y-2">
-                      <textarea
+                    <div className="flex flex-1 flex-col space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
+                          Cole a descrição da vaga
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          Use o texto completo para uma análise mais precisa.
+                        </p>
+                      </div>
+                      <Textarea
                         value={tempJobText}
                         onChange={(e) => setTempJobText(e.target.value)}
                         placeholder="Cole a descrição aqui..."
-                        className="w-full flex-1 resize-none rounded-xl border-2 border-border bg-card p-3 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary"
+                        className="min-h-[112px] flex-1 resize-none rounded-xl border-border/70 bg-background p-4 text-[15px] leading-7 shadow-none focus-visible:ring-2"
                       />
-                      <button
+                      <Button
                         onClick={submitJobTextForm}
                         disabled={!tempJobText.trim()}
-                        className="w-full rounded-xl bg-primary py-2 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                        size="lg"
+                        className="h-12 w-full rounded-xl text-[15px] font-semibold shadow-md shadow-primary/15"
                       >
                         Confirmar Texto
-                      </button>
+                      </Button>
                     </div>
                   )}
+
+                  {crawlError && jobInputMode === "url" ? (
+                    <p className="mt-3 text-sm font-medium text-rose-600">
+                      {crawlError}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             ) : (
-              <div className="relative flex h-[200px] animate-in flex-col justify-center rounded-2xl border-2 border-primary/20 bg-primary/5 p-6 duration-500 zoom-in-95">
-                <div className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white shadow-lg">
+              <div className="relative flex h-[220px] animate-in flex-col justify-center rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] to-background p-7 duration-500 zoom-in-95">
+                <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-lg">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border-2 border-primary/10 bg-card text-primary shadow-sm">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/10 bg-background text-primary shadow-sm">
                   <Briefcase className="h-6 w-6" />
                 </div>
-                <h4 className="line-clamp-1 text-base font-bold">
+                <h4 className="line-clamp-2 text-xl font-semibold tracking-[-0.02em]">
                   {jobName}
                 </h4>
                 <button
                   onClick={resetJob}
-                  className="mt-3 w-fit text-xs font-bold text-muted-foreground hover:text-primary transition-colors"
+                  className="mt-4 w-fit text-sm font-semibold text-muted-foreground transition-colors hover:text-primary"
                 >
                   Trocar vaga
                 </button>
@@ -547,35 +614,40 @@ export function GuestEvaluator() {
 
         {/* Call to Action Bar */}
         <div
-          className={`flex flex-col items-center justify-between gap-4 rounded-2xl border-2 p-4 transition-all duration-300 md:flex-row ${isFormReady ? "border-primary bg-primary text-primary-foreground shadow-xl shadow-primary/20" : "border-border bg-muted/40"}`}
+          className={cn(
+            "flex flex-col items-center justify-between gap-6 rounded-2xl border p-6 transition-all duration-300 md:flex-row",
+            isFormReady
+              ? "border-primary/20 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-xl shadow-primary/20"
+              : "border-border/70 bg-muted/35",
+          )}
         >
           <div className="text-center md:text-left">
-            <h3 className={`text-base font-bold ${isFormReady ? "text-primary-foreground" : "text-foreground"}`}>
+            <h3 className={cn(
+              "text-xl font-semibold tracking-[-0.02em]",
+              isFormReady ? "text-primary-foreground" : "text-foreground",
+            )}>
               {isFormReady ? "Análise Pronta" : "Faltam os dados"}
             </h3>
-            <p className={`text-[10px] font-medium opacity-80`}>
+            <p className="mt-1 text-sm leading-6 opacity-85">
               {isFormReady ? "Pronto para gerar o seu Match Score." : "Adicione o CV e a Vaga para continuar."}
             </p>
           </div>
-          <button
+          <Button
             onClick={handleAnalyze}
-            disabled={!isFormReady || isAnalyzing}
-            className={`
-              group relative flex h-10 w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-6 text-xs font-bold transition-all md:w-auto
-              ${isFormReady && !isAnalyzing ? "bg-white text-primary shadow-md hover:scale-[1.05] active:scale-95" : "bg-muted-foreground/10 text-muted-foreground cursor-not-allowed"}
-            `}
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Processando...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" /> Calcular Match Score
-              </>
+            disabled={!isFormReady}
+            isLoading={isAnalyzing}
+            loadingText="Processando..."
+            size="lg"
+            className={cn(
+              "group relative h-12 w-full overflow-hidden rounded-xl px-8 text-[15px] font-semibold md:w-auto",
+              isFormReady
+                ? "bg-white text-primary shadow-md"
+                : "bg-muted-foreground/10 text-muted-foreground",
             )}
-          </button>
+          >
+            <Sparkles className="h-4 w-4" />
+            Calcular Match Score
+          </Button>
         </div>
       </div>
     </div>
