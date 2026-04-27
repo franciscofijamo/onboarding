@@ -10,7 +10,6 @@ import {
   Link2,
   MessagesSquare,
   Mic2,
-  MousePointerClick,
 } from "lucide-react";
 import { GuestEvaluator } from "@/components/marketing/guest-evaluator";
 
@@ -227,27 +226,20 @@ export default function HomePage() {
 
       <section
         id="avaliador"
-        className="mx-auto w-full max-w-6xl scroll-mt-24 pt-12"
+        className="mx-auto w-full max-w-6xl scroll-mt-24 mt-24 pt-12"
       >
-        <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div className="max-w-3xl space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Teste gratuito
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+        <div className="mb-12 mx-auto max-w-3xl space-y-5 px-4 text-center flex flex-col items-center">
+          <p className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 shadow-sm">
+            Teste gratuito
+          </p>
+          <div className="space-y-3 mt-5">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl text-balance">
               Compare o seu CV com uma vaga em poucos minutos.
             </h2>
-            <p className="text-sm leading-6 text-muted-foreground md:text-base">
+            <p className="max-w-2xl mx-auto text-base leading-7 text-muted-foreground md:text-lg text-pretty">
               Carregue o documento, indique a oportunidade e veja uma
               pré-análise clara antes de criar o perfil completo.
             </p>
-          </div>
-
-          <div
-            className="inline-flex h-10 w-fit items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground shadow-sm"
-          >
-            <MousePointerClick className="h-4 w-4 text-primary" />
-            Comece abaixo
           </div>
         </div>
 
