@@ -4,6 +4,7 @@
 .env
 .env.local
 .env.*.local
+.env.*.example
 .env.*
 .env.development
 .env.production
