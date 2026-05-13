@@ -100,7 +100,7 @@ async function handleImageGeneration(req: Request) {
         ? String(originFromReq).startsWith('http')
           ? originFromReq
           : `http://${originFromReq}`
-        : 'http://localhost:3000')
+        : 'http://localhost:5000')
 
     const DEBUG = process.env.IMAGE_DEBUG === '1' || process.env.NODE_ENV !== 'production'
     const startedAt = Date.now()

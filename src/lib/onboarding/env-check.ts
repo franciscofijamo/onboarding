@@ -36,7 +36,7 @@ const REQUIRED_ENV_VARS: Omit<EnvChecklistItem, 'value' | 'isConfigured'>[] = [
   {
     key: 'CLERK_WEBHOOK_SECRET',
     label: 'Clerk Webhook Secret',
-    description: 'Usada para validar eventos de billing recebidos do Clerk.',
+    description: 'Usada para validar eventos de usuário recebidos do Clerk.',
     docsPath: '.context/docs/authentication.md',
     category: 'Clerk',
   },

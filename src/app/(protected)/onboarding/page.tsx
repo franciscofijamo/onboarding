@@ -22,7 +22,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Copy,
   BarChart3,
   Target,
   TrendingUp,
@@ -38,8 +37,18 @@ import {
   ChevronDown,
   ChevronUp,
   Edit2,
+  Eye,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { RichTextViewer } from "@/components/editor/rich-text-editor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   CATEGORY_LABELS,
   JOB_TYPE_LABELS,
@@ -49,7 +58,7 @@ import {
   type SalaryRange,
 } from "@/lib/recruiter/postings";
 
-type Step = "resume" | "cover-letter" | "job-description" | "analysis";
+type Step = "resume" | "job-description" | "analysis";
 
 interface JobPostingPreview {
   id: string;
@@ -63,14 +72,12 @@ interface JobPostingPreview {
 
 interface ResumeData {
   id: string;
-  title: string;
-  content: string;
-}
-
-interface CoverLetterData {
-  id: string;
-  title: string;
-  content: string;
+  title: string | null;
+  content: string | null;
+  fileUrl?: string | null;
+  filePath?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface JobApplicationData {
@@ -112,7 +119,6 @@ interface JobApplicationResponse {
 
 const STEPS: { key: Step; required: boolean }[] = [
   { key: "resume", required: true },
-  { key: "cover-letter", required: false },
   { key: "job-description", required: true },
   { key: "analysis", required: false },
 ];
@@ -123,22 +129,24 @@ function StepIndicator({
   completedSteps,
   onStepClick,
   isPublicApplication,
+  t,
 }: {
   steps: typeof STEPS;
   currentStep: Step;
   completedSteps: Set<Step>;
   onStepClick: (step: Step) => void;
   isPublicApplication?: boolean;
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const labels: Record<Step, string> = {
-    resume: "CV / Resume",
-    "cover-letter": "Cover Letter",
-    "job-description": "Descrição da Vaga",
-    analysis: isPublicApplication ? "Enviar Candidatura" : "AI Analysis",
+    resume: t("onboarding.stepResume"),
+    "job-description": t("onboarding.stepJobDescription"),
+    analysis: isPublicApplication
+      ? t("onboarding.stepSubmitApplication")
+      : t("onboarding.stepAnalysis"),
   };
   const icons: Record<Step, React.ReactNode> = {
     resume: <FileText className="h-4 w-4" />,
-    "cover-letter": <Copy className="h-4 w-4" />,
     "job-description": <Briefcase className="h-4 w-4" />,
     analysis: <Sparkles className="h-4 w-4" />,
   };
@@ -167,9 +175,6 @@ function StepIndicator({
                 icons[step.key]
               )}
               <span className="hidden sm:inline">{labels[step.key]}</span>
-              {!step.required && step.key !== "analysis" && (
-                <span className="text-xs opacity-60">(optional)</span>
-              )}
             </button>
             {index < steps.length - 1 && (
               <div
@@ -196,6 +201,38 @@ function toStringArray(
   return [];
 }
 
+function formatResumeDate(value: string | undefined, locale: string) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getDocumentType(value: string | null | undefined) {
+  const lowered = (value || "").toLowerCase();
+  if (lowered.includes("pdf") || lowered.endsWith(".pdf")) return "pdf";
+  if (
+    lowered.includes("wordprocessingml.document") ||
+    lowered.endsWith(".docx")
+  ) {
+    return "docx";
+  }
+  return undefined;
+}
+
+function getDownloadFileName(fileName: string | null, fallbackTitle: string, fileType: string | null) {
+  const baseName = fileName || fallbackTitle || "document";
+  if (/\.(pdf|docx)$/i.test(baseName)) return baseName;
+  if (fileType === "pdf") return baseName + ".pdf";
+  if (fileType === "docx") return baseName + ".docx";
+  return baseName;
+}
 
 function renderHighlightedAnalysisText(
   text: string,
@@ -248,31 +285,34 @@ export default function OnboardingPage() {
   const startFresh = searchParams.get("new") === "1";
   const jobPostingId = searchParams.get("jobPostingId");
   const queryClient = useQueryClient();
-  const { t, tArray } = useLanguage();
+  const { locale, t, tArray } = useLanguage();
   const { credits, refresh: refreshCredits } = useCredits();
 
   useSetPageMetadata({
-    title: Boolean(jobPostingId) ? "Candidatura" : "Processo de Candidatura",
+    title: Boolean(jobPostingId)
+      ? t("onboarding.metadataPublicTitle")
+      : t("onboarding.metadataTitle"),
     description: Boolean(jobPostingId)
-      ? "Envie a sua candidatura para a vaga seleccionada"
-      : "Faça a gestão da sua candidatura com análise IA",
+      ? t("onboarding.metadataPublicDescription")
+      : t("onboarding.metadataDescription"),
     showBreadcrumbs: true,
   });
 
   const [currentStep, setCurrentStep] = React.useState<Step>("resume");
   const [resumeText, setResumeText] = React.useState("");
   const [resumeTitle, setResumeTitle] = React.useState("");
-  const [coverLetterText, setCoverLetterText] = React.useState("");
-  const [coverLetterTitle, setCoverLetterTitle] = React.useState("");
+  const [resumeFileUrl, setResumeFileUrl] = React.useState<string | null>(null);
+  const [resumeFilePath, setResumeFilePath] = React.useState<string | null>(null);
+  const [resumeFileType, setResumeFileType] = React.useState<string | null>(null);
+  const [resumeFileName, setResumeFileName] = React.useState<string | null>(null);
+  const [resumeLocalPreviewUrl, setResumeLocalPreviewUrl] = React.useState<string | null>(null);
+  const [isUploadingResumeFile, setIsUploadingResumeFile] = React.useState(false);
   const [jobTitle, setJobTitle] = React.useState("");
   const [companyName, setCompanyName] = React.useState("");
   const [jobDescription, setJobDescription] = React.useState("");
   const [savedResumeId, setSavedResumeId] = React.useState<string | null>(
     null
   );
-  const [savedCoverLetterId, setSavedCoverLetterId] = React.useState<
-    string | null
-  >(null);
   const [analysisResult, setAnalysisResult] =
     React.useState<AnalysisData | null>(null);
   const [analysisError, setAnalysisError] = React.useState<string | null>(null);
@@ -283,7 +323,6 @@ export default function OnboardingPage() {
   const [isSavingDraft, setIsSavingDraft] = React.useState(false);
   const [isExtractingResume, setIsExtractingResume] = React.useState(false);
   const [resumeUploadError, setResumeUploadError] = React.useState<string | null>(null);
-  const [jobInputMode, setJobInputMode] = React.useState<"paste" | "url">("paste");
   const [jobUrl, setJobUrl] = React.useState("");
   const [isCrawling, setIsCrawling] = React.useState(false);
   const [crawlError, setCrawlError] = React.useState<string | null>(null);
@@ -292,8 +331,13 @@ export default function OnboardingPage() {
   const [platformAppSubmitted, setPlatformAppSubmitted] = React.useState(false);
   const [platformAppError, setPlatformAppError] = React.useState<string | null>(null);
   const [expandedVaga, setExpandedVaga] = React.useState(false);
-  const [expandedCV, setExpandedCV] = React.useState(false);
   const [analysisProgressIndex, setAnalysisProgressIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    return () => {
+      if (resumeLocalPreviewUrl) URL.revokeObjectURL(resumeLocalPreviewUrl);
+    };
+  }, [resumeLocalPreviewUrl]);
 
   const analysisProgressSteps = React.useMemo(() => {
     const steps = tArray("onboarding.analysisSteps");
@@ -326,12 +370,6 @@ export default function OnboardingPage() {
     queryFn: () => api.get("/api/resume"),
   });
 
-  const { data: existingCoverLetters, isLoading: loadingCoverLetters } =
-    useQuery<{ coverLetters: CoverLetterData[] }>({
-      queryKey: ["coverLetters"],
-      queryFn: () => api.get("/api/cover-letter"),
-    });
-
   const { data: existingJobApplications, isLoading: loadingJobApplications } =
     useQuery<{ jobApplications: JobApplicationData[] }>({
       queryKey: ["jobApplications"],
@@ -346,13 +384,28 @@ export default function OnboardingPage() {
     [existingJobApplications, selectedJobApplicationId]
   );
 
+  const setResumeDocumentSource = React.useCallback((resume: ResumeData | null) => {
+    setResumeFileUrl(resume?.fileUrl || null);
+    setResumeFilePath(resume?.filePath || null);
+    setResumeFileType(getDocumentType(resume?.filePath || resume?.fileUrl || resume?.title || ""));
+    setResumeFileName(resume?.filePath?.split("/").pop() || resume?.title || null);
+    setResumeLocalPreviewUrl(null);
+  }, []);
+
+  const clearResumeDocumentSource = React.useCallback(() => {
+    setResumeFileUrl(null);
+    setResumeFilePath(null);
+    setResumeFileType(null);
+    setResumeFileName(null);
+    setResumeLocalPreviewUrl(null);
+  }, []);
+
   React.useEffect(() => {
     if (dataLoaded) return;
-    if (loadingResumes || loadingCoverLetters || loadingJobApplications) return;
+    if (loadingResumes || loadingJobApplications) return;
     if (isPublicApplication && loadingJobPosting) return;
 
     const resumes = existingResumes?.resumes || [];
-    const coverLetters = existingCoverLetters?.coverLetters || [];
     const jobApps = existingJobApplications?.jobApplications || [];
 
     // For platform applications, always start fresh but pre-load last resume if available
@@ -370,15 +423,14 @@ export default function OnboardingPage() {
         setSavedResumeId(lastResume.id);
         setResumeTitle(lastResume.title || "");
         setResumeText(lastResume.content || "");
+        setResumeDocumentSource(lastResume);
       } else {
         setResumeText("");
         setResumeTitle("");
         setSavedResumeId(null);
+        clearResumeDocumentSource();
       }
 
-      setCoverLetterText("");
-      setCoverLetterTitle("");
-      setSavedCoverLetterId(null);
       setDataLoaded(true);
       return;
     }
@@ -402,19 +454,10 @@ export default function OnboardingPage() {
           setSavedResumeId(linkedResume.id);
           setResumeTitle(linkedResume.title || "");
           setResumeText(linkedResume.content || "");
+          setResumeDocumentSource(linkedResume);
         }
       }
 
-      if (selected.coverLetter?.id) {
-        const linkedCoverLetter = coverLetters.find(
-          (cl) => cl.id === selected.coverLetter?.id
-        );
-        if (linkedCoverLetter) {
-          setSavedCoverLetterId(linkedCoverLetter.id);
-          setCoverLetterTitle(linkedCoverLetter.title || "");
-          setCoverLetterText(linkedCoverLetter.content || "");
-        }
-      }
     } else {
       setSelectedJobApplicationId(null);
       setJobTitle("");
@@ -426,43 +469,32 @@ export default function OnboardingPage() {
       setResumeText("");
       setResumeTitle("");
       setSavedResumeId(null);
-      setCoverLetterText("");
-      setCoverLetterTitle("");
-      setSavedCoverLetterId(null);
+      clearResumeDocumentSource();
     }
 
     setDataLoaded(true);
   }, [
     dataLoaded,
     loadingResumes,
-    loadingCoverLetters,
     loadingJobApplications,
     loadingJobPosting,
     existingResumes,
-    existingCoverLetters,
     existingJobApplications,
     requestedApplicationId,
     startFresh,
     isPublicApplication,
     jobPosting,
+    setResumeDocumentSource,
+    clearResumeDocumentSource,
   ]);
 
   const completedSteps = React.useMemo(() => {
     const completed = new Set<Step>();
     if (savedResumeId && resumeText.trim()) completed.add("resume");
-    if (savedCoverLetterId && coverLetterText.trim())
-      completed.add("cover-letter");
     if (jobDescription.trim()) completed.add("job-description");
     if (analysisResult) completed.add("analysis");
     return completed;
-  }, [
-    savedResumeId,
-    resumeText,
-    savedCoverLetterId,
-    coverLetterText,
-    jobDescription,
-    analysisResult,
-  ]);
+  }, [savedResumeId, resumeText, jobDescription, analysisResult]);
 
   const showSaveStatus = (msg: string) => {
     setSaveStatus(msg);
@@ -472,17 +504,12 @@ export default function OnboardingPage() {
   const saveDraftForStep = React.useCallback(
     async (overrides?: {
       resumeId?: string | null;
-      coverLetterId?: string | null;
       jobTitle?: string;
       companyName?: string;
       jobDescription?: string;
     }) => {
       const payload = {
         resumeId: overrides?.resumeId !== undefined ? overrides.resumeId : savedResumeId || undefined,
-        coverLetterId:
-          overrides?.coverLetterId !== undefined
-            ? overrides.coverLetterId
-            : savedCoverLetterId || undefined,
         jobTitle: overrides?.jobTitle !== undefined ? overrides.jobTitle : jobTitle || undefined,
         companyName:
           overrides?.companyName !== undefined
@@ -510,7 +537,6 @@ export default function OnboardingPage() {
     [
       selectedJobApplicationId,
       savedResumeId,
-      savedCoverLetterId,
       jobTitle,
       companyName,
       jobDescription,
@@ -524,17 +550,18 @@ export default function OnboardingPage() {
     },
     onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ["resumes"] });
-      showSaveStatus("CV apagado!");
+      showSaveStatus(t("onboarding.resumeDeleted"));
       if (savedResumeId === deletedId) {
         setSavedResumeId(null);
         setResumeTitle("");
         setResumeText("");
+        clearResumeDocumentSource();
       }
     },
   });
 
   const resumeSaveMutation = useMutation({
-    mutationFn: async (data: { title: string; content: string }) => {
+    mutationFn: async (data: { title: string; content: string; fileUrl?: string | null; filePath?: string | null }) => {
       if (savedResumeId) {
         return api.patch<{ resume: ResumeData }>("/api/resume", {
           id: savedResumeId,
@@ -545,28 +572,13 @@ export default function OnboardingPage() {
     },
     onSuccess: (data) => {
       setSavedResumeId(data.resume.id);
-      queryClient.invalidateQueries({ queryKey: ["resumes"] });
-      showSaveStatus("Resume saved!");
-    },
-  });
-
-  const coverLetterSaveMutation = useMutation({
-    mutationFn: async (data: { title: string; content: string }) => {
-      if (savedCoverLetterId) {
-        return api.patch<{ coverLetter: CoverLetterData }>(
-          "/api/cover-letter",
-          { id: savedCoverLetterId, ...data }
-        );
+      if (data.resume.fileUrl || !resumeLocalPreviewUrl) {
+        setResumeDocumentSource(data.resume);
+      } else {
+        setResumeFilePath(data.resume.filePath || null);
       }
-      return api.post<{ coverLetter: CoverLetterData }>(
-        "/api/cover-letter",
-        data
-      );
-    },
-    onSuccess: (data) => {
-      setSavedCoverLetterId(data.coverLetter.id);
-      queryClient.invalidateQueries({ queryKey: ["coverLetters"] });
-      showSaveStatus("Cover letter saved!");
+      queryClient.invalidateQueries({ queryKey: ["resumes"] });
+      showSaveStatus(t("onboarding.resumeSaved"));
     },
   });
 
@@ -621,21 +633,23 @@ export default function OnboardingPage() {
 
   const handleSaveResume = async () => {
     if (!resumeText.trim()) {
-      window.alert("Por favor, carregue ou escreva um CV antes de salvar.");
+      window.alert(t("onboarding.resumeRequiredAlert"));
       return;
     }
     setIsSavingDraft(true);
     try {
       const saved = await resumeSaveMutation.mutateAsync({
-        title: resumeTitle || "My Resume",
+        title: resumeTitle || t("onboarding.defaultResumeTitle"),
         content: resumeText,
+        fileUrl: resumeFileUrl,
+        filePath: resumeFilePath,
       });
       if (!isPublicApplication) {
         await saveDraftForStep({ resumeId: saved.resume.id });
       } else {
         setSavedResumeId(saved.resume.id);
       }
-      showSaveStatus("Resume draft saved!");
+      showSaveStatus(t("onboarding.resumeDraftSaved"));
     } finally {
       setIsSavingDraft(false);
     }
@@ -643,63 +657,23 @@ export default function OnboardingPage() {
 
   const handleSaveResumeAndContinue = async () => {
     if (!resumeText.trim()) {
-      window.alert("Por favor, carregue ou escreva um CV antes de avançar.");
+      window.alert(t("onboarding.resumeContinueAlert"));
       return;
     }
     setIsSavingDraft(true);
     try {
       const saved = await resumeSaveMutation.mutateAsync({
-        title: resumeTitle || "My Resume",
+        title: resumeTitle || t("onboarding.defaultResumeTitle"),
         content: resumeText,
+        fileUrl: resumeFileUrl,
+        filePath: resumeFilePath,
       });
       if (!isPublicApplication) {
         await saveDraftForStep({ resumeId: saved.resume.id });
       } else {
         setSavedResumeId(saved.resume.id);
       }
-      showSaveStatus("Resume draft saved!");
-      setCurrentStep("job-description");
-    } finally {
-      setIsSavingDraft(false);
-    }
-  };
-
-  const handleSaveCoverLetter = async () => {
-    if (!coverLetterText.trim()) return;
-    setIsSavingDraft(true);
-    try {
-      const saved = await coverLetterSaveMutation.mutateAsync({
-        title: coverLetterTitle || "My Cover Letter",
-        content: coverLetterText,
-      });
-      if (!isPublicApplication) {
-        await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
-      } else {
-        setSavedCoverLetterId(saved.coverLetter.id);
-      }
-      showSaveStatus("Cover letter draft saved!");
-    } finally {
-      setIsSavingDraft(false);
-    }
-  };
-
-  const handleSaveCoverLetterAndContinue = async () => {
-    setIsSavingDraft(true);
-    try {
-      if (coverLetterText.trim()) {
-        const saved = await coverLetterSaveMutation.mutateAsync({
-          title: coverLetterTitle || "My Cover Letter",
-          content: coverLetterText,
-        });
-        if (!isPublicApplication) {
-          await saveDraftForStep({ coverLetterId: saved.coverLetter.id });
-        } else {
-          setSavedCoverLetterId(saved.coverLetter.id);
-        }
-      } else if (!isPublicApplication) {
-        await saveDraftForStep();
-      }
-      showSaveStatus("Draft saved!");
+      showSaveStatus(t("onboarding.resumeDraftSaved"));
       setCurrentStep("job-description");
     } finally {
       setIsSavingDraft(false);
@@ -707,10 +681,55 @@ export default function OnboardingPage() {
   };
 
   const handleLoadExistingResume = (resume: ResumeData) => {
-    setResumeText(resume.content);
-    setResumeTitle(resume.title);
+    setResumeText(resume.content || "");
+    setResumeTitle(resume.title || "");
     setSavedResumeId(resume.id);
+    setResumeDocumentSource(resume);
     setResumeUploadError(null);
+  };
+
+  const handleOpenResumeDocument = () => {
+    if (!resumePreviewUrl) {
+      window.alert(t("onboarding.previewUnavailable"));
+      return;
+    }
+
+    if (resumeFileType === "pdf") {
+      window.open(resumePreviewUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const anchor = document.createElement("a");
+    anchor.href = resumePreviewUrl;
+    anchor.download = getDownloadFileName(
+      resumeFileName,
+      resumePreviewTitle,
+      resumeFileType
+    );
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  };
+
+  const uploadResumeFileForPreview = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Resume file upload failed");
+    }
+
+    return (await response.json()) as {
+      url: string;
+      pathname: string;
+      contentType?: string;
+    };
   };
 
   const handleExtractResumeFromFile = async (
@@ -722,6 +741,7 @@ export default function OnboardingPage() {
 
     setResumeUploadError(null);
     setIsExtractingResume(true);
+    setIsUploadingResumeFile(false);
 
     try {
       const formData = new FormData();
@@ -772,29 +792,50 @@ export default function OnboardingPage() {
         throw new Error(detailedMessage);
       }
 
+      const localPreviewUrl = URL.createObjectURL(file);
+      const documentType = getDocumentType(file.name || file.type);
+      setResumeLocalPreviewUrl(localPreviewUrl);
+      setResumeFileUrl(null);
+      setResumeFilePath(null);
+      setResumeFileType(documentType || file.type || null);
+      setResumeFileName(file.name || null);
+      setIsUploadingResumeFile(true);
+
+      try {
+        const uploaded = await uploadResumeFileForPreview(file);
+        setResumeFileUrl(uploaded.url);
+        setResumeFilePath(uploaded.pathname);
+        setResumeFileType(
+          documentType || getDocumentType(uploaded.contentType) || file.type || null
+        );
+        setResumeFileName(file.name || uploaded.pathname.split("/").pop() || null);
+        if (documentType !== "pdf") {
+          setResumeLocalPreviewUrl(null);
+        }
+      } catch (uploadError) {
+        console.warn("Resume file preview upload failed:", uploadError);
+      } finally {
+        setIsUploadingResumeFile(false);
+      }
+
       setResumeTitle(payload.title || file.name.replace(/\.[^/.]+$/, ""));
       setResumeText(payload.content || "");
       setSavedResumeId(null);
       showSaveStatus(
         payload.truncated
-          ? "CV extracted (content was truncated to fit limits)."
-          : "CV extracted successfully!"
+          ? t("onboarding.resumeExtractedTruncated")
+          : t("onboarding.resumeExtracted")
       );
     } catch (error) {
       setResumeUploadError(
         error instanceof Error
           ? error.message
-          : "Failed to extract CV text from file."
+          : t("onboarding.resumeExtractFailed")
       );
     } finally {
       setIsExtractingResume(false);
       input.value = "";
     }
-  };
-  const handleLoadExistingCoverLetter = (coverLetter: CoverLetterData) => {
-    setCoverLetterText(coverLetter.content);
-    setCoverLetterTitle(coverLetter.title);
-    setSavedCoverLetterId(coverLetter.id);
   };
 
   const handleCrawlUrl = async () => {
@@ -810,7 +851,6 @@ export default function OnboardingPage() {
       if (extractedTitle) setJobTitle(extractedTitle);
       if (extractedCompany) setCompanyName(extractedCompany);
       if (extractedDescription) setJobDescription(extractedDescription);
-      setJobInputMode("paste");
     } catch (err) {
       setCrawlError(err instanceof Error ? err.message : "Failed to fetch job posting from this URL.");
     } finally {
@@ -837,7 +877,6 @@ export default function OnboardingPage() {
       await api.post("/api/job-application", {
         jobPostingId,
         resumeId: savedResumeId,
-        coverLetterId: savedCoverLetterId || undefined,
         triggerAnalysis: false,
       });
       setPlatformAppSubmitted(true);
@@ -902,7 +941,7 @@ export default function OnboardingPage() {
   };
 
   const isLoading =
-    loadingResumes || loadingCoverLetters || loadingJobApplications || (isPublicApplication && loadingJobPosting);
+    loadingResumes || loadingJobApplications || (isPublicApplication && loadingJobPosting);
 
   React.useEffect(() => {
     if (!(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting)) {
@@ -923,6 +962,17 @@ export default function OnboardingPage() {
     analysisProgressSteps.length,
   ]);
 
+  const resumePreviewUrl =
+    resumeFileType === "pdf"
+      ? resumeLocalPreviewUrl || resumeFileUrl
+      : resumeFileUrl || resumeLocalPreviewUrl;
+  const resumePreviewTitle = resumeTitle || t("onboarding.untitledResume");
+  const hasResumeDocument = Boolean(resumePreviewUrl);
+  const isPdfResume = resumeFileType === "pdf";
+  const resumeDocumentActionLabel = isPdfResume
+    ? t("onboarding.openPdf")
+    : t("onboarding.downloadDocument");
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -942,22 +992,25 @@ export default function OnboardingPage() {
       )}
 
       <StepIndicator
-        steps={STEPS.filter(s => !(isPublicApplication && s.key === "cover-letter"))}
+        steps={STEPS}
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={setCurrentStep}
         isPublicApplication={isPublicApplication}
+        t={t}
       />
 
       <div className="bg-card rounded-2xl border border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div>
-              <p className="text-sm font-medium">Application Context</p>
+              <p className="text-sm font-medium">
+                {t("onboarding.applicationContext")}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {selectedJobApplicationId
-                  ? "Editing existing application"
-                  : "Creating a new application"}
+                  ? t("onboarding.editingApplication")
+                  : t("onboarding.creatingApplication")}
               </p>
             </div>
             {currentApplication && (
@@ -970,134 +1023,198 @@ export default function OnboardingPage() {
                 )}
                 <span className="text-xs text-muted-foreground">
                   {mapStatusToKanbanStage(currentApplication.status) === "IN_PROGRESS"
-                    ? "Still in progress"
+                    ? t("onboarding.statusInProgress")
                     : mapStatusToKanbanStage(currentApplication.status) === "APPLIED"
-                    ? "Already marked as applied"
-                    : "Already in interview stage"}
+                    ? t("onboarding.statusApplied")
+                    : t("onboarding.statusInterview")}
                 </span>
               </div>
             )}
           </div>
           <Button variant="outline" onClick={() => router.push("/applications")}>
             <ArrowRight className="h-4 w-4" />
-            Open Kanban
+            {t("onboarding.openKanban")}
           </Button>
         </div>
       </div>
 
       {currentStep === "resume" && (
         <div className="space-y-6">
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Upload Your CV / Resume</h2>
-                <p className="text-sm text-muted-foreground">
-                  Upload a PDF/DOCX or paste your resume content below. This will be used for AI analysis.
-                </p>
-              </div>
-              <Badge variant="secondary" className="ml-auto">
-                Required
-              </Badge>
-            </div>
-
-            <div className="mb-4 p-3 bg-muted/50 rounded-xl">
-              <p className="text-sm font-medium mb-2">Upload CV file (PDF or DOCX):</p>
-              <label className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:bg-muted/60 transition-colors">
-                {isExtractingResume ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                <span>{isExtractingResume ? "Extracting..." : "Choose file"}</span>
-                <input
-                  type="file"
-                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  className="hidden"
-                  onChange={handleExtractResumeFromFile}
-                  disabled={isExtractingResume}
-                />
-              </label>
-              {resumeUploadError && (
-                <p className="text-xs text-destructive mt-2">{resumeUploadError}</p>
-              )}
-            </div>
-
-            {existingResumes?.resumes &&
-              existingResumes.resumes.length > 0 && (
-                <div className="mb-4 p-3 bg-muted/50 rounded-xl">
-                  <p className="text-sm font-medium mb-2">
-                    Load existing resume:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {existingResumes.resumes.map((resume) => (
-                      <div key={resume.id} className="relative inline-flex group m-1 shadow-sm rounded-md">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleLoadExistingResume(resume)}
-                          className={
-                            savedResumeId === resume.id
-                              ? "border-primary bg-primary/5 pr-8"
-                              : "pr-8"
-                          }
-                        >
-                          <FileText className="h-3 w-3 mr-1" />
-                          {resume.title}
-                        </Button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm("Apagar CV?")) {
-                              deleteResumeMutation.mutate(resume.id);
-                            }
-                          }}
-                          title="Apagar CV"
-                          className="absolute -top-2 -left-2 p-0.5 bg-background border border-border shadow-sm rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
+          <div className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,248,244,0.96))] p-6 sm:p-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.24),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(217,249,157,0.22),transparent_34%)]" />
+            <div className="relative space-y-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                      {t("onboarding.resumeStepTitle")}
+                    </h2>
+                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {t("onboarding.resumeStepDescription")}
+                    </p>
                   </div>
                 </div>
-              )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Resume Title
-                </label>
-                <input
-                  type="text"
-                  value={resumeTitle}
-                  onChange={(e) => setResumeTitle(e.target.value)}
-                  placeholder="e.g., Software Engineer Resume"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+                <Badge variant="secondary" className="w-fit rounded-full px-3">
+                  {t("onboarding.required")}
+                </Badge>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Resume Content
-                </label>
-                <textarea
-                  value={resumeText}
-                  onChange={(e) => setResumeText(e.target.value)}
-                  placeholder="Paste your full resume/CV content here..."
-                  rows={12}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {resumeText.trim().split(/\s+/).filter(Boolean).length} words
-                </p>
+              <div className="mx-auto grid w-full max-w-3xl gap-4">
+                <div className="rounded-[28px] border border-border/70 bg-background/85 p-5 sm:p-6">
+                  <div className="mx-auto max-w-2xl">
+                    <div className="mb-5 flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-foreground text-background">
+                        <Upload className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {t("onboarding.useFileTitle")}
+                        </p>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {t("onboarding.useFileDescription")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-white/80 px-4 py-4 text-sm font-medium text-foreground transition-colors hover:border-foreground/20 hover:bg-white">
+                      {isExtractingResume ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4" />
+                      )}
+                      <span>
+                        {isExtractingResume
+                          ? t("onboarding.extracting")
+                          : t("onboarding.chooseFile")}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        className="hidden"
+                        onChange={handleExtractResumeFromFile}
+                        disabled={isExtractingResume}
+                      />
+                    </label>
+                    {resumeUploadError && (
+                      <p className="mt-3 text-xs text-destructive">
+                        {resumeUploadError}
+                      </p>
+                    )}
+
+                    {resumeText.trim() && (
+                      <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-white/85 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-background text-foreground ring-1 ring-border">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {resumePreviewTitle}
+                            </p>
+                            <p className="text-xs leading-5 text-muted-foreground">
+                              {isUploadingResumeFile
+                                ? t("onboarding.preparingPreview")
+                                : hasResumeDocument
+                                ? isPdfResume
+                                  ? t("onboarding.pdfPreviewReady")
+                                  : t("onboarding.wordDownloadReady")
+                                : t("onboarding.previewUnavailableShort")}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0 rounded-xl"
+                          onClick={handleOpenResumeDocument}
+                          disabled={isUploadingResumeFile || !hasResumeDocument}
+                        >
+                          {isUploadingResumeFile ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : isPdfResume ? (
+                            <ExternalLink className="h-4 w-4" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                          {resumeDocumentActionLabel}
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="my-5 flex items-center gap-3">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                        {t("onboarding.or")}
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-foreground">
+                        {t("onboarding.existingResumeLabel")}
+                      </label>
+                      <Select
+                        value={savedResumeId ?? undefined}
+                        onValueChange={(value) => {
+                          const resume = existingResumes?.resumes?.find(
+                            (item) => item.id === value
+                          );
+                          if (resume) handleLoadExistingResume(resume);
+                        }}
+                        disabled={!existingResumes?.resumes?.length}
+                      >
+                        <SelectTrigger className="h-12 rounded-2xl bg-white/90">
+                          <SelectValue
+                            placeholder={
+                              existingResumes?.resumes?.length
+                                ? t("onboarding.existingResumePlaceholder")
+                                : t("onboarding.noExistingResumes")
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(existingResumes?.resumes || []).map((resume) => {
+                            const uploadedAt = formatResumeDate(
+                              resume.createdAt,
+                              locale
+                            );
+                            return (
+                              <SelectItem key={resume.id} value={resume.id}>
+                                {(resume.title || t("onboarding.untitledResume")) +
+                                  (uploadedAt ? " - " + uploadedAt : "")}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {savedResumeId && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="mt-3 h-auto rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          if (window.confirm(t("onboarding.deleteResumeConfirm"))) {
+                            deleteResumeMutation.mutate(savedResumeId);
+                          }
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        {t("onboarding.deleteResume")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="mx-auto flex max-w-5xl flex-col-reverse gap-3 sm:flex-row sm:justify-between">
             <Button
               variant="outline"
               onClick={handleSaveResume}
@@ -1108,7 +1225,7 @@ export default function OnboardingPage() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              Save
+              {t("onboarding.save")}
             </Button>
             <Button
               onClick={handleSaveResumeAndContinue}
@@ -1119,307 +1236,199 @@ export default function OnboardingPage() {
               ) : (
                 <ArrowRight className="h-4 w-4" />
               )}
-              Save & Continue
+              {t("onboarding.saveAndContinue")}
             </Button>
-          </div>
-        </div>
-      )}
-
-      {currentStep === "cover-letter" && (
-        <div className="space-y-6">
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                <Copy className="h-5 w-5 text-blue-700" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Cover Letter</h2>
-                <p className="text-sm text-muted-foreground">
-                  Optionally paste your cover letter for a more comprehensive
-                  analysis.
-                </p>
-              </div>
-              <Badge variant="outline" className="ml-auto">
-                Optional
-              </Badge>
-            </div>
-
-            {existingCoverLetters?.coverLetters &&
-              existingCoverLetters.coverLetters.length > 1 && (
-                <div className="mb-4 p-3 bg-muted/50 rounded-xl">
-                  <p className="text-sm font-medium mb-2">
-                    Load existing cover letter:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {existingCoverLetters.coverLetters.map((cl) => (
-                      <Button
-                        key={cl.id}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleLoadExistingCoverLetter(cl)}
-                        className={
-                          savedCoverLetterId === cl.id
-                            ? "border-primary bg-primary/5"
-                            : ""
-                        }
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        {cl.title}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Cover Letter Title
-                </label>
-                <input
-                  type="text"
-                  value={coverLetterTitle}
-                  onChange={(e) => setCoverLetterTitle(e.target.value)}
-                  placeholder="e.g., Application for Senior Developer"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-1.5">
-                  Cover Letter Content
-                </label>
-                <textarea
-                  value={coverLetterText}
-                  onChange={(e) => setCoverLetterText(e.target.value)}
-                  placeholder="Paste your cover letter here (optional)..."
-                  rows={8}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentStep("resume")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div className="flex gap-2">
-              {coverLetterText.trim() && (
-                <Button
-                  variant="outline"
-                  onClick={handleSaveCoverLetter}
-                  disabled={coverLetterSaveMutation.isPending || isSavingDraft}
-                >
-                  {coverLetterSaveMutation.isPending || isSavingDraft ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  Save
-                </Button>
-              )}
-              <Button
-                onClick={handleSaveCoverLetterAndContinue}
-                disabled={coverLetterSaveMutation.isPending || isSavingDraft}
-              >
-                {coverLetterSaveMutation.isPending || isSavingDraft ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="h-4 w-4" />
-                )}
-                {coverLetterText.trim() ? "Save & Continue" : "Skip & Continue"}
-              </Button>
-            </div>
           </div>
         </div>
       )}
 
       {currentStep === "job-description" && (
         <div className="space-y-6">
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <Briefcase className="h-5 w-5 text-emerald-700" />
+          <div className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,248,244,0.96))] p-6 sm:p-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,249,157,0.24),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(191,219,254,0.2),transparent_34%)]" />
+            <div className="relative space-y-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                      {t("onboarding.jobDescription")}
+                    </h2>
+                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {isPublicApplication
+                        ? t("onboarding.publicJobDescriptionDesc")
+                        : t("onboarding.jobDescriptionDesc")}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={isPublicApplication ? "outline" : "secondary"} className="w-fit rounded-full px-3">
+                  {isPublicApplication ? t("onboarding.preFilled") : t("onboarding.required")}
+                </Badge>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">
-                  {isPublicApplication ? "Descrição da Vaga" : "Job Description"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {isPublicApplication
-                    ? "Esta é a descrição da vaga para a qual está a candidatar-se."
-                    : "Paste the job posting you want to apply for. The AI will compare it against your resume."}
-                </p>
-              </div>
-              <Badge variant={isPublicApplication ? "outline" : "secondary"} className="ml-auto">
-                {isPublicApplication ? "Pré-preenchido" : "Required"}
-              </Badge>
-            </div>
 
-            {isPublicApplication && jobPosting ? (
-              <div className="space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
-                    <Briefcase className="h-3.5 w-3.5" />
-                    {jobPosting.title}
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
-                    <Building2 className="h-3.5 w-3.5" />
-                    {jobPosting.company.name}
-                  </div>
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
-                    {CATEGORY_LABELS[jobPosting.category]}
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
-                    {JOB_TYPE_LABELS[jobPosting.jobType]}
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 font-medium">
-                    {SALARY_RANGE_LABELS[jobPosting.salaryRange]}
-                  </span>
-                </div>
-                <div className="rounded-xl border border-border bg-muted/20 p-4">
-                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Descrição</p>
-                  <RichTextViewer content={jobPosting.description} className="text-sm leading-relaxed" />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1.5">
-                      Job Title
-                    </label>
-                    <input
-                      type="text"
-                      value={jobTitle}
-                      onChange={(e) => setJobTitle(e.target.value)}
-                      placeholder="e.g., Senior Software Engineer"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1.5">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="e.g., Google"
-                      className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-sm font-medium text-foreground">
-                      Job Description
-                    </label>
-                    <div className="flex items-center gap-1 rounded-lg border border-input bg-muted/40 p-0.5">
-                      <button
-                        type="button"
-                        onClick={() => { setJobInputMode("paste"); setCrawlError(null); }}
-                        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                          jobInputMode === "paste"
-                            ? "bg-background shadow-sm text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        Paste text
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setJobInputMode("url"); setCrawlError(null); }}
-                        className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
-                          jobInputMode === "url"
-                            ? "bg-background shadow-sm text-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        <Link className="h-3.5 w-3.5" />
-                        Import from URL
-                      </button>
+              {isPublicApplication && jobPosting ? (
+                <div className="space-y-4 rounded-[28px] border border-border/70 bg-white/90 p-5 sm:p-6">
+                  <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                      <Briefcase className="h-3.5 w-3.5" />
+                      {jobPosting.title}
                     </div>
+                    <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {jobPosting.company.name}
+                    </div>
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                      {CATEGORY_LABELS[jobPosting.category]}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+                      {JOB_TYPE_LABELS[jobPosting.jobType]}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                      {SALARY_RANGE_LABELS[jobPosting.salaryRange]}
+                    </span>
                   </div>
-
-                  {jobInputMode === "url" ? (
-                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="url"
-                          value={jobUrl}
-                          onChange={(e) => { setJobUrl(e.target.value); setCrawlError(null); }}
-                          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCrawlUrl(); } }}
-                          placeholder="https://company.com/careers/job-posting"
-                          disabled={isCrawling}
-                          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                        />
-                        <Button
-                          type="button"
-                          onClick={handleCrawlUrl}
-                          disabled={!jobUrl.trim() || isCrawling}
-                          className="shrink-0"
-                        >
-                          {isCrawling ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Fetching...
-                            </>
-                          ) : (
-                            <>
-                              <Search className="h-4 w-4" />
-                              Fetch
-                            </>
-                          )}
-                        </Button>
+                  <div className="rounded-2xl border border-border bg-muted/20 p-4">
+                    <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {t("onboarding.description")}
+                    </p>
+                    <RichTextViewer content={jobPosting.description} className="text-sm leading-relaxed" />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={`mx-auto grid w-full gap-4 ${
+                    jobDescription.trim()
+                      ? "max-w-5xl lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+                      : "max-w-3xl"
+                  }`}
+                >
+                  <div className="rounded-[28px] border border-border/70 bg-background/85 p-5 sm:p-6">
+                    <div className="mx-auto max-w-2xl space-y-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-lime text-lime-foreground">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {t("onboarding.pasteJobTextTitle")}
+                          </p>
+                          <p className="text-sm leading-6 text-muted-foreground">
+                            {t("onboarding.pasteJobTextDescription")}
+                          </p>
+                        </div>
                       </div>
 
-                      {crawlError && (
-                        <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
-                          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                          <span>{crawlError}</span>
-                        </div>
-                      )}
-
-                      <p className="text-xs text-muted-foreground">
-                        Paste the public URL of the job posting. The app will extract the description automatically.
-                        Only public pages are supported — login-protected postings must be pasted manually.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
                       <textarea
                         value={jobDescription}
                         onChange={(e) => setJobDescription(e.target.value)}
-                        placeholder="Paste the full job description here..."
-                        rows={12}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                        placeholder={t("onboarding.jobDescriptionPlaceholder")}
+                        rows={10}
+                        className="min-h-[240px] w-full resize-y rounded-2xl border border-input bg-white/90 px-4 py-3 text-sm leading-6 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {jobDescription.trim().split(/\s+/).filter(Boolean).length}{" "}
-                        words
-                      </p>
+
+                      <div className="flex items-center gap-3">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                          {t("onboarding.or")}
+                        </span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+
+                      <div className="space-y-3 rounded-2xl border border-border/70 bg-white/80 p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-foreground text-background">
+                            <Link className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {t("onboarding.jobLinkTitle")}
+                            </p>
+                            <p className="text-sm leading-6 text-muted-foreground">
+                              {t("onboarding.jobLinkDescription")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            type="url"
+                            value={jobUrl}
+                            onChange={(e) => { setJobUrl(e.target.value); setCrawlError(null); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCrawlUrl(); } }}
+                            placeholder="https://company.com/careers/job-posting"
+                            disabled={isCrawling}
+                            className="min-w-0 flex-1 rounded-2xl border border-input bg-background px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                          />
+                          <Button
+                            type="button"
+                            onClick={handleCrawlUrl}
+                            disabled={!jobUrl.trim() || isCrawling}
+                            className="h-12 shrink-0 rounded-2xl"
+                          >
+                            {isCrawling ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                {t("onboarding.fetching")}
+                              </>
+                            ) : (
+                              <>
+                                <Search className="h-4 w-4" />
+                                {t("onboarding.fetch")}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+
+                        {crawlError && (
+                          <div className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>{crawlError}</span>
+                          </div>
+                        )}
+
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          {t("onboarding.urlImportHelp")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {jobDescription.trim() && (
+                    <div className="rounded-[28px] border border-border/70 bg-white/90 p-5 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-background text-foreground ring-1 ring-border">
+                          <Eye className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {t("onboarding.jobDescriptionOverview")}
+                          </p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {jobTitle || companyName
+                              ? [jobTitle, companyName].filter(Boolean).join(" - ")
+                              : t("onboarding.jobDescriptionSelected")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap border-t border-border/70 pt-4 text-sm leading-6 text-muted-foreground">
+                        {jobDescription}
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="mx-auto flex max-w-5xl flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="outline"
               onClick={() => setCurrentStep("resume")}
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("onboarding.back")}
             </Button>
             <div className="flex items-center gap-3">
               {isPublicApplication ? (
@@ -1428,7 +1437,7 @@ export default function OnboardingPage() {
                   disabled={!savedResumeId}
                 >
                   <ArrowRight className="h-4 w-4" />
-                  Continuar
+                  {t("onboarding.continue")}
                 </Button>
               ) : (
                 <>
@@ -1442,10 +1451,10 @@ export default function OnboardingPage() {
                     ) : (
                       <Save className="h-4 w-4" />
                     )}
-                    Save Draft
+                    {t("onboarding.saveDraft")}
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Cost: 10 credits
+                    {t("onboarding.costCredits", { credits: 10 })}
                   </span>
                   <Button
                     onClick={handleSubmitJobApplication}
@@ -1458,12 +1467,12 @@ export default function OnboardingPage() {
                     {analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Analyzing...
+                        {t("onboarding.analyzingShort")}
                       </>
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4" />
-                        Analyze Application
+                        {t("onboarding.analyzeApplicationButton")}
                       </>
                     )}
                   </Button>
@@ -1473,9 +1482,9 @@ export default function OnboardingPage() {
           </div>
 
           {!savedResumeId && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              Please save your resume first (Step 1) before running the analysis.
+            <div className="flex items-center gap-2 rounded-lg border border-yellow-400 bg-yellow-200 p-3 text-sm font-medium text-black">
+              <AlertCircle className="h-4 w-4 shrink-0 text-black" />
+              {t("onboarding.saveResumeFirst")}
             </div>
           )}
         </div>
@@ -1488,15 +1497,17 @@ export default function OnboardingPage() {
               <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
                 <CheckCircle2 className="h-8 w-8 text-emerald-600" />
               </div>
-              <h3 className="text-xl font-semibold">Candidatura Enviada!</h3>
+              <h3 className="text-xl font-semibold">
+                {t("onboarding.applicationSubmittedTitle")}
+              </h3>
               <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                A sua candidatura foi submetida com sucesso. O recrutador irá analisá-la em breve.
+                {t("onboarding.applicationSubmittedDescription")}
               </p>
               <Button
                 className="mt-6"
                 onClick={() => router.push("/applications")}
               >
-                Ver as minhas candidaturas
+                {t("onboarding.viewMyApplications")}
               </Button>
             </div>
           ) : (
@@ -1507,9 +1518,11 @@ export default function OnboardingPage() {
                     <CheckCircle2 className="h-5 w-5 text-emerald-700" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold">Confirmar Candidatura</h2>
+                    <h2 className="text-lg font-semibold">
+                      {t("onboarding.confirmApplication")}
+                    </h2>
                     <p className="text-sm text-muted-foreground">
-                      Reveja os detalhes antes de submeter a sua candidatura.
+                      {t("onboarding.confirmApplicationDescription")}
                     </p>
                   </div>
                 </div>
@@ -1523,7 +1536,9 @@ export default function OnboardingPage() {
                         <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Vaga</p>
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                              {t("onboarding.vacancy")}
+                            </p>
                             {expandedVaga ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
                           </div>
                           <p className="font-medium">{jobPosting.title}</p>
@@ -1540,30 +1555,46 @@ export default function OnboardingPage() {
                   {savedResumeId && (
                     <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/30 p-4">
                       <div className="flex items-center justify-between">
-                        <div 
-                          className="flex items-start gap-3 cursor-pointer select-none flex-1"
-                          onClick={() => setExpandedCV(!expandedCV)}
-                        >
+                        <div className="flex flex-1 items-start gap-3">
                           <FileText className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                           <div>
                             <div className="flex items-center gap-2 mb-0.5">
-                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">CV / Resume</p>
-                              {expandedCV ? <ChevronUp className="h-3 w-3 text-muted-foreground" /> : <ChevronDown className="h-3 w-3 text-muted-foreground" />}
+                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                                {t("onboarding.stepResume")}
+                              </p>
                             </div>
                             <p className="font-medium">
-                              {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.title ?? "CV seleccionado"}
+                              {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.title ?? t("onboarding.selectedResume")}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {hasResumeDocument
+                                ? isPdfResume
+                                  ? t("onboarding.pdfPreviewReady")
+                                  : t("onboarding.wordDownloadReady")
+                                : t("onboarding.previewUnavailableShort")}
                             </p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={() => setCurrentStep("resume")} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground border border-input shadow-sm">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {expandedCV && (
-                         <div className="mt-2 text-sm text-muted-foreground border-t border-border/50 pt-3 whitespace-pre-wrap">
-                          {existingResumes?.resumes?.find((r) => r.id === savedResumeId)?.content ?? ""}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenResumeDocument}
+                            disabled={!hasResumeDocument}
+                            className="shrink-0"
+                          >
+                            {isPdfResume ? (
+                              <ExternalLink className="h-4 w-4" />
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
+                            {resumeDocumentActionLabel}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setCurrentStep("resume")} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground border border-input shadow-sm">
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1580,7 +1611,7 @@ export default function OnboardingPage() {
                   onClick={() => setCurrentStep("job-description")}
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back
+                  {t("onboarding.back")}
                 </Button>
                 <Button
                   onClick={handleSubmitPlatformApplication}
@@ -1589,12 +1620,12 @@ export default function OnboardingPage() {
                   {isSubmittingPlatformApp ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      A submeter...
+                      {t("onboarding.submitting")}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      Confirmar Candidatura
+                      {t("onboarding.confirmApplication")}
                     </>
                   )}
                 </Button>
@@ -1607,83 +1638,93 @@ export default function OnboardingPage() {
       {currentStep === "analysis" && !isPublicApplication && (
         <div className="space-y-6">
           {(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) && (
-            <div className="px-1 py-2">
-              <div className="mb-5">
-                <h3 className="text-xl font-semibold text-foreground">
-                  {t("onboarding.analyzing")}
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  This usually finishes in under 30 seconds.
-                </p>
-              </div>
+            <div className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,248,244,0.96))] p-6 sm:p-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,249,157,0.28),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(191,219,254,0.22),transparent_34%)]" />
+              <div className="relative grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start">
+                <div className="space-y-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight text-foreground">
+                      {t("onboarding.analyzing")}
+                    </h3>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                      {t("onboarding.analysisTimeHint")}
+                    </p>
+                  </div>
+                </div>
 
-              <div className="space-y-1">
-                {analysisProgressSteps.map((step, index) => {
-                  const isComplete = index < analysisProgressIndex;
-                  const isActive = index === analysisProgressIndex;
+                <div className="rounded-[28px] border border-border/70 bg-white/90 p-5">
+                  <div className="space-y-1">
+                    {analysisProgressSteps.map((step, index) => {
+                      const isComplete = index < analysisProgressIndex;
+                      const isActive = index === analysisProgressIndex;
 
-                  return (
-                    <motion.div
-                      key={step}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: isActive || isComplete ? 1 : 0.32, y: 0 }}
-                      transition={{ duration: 0.24, ease: "easeOut" }}
-                      className="flex items-center gap-4 rounded-lg px-1 py-2.5"
-                    >
-                      <div
-                        className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
-                          isComplete
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : isActive
-                            ? "border-foreground text-foreground"
-                            : "border-muted-foreground/35 text-transparent"
-                        }`}
-                      >
-                        {isComplete ? (
-                          <CheckCircle2 className="h-4 w-4" />
-                        ) : isActive ? (
-                          <>
-                            <motion.span
-                              className="absolute inset-0 rounded-full border border-foreground/40"
-                              animate={{ scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
-                              transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-                            />
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-                            >
-                              <Loader2 className="h-4 w-4" />
-                            </motion.div>
-                          </>
-                        ) : (
-                          <span className="h-3 w-3 rounded-full border border-muted-foreground/25" />
-                        )}
-                      </div>
-                      <p
-                        className={`min-w-0 truncate text-base transition-colors ${
-                          isActive || isComplete
-                            ? "text-foreground"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {step}
-                      </p>
-                    </motion.div>
-                  );
-                })}
+                      return (
+                        <motion.div
+                          key={step}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: isActive || isComplete ? 1 : 0.32, y: 0 }}
+                          transition={{ duration: 0.24, ease: "easeOut" }}
+                          className="flex items-center gap-4 rounded-2xl px-2 py-3"
+                        >
+                          <div
+                            className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${
+                              isComplete
+                                ? "border-emerald-500 bg-emerald-500 text-white"
+                                : isActive
+                                ? "border-foreground text-foreground"
+                                : "border-muted-foreground/35 text-transparent"
+                            }`}
+                          >
+                            {isComplete ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : isActive ? (
+                              <>
+                                <motion.span
+                                  className="absolute inset-0 rounded-full border border-foreground/40"
+                                  animate={{ scale: [1, 1.35, 1], opacity: [0.55, 0, 0.55] }}
+                                  transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+                                />
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                                >
+                                  <Loader2 className="h-4 w-4" />
+                                </motion.div>
+                              </>
+                            ) : (
+                              <span className="h-3 w-3 rounded-full border border-muted-foreground/25" />
+                            )}
+                          </div>
+                          <p
+                            className={`min-w-0 text-sm leading-5 transition-colors ${
+                              isActive || isComplete
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {step}
+                          </p>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {analysisError && !analysisResult && (
-            <div className="bg-card rounded-2xl border border-destructive/30 p-6">
+            <div className="rounded-[28px] border border-destructive/30 bg-white/90 p-6">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10">
                   <XCircle className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-destructive">
-                    Analysis Failed
+                    {t("onboarding.analysisFailed")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {analysisError}
@@ -1699,15 +1740,16 @@ export default function OnboardingPage() {
                 }}
               >
                 <RefreshCw className="h-4 w-4" />
-                Try Again
+                {t("onboarding.tryAgain")}
               </Button>
             </div>
           )}
 
           {analysisResult && (
             <>
-              <div className="bg-gradient-to-br from-card to-muted/30 rounded-2xl border border-border p-6 overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              <div className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,248,244,0.96))] p-6 sm:p-8">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(217,249,157,0.28),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(191,219,254,0.22),transparent_34%)]" />
+                <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
                   <div className="relative shrink-0">
                     <svg
                       width="120"
@@ -1752,7 +1794,7 @@ export default function OnboardingPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-xl font-semibold">Match Score</h3>
+                      <h3 className="text-xl font-semibold">{t("onboarding.matchScore")}</h3>
                       <Badge
                         className={`text-xs text-white border-transparent ${
                           (analysisResult.fitScore || 0) >= 70
@@ -1763,10 +1805,10 @@ export default function OnboardingPage() {
                         }`}
                       >
                         {(analysisResult.fitScore || 0) >= 70
-                          ? "Strong Match"
+                          ? t("onboarding.strongMatch")
                           : (analysisResult.fitScore || 0) >= 50
-                          ? "Moderate Match"
-                          : "Needs Work"}
+                          ? t("onboarding.moderateMatch")
+                          : t("onboarding.needsWork")}
                       </Badge>
                     </div>
                     {analysisResult.summary && (
@@ -1777,25 +1819,37 @@ export default function OnboardingPage() {
                     {!analysisResult.summary && (
                       <p className="text-sm text-muted-foreground">
                         {(analysisResult.fitScore || 0) >= 70
-                          ? "Your profile is well-aligned with this role. Focus on highlighting your matching skills."
+                          ? t("onboarding.scoreSummaryStrong")
                           : (analysisResult.fitScore || 0) >= 50
-                          ? "You have a solid foundation. Address the gaps below to strengthen your application."
-                          : "There are significant gaps between your profile and this role. Review the recommendations carefully."}
+                          ? t("onboarding.scoreSummaryModerate")
+                          : t("onboarding.scoreSummaryNeedsWork")}
                       </p>
                     )}
 
-                    <div className="flex gap-6 mt-4">
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-emerald-400">{toStringArray(analysisResult.skillsMatch).length}</div>
-                        <div className="text-xs text-muted-foreground">Skills Match</div>
+                    <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-border/70 bg-white/75 px-4 py-3">
+                        <div className="text-2xl font-semibold tracking-tight text-foreground">
+                          {toStringArray(analysisResult.skillsMatch).length}
+                        </div>
+                        <div className="mt-1 text-xs font-medium text-muted-foreground">
+                          {t("onboarding.skillsMatch")}
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-orange-300">{toStringArray(analysisResult.missingSkills).length}</div>
-                        <div className="text-xs text-muted-foreground">Gaps Found</div>
+                      <div className="rounded-2xl border border-border/70 bg-white/75 px-4 py-3">
+                        <div className="text-2xl font-semibold tracking-tight text-foreground">
+                          {toStringArray(analysisResult.missingSkills).length}
+                        </div>
+                        <div className="mt-1 text-xs font-medium text-muted-foreground">
+                          {t("onboarding.gapsFound")}
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-lg font-bold text-primary/70">{toStringArray(analysisResult.recommendations).length}</div>
-                        <div className="text-xs text-muted-foreground">Recommendations</div>
+                      <div className="rounded-2xl border border-border/70 bg-white/75 px-4 py-3">
+                        <div className="text-2xl font-semibold tracking-tight text-foreground">
+                          {toStringArray(analysisResult.recommendations).length}
+                        </div>
+                        <div className="mt-1 text-xs font-medium text-muted-foreground">
+                          {t("onboarding.recommendations")}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1804,14 +1858,18 @@ export default function OnboardingPage() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 {toStringArray(analysisResult.skillsMatch).length > 0 && (
-                  <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                  <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="h-4 w-4 text-white" />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-sm">Matching Skills</h4>
-                        <p className="text-xs text-muted-foreground">{toStringArray(analysisResult.skillsMatch).length} skills aligned</p>
+                        <h4 className="font-semibold text-sm">{t("onboarding.matchingSkills")}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {t("onboarding.skillsAlignedCount", {
+                            count: toStringArray(analysisResult.skillsMatch).length,
+                          })}
+                        </p>
                       </div>
                     </div>
                     <ul className="space-y-1.5">
@@ -1831,14 +1889,18 @@ export default function OnboardingPage() {
                 )}
 
                 {toStringArray(analysisResult.missingSkills).length > 0 && (
-                  <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                  <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
                         <AlertCircle className="h-4 w-4 text-white" />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-sm">Missing Skills</h4>
-                        <p className="text-xs text-muted-foreground">{toStringArray(analysisResult.missingSkills).length} gaps to address</p>
+                        <h4 className="font-semibold text-sm">{t("onboarding.missingSkills")}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {t("onboarding.gapsToAddressCount", {
+                            count: toStringArray(analysisResult.missingSkills).length,
+                          })}
+                        </p>
                       </div>
                     </div>
                     <ul className="space-y-1.5">
@@ -1859,21 +1921,24 @@ export default function OnboardingPage() {
               </div>
 
               {analysisResult.keywordAnalysis && (
-                <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="h-7 w-7 rounded-lg bg-sky-500 flex items-center justify-center shrink-0">
                       <Search className="h-4 w-4 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="font-semibold text-sm">Keyword Analysis</h4>
-                      <p className="text-xs text-muted-foreground">Keywords from the job description found in your resume</p>
+                      <h4 className="font-semibold text-sm">{t("onboarding.keywordAnalysis")}</h4>
+                      <p className="text-xs text-muted-foreground">{t("onboarding.keywordAnalysisDescription")}</p>
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     {(analysisResult.keywordAnalysis.found || []).length > 0 && (
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" /> Found in your CV ({(analysisResult.keywordAnalysis.found || []).length})
+                          <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" />
+                          {t("onboarding.foundInResume", {
+                            count: (analysisResult.keywordAnalysis.found || []).length,
+                          })}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.found || []).map((kw, i) => (
@@ -1887,7 +1952,10 @@ export default function OnboardingPage() {
                     {(analysisResult.keywordAnalysis.missing || []).length > 0 && (
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <XCircle className="h-3 w-3 shrink-0 text-orange-300" /> Missing from your CV ({(analysisResult.keywordAnalysis.missing || []).length})
+                          <XCircle className="h-3 w-3 shrink-0 text-orange-300" />
+                          {t("onboarding.missingFromResume", {
+                            count: (analysisResult.keywordAnalysis.missing || []).length,
+                          })}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {(analysisResult.keywordAnalysis.missing || []).map((kw, i) => (
@@ -1903,12 +1971,12 @@ export default function OnboardingPage() {
               )}
 
               {toStringArray(analysisResult.strengths).length > 0 && (
-                <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-lg bg-emerald-500 flex items-center justify-center shrink-0">
                       <TrendingUp className="h-4 w-4 text-white" />
                     </div>
-                    <h4 className="font-semibold text-sm">Your Strengths</h4>
+                    <h4 className="font-semibold text-sm">{t("onboarding.yourStrengths")}</h4>
                   </div>
                   <ul className="space-y-2">
                     {toStringArray(analysisResult.strengths).map(
@@ -1927,12 +1995,12 @@ export default function OnboardingPage() {
               )}
 
               {toStringArray(analysisResult.improvements).length > 0 && (
-                <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-lg bg-orange-500 flex items-center justify-center shrink-0">
                       <Lightbulb className="h-4 w-4 text-white" />
                     </div>
-                    <h4 className="font-semibold text-sm">Areas for Improvement</h4>
+                    <h4 className="font-semibold text-sm">{t("onboarding.improvements")}</h4>
                   </div>
                   <ul className="space-y-2">
                     {toStringArray(analysisResult.improvements).map(
@@ -1951,12 +2019,12 @@ export default function OnboardingPage() {
               )}
 
               {toStringArray(analysisResult.recommendations).length > 0 && (
-                <div className="bg-card rounded-2xl border border-border p-5 overflow-hidden">
+                <div className="overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
                       <Sparkles className="h-4 w-4 text-primary-foreground" />
                     </div>
-                    <h4 className="font-semibold text-sm">Recommendations</h4>
+                    <h4 className="font-semibold text-sm">{t("onboarding.recommendations")}</h4>
                   </div>
                   <ul className="space-y-2">
                     {toStringArray(analysisResult.recommendations).map(
@@ -1982,7 +2050,7 @@ export default function OnboardingPage() {
                   onClick={() => setCurrentStep("job-description")}
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Modify & Re-analyze
+                  {t("onboarding.modifyAndReanalyze")}
                 </Button>
                 <div className="flex flex-wrap gap-2 lg:justify-end">
                   {selectedJobApplicationId && (
@@ -2003,7 +2071,7 @@ export default function OnboardingPage() {
                       ) : (
                         <CheckCircle2 className="h-4 w-4" />
                       )}
-                      Mark as Applied
+                      {t("onboarding.markAsApplied")}
                     </Button>
                   )}
                   {selectedJobApplicationId && (
@@ -2023,12 +2091,12 @@ export default function OnboardingPage() {
                       ) : (
                         <Target className="h-4 w-4" />
                       )}
-                      Move to Interview
+                      {t("onboarding.moveToInterview")}
                     </Button>
                   )}
                   <Button onClick={() => router.push("/interview-prep")}>
                     <ArrowRight className="h-4 w-4" />
-                    Continue to Interview Prep
+                    {t("onboarding.continueToInterviewPrep")}
                   </Button>
                 </div>
               </div>
@@ -2038,21 +2106,21 @@ export default function OnboardingPage() {
           {!(analyzeExistingJobApplicationMutation.isPending || isAnalyzingExisting) &&
             !analysisResult &&
             !analysisError && (
-              <div className="bg-card rounded-2xl border border-border p-12 text-center">
+              <div className="rounded-[32px] border border-border/70 bg-white/90 p-12 text-center">
                 <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
                   <BarChart3 className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold mb-1">
-                  No Analysis Yet
+                  {t("onboarding.noAnalysisYet")}
                 </h3>
                 <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Complete the previous steps and submit your job application to see your AI-powered analysis dashboard.
+                  {t("onboarding.noAnalysisYetDescription")}
                 </p>
                 <Button
                   onClick={() => setCurrentStep("job-description")}
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Go to Job Description
+                  {t("onboarding.goToJobDescription")}
                 </Button>
               </div>
             )}

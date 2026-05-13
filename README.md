@@ -248,19 +248,62 @@ Guia detalhado para Clerk, banco, deploy na Vercel e uso de agentes.
 - URLs do Clerk (padrões do template):
   - `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`
   - `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`
-  - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard`
-  - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard`
+  - `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard`
+  - `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard`
 - Banco: `DATABASE_URL=postgresql://user:password@host:5432/saas_template`
 - App: `NEXT_PUBLIC_APP_URL=http://localhost:5000`
 
 ### Configurar Clerk
-1) Crie um app em dashboard.clerk.com e copie as chaves.
-2) Defina `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` e `CLERK_SECRET_KEY` em `.env`.
-3) Redirects/origens autorizadas:
-   - Dev: `http://localhost:5000`
-   - Produção: domínio `.vercel.app` e custom domain
-4) Rotas de auth: `src/app/(auth)/sign-in` e `src/app/(auth)/sign-up`. Rotas protegidas: `src/app/(protected)`.
-5) Webhooks (opcional): configure um endpoint para sincronização de usuários e defina `CLERK_WEBHOOK_SECRET`.
+1) Crie a aplicação em `https://dashboard.clerk.com`.
+
+2) No Clerk Dashboard, abra **Configure > API keys** e copie:
+   - `Publishable key` para `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `Secret key` para `CLERK_SECRET_KEY`
+
+3) Defina as variáveis em `.env.local`:
+   ```env
+   NEXT_PUBLIC_APP_URL=http://localhost:5000
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+   NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/dashboard
+   NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/dashboard
+   ```
+
+4) No Clerk Dashboard, configure **Paths**:
+   - Sign-in URL: `/sign-in`
+   - Sign-up URL: `/sign-up`
+   - After sign-in URL: `/dashboard`
+   - After sign-up URL: `/dashboard`
+
+5) No Clerk Dashboard, configure **Domains/Allowed origins**:
+   - Desenvolvimento: `http://localhost:5000`
+   - Produção: domínio `.vercel.app` e domínio customizado, se existir
+
+6) Confirme as rotas do app:
+   - Login: `src/app/(auth)/sign-in/[[...sign-in]]/page.tsx`
+   - Cadastro: `src/app/(auth)/sign-up/[[...sign-up]]/page.tsx`
+   - Rotas privadas: `src/app/(protected)`
+   - Middleware: `src/middleware.ts`
+
+7) Configure webhooks para sincronizar usuários:
+   - Endpoint: `https://<seu-dominio>/api/webhooks/clerk`
+   - Em desenvolvimento com túnel: `https://<url-do-tunel>/api/webhooks/clerk`
+   - Eventos: `user.created`, `user.updated`, `user.deleted`
+   - Copie o signing secret para `CLERK_WEBHOOK_SECRET=whsec_...`
+
+8) Configure admin:
+   - Crie ou entre com um usuário no app
+   - Copie o User ID no Clerk Dashboard
+   - Defina `ADMIN_USER_IDS=user_...`
+   - Alternativa: `ADMIN_EMAILS=admin@seudominio.com`
+
+9) Rode e valide:
+   ```bash
+   npm run dev
+   ```
+   Acesse `http://localhost:5000/sign-up`, crie uma conta, confirme o redirect para `/dashboard` e teste `/admin` com um usuário autorizado.
 
 ### Configurar Asaas
 1) Crie uma conta no [Asaas](https://www.asaas.com/) e obtenha sua chave de API.

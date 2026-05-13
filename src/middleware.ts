@@ -12,6 +12,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/guest/(.*)',
   '/api/resume/extract(.*)',
   '/api/job-application/crawl(.*)',
+  '/ingest(.*)',
 ])
 
 const isAdminRoute = createRouteMatcher(['/admin(.*)'])
@@ -48,7 +49,8 @@ export default E2E_BYPASS
   }
 
   if (!authResult.userId) {
-    return NextResponse.next()
+    const url = new URL('/sign-in', request.url)
+    return NextResponse.redirect(url)
   }
 
   const userRole = (authResult.sessionClaims?.publicMetadata as { role?: string } | undefined)?.role ?? null

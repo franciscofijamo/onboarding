@@ -22,7 +22,7 @@ export const site = {
   shortName: 'StandOut',
   description:
     'StandOut — The intelligent platform for Business English job onboarding. AI-powered CV analysis, interview preparation, and workplace scenario simulations.',
-  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+  url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:5000',
   author: 'StandOut',
   keywords: ['StandOut', 'Business English', 'Job Onboarding', 'CV Analysis', 'Interview Prep', 'AI', 'Career'],
   ogImage: '/og-image.png',

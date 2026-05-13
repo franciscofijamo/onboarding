@@ -2,26 +2,114 @@
 
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { useSetPageMetadata } from "@/contexts/page-metadata";
-import { useLanguage } from "@/contexts/language";
-import { useCredits } from "@/hooks/use-credits";
-import { useProfile } from "@/hooks/use-profile";
-import { Button } from "@/components/ui/button";
-import { WelcomeCreditsDialog } from "@/components/app/welcome-credits-dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowRight,
-  Upload,
-  MessageSquare,
-  Mic,
-  Coins,
-  BarChart3,
-  BrainCircuit,
   Briefcase,
-  LayoutGrid,
-  PlusCircle,
   Building2,
+  Coins,
+  LayoutGrid,
+  Mic,
+  PlusCircle,
+  Upload,
 } from "lucide-react";
+import { WelcomeCreditsDialog } from "@/components/app/welcome-credits-dialog";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/contexts/language";
+import { useSetPageMetadata } from "@/contexts/page-metadata";
+import { useCredits } from "@/hooks/use-credits";
+import { useProfile } from "@/hooks/use-profile";
+
+type ActionPanelProps = {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  cta: string;
+  accentClassName: string;
+};
+
+function ActionPanel({
+  href,
+  icon: Icon,
+  title,
+  description,
+  cta,
+  accentClassName,
+}: ActionPanelProps) {
+  return (
+    <Link
+      href={href}
+      className="group relative overflow-hidden rounded-[28px] border border-border/70 bg-white/90 p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-[0_24px_70px_-38px_rgba(15,23,42,0.4)]"
+    >
+      <div className={`absolute inset-x-0 top-0 h-1 ${accentClassName}`} />
+      <div className="flex h-full flex-col justify-between gap-8">
+        <div className="space-y-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground text-background">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              {title}
+            </h2>
+            <p className="max-w-md text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+          <span>{cta}</span>
+          <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+type StepItemProps = {
+  index: string;
+  title: string;
+  description: string;
+};
+
+function StepItem({ index, title, description }: StepItemProps) {
+  return (
+    <div className="grid grid-cols-[auto_1fr] gap-4">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold text-muted-foreground">
+        {index}
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-foreground">{title}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function CreditsStat({
+  label,
+  value,
+  loading,
+}: {
+  label: string;
+  value: number;
+  loading: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </p>
+      {loading ? (
+        <Skeleton className="mt-3 h-8 w-16 rounded-full" />
+      ) : (
+        <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          {value}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -30,91 +118,104 @@ export default function DashboardPage() {
   const { role } = useProfile();
 
   useSetPageMetadata({
-    title: t("dashboard.hello", { name: user?.firstName || t("dashboard.defaultUser") }),
+    title: t("dashboard.hello", {
+      name: user?.firstName || t("dashboard.defaultUser"),
+    }),
     description: t("dashboard.welcomeSubtitle"),
   });
 
   if (role === "RECRUITER") {
     return (
-      <div className="space-y-8 w-full">
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_35%)]" />
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-2xl space-y-2">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                {t("dashboard.recruiterHeroTitle", { name: user?.firstName || t("dashboard.recruiterDefaultUser") })}
-              </h1>
-              <p className="text-sm text-muted-foreground sm:text-base">
-                {t("dashboard.recruiterHeroDescription")}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
+      <div className="w-full space-y-6">
+        <section className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(246,247,241,0.96))] p-6 sm:p-8">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(187,247,208,0.35),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(226,232,240,0.7),transparent_38%)]" />
+          <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+          <div className="relative space-y-8">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl space-y-4">
+                <span className="inline-flex w-fit items-center rounded-full border border-border/80 bg-background/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                  {t("dashboard.recruiterEyebrow")}
+                </span>
+                <div className="space-y-3">
+                  <h1 className="text-3xl font-semibold tracking-[-0.03em] text-foreground sm:text-4xl">
+                    {t("dashboard.recruiterHeroTitle", {
+                      name: user?.firstName || t("dashboard.recruiterDefaultUser"),
+                    })}
+                  </h1>
+                  <p className="max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
+                    {t("dashboard.recruiterMinimalDescription")}
+                  </p>
+                </div>
+              </div>
+              <Button asChild size="lg" className="rounded-full px-6">
                 <Link href="/recruiter/postings/new">
-                  <PlusCircle className="h-4 w-4 mr-2" />
+                  <PlusCircle className="mr-2 h-4 w-4" />
                   {t("dashboard.recruiterNewPosting")}
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
-                <Link href="/company/profile">
-                  <Building2 className="h-4 w-4 mr-2" />
-                  {t("dashboard.recruiterCompanyProfile")}
-                </Link>
-              </Button>
             </div>
-          </div>
-        </section>
 
-        <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-            {t("dashboard.recruiterFeatures")}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Link href="/recruiter/postings" className="block group">
-              <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-600">
-                        <LayoutGrid className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recruiterPostingsTitle")}</h3>
-                        <p className="text-sm text-muted-foreground">{t("dashboard.recruiterPostingsSummary")}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {t("dashboard.recruiterPostingsDescription")}
-                  </p>
-                </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
+              <div className="grid gap-4 md:grid-cols-2">
+                <ActionPanel
+                  href="/recruiter/postings/new"
+                  icon={PlusCircle}
+                  title={t("dashboard.recruiterPrimaryTitle")}
+                  description={t("dashboard.recruiterPrimaryDescription")}
+                  cta={t("dashboard.recruiterPrimaryCta")}
+                  accentClassName="bg-foreground"
+                />
+                <ActionPanel
+                  href="/recruiter/postings"
+                  icon={LayoutGrid}
+                  title={t("dashboard.recruiterSecondaryTitle")}
+                  description={t("dashboard.recruiterSecondaryDescription")}
+                  cta={t("dashboard.recruiterSecondaryCta")}
+                  accentClassName="bg-lime-bright"
+                />
               </div>
-            </Link>
 
-            <Link href="/company/profile" className="block group">
-              <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full" />
-                <div className="relative">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600">
-                        <Building2 className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground">{t("dashboard.recruiterCompanyCardTitle")}</h3>
-                        <p className="text-sm text-muted-foreground">{t("dashboard.recruiterCompanyCardSummary")}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              <div className="rounded-[28px] border border-border/70 bg-background/80 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-lime text-lime-foreground">
+                    <Building2 className="h-5 w-5" />
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {t("dashboard.recruiterCompanyCardDescription")}
-                  </p>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {t("dashboard.recruiterSupportTitle")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("dashboard.recruiterSupportDescription")}
+                    </p>
+                  </div>
                 </div>
+
+                <div className="mt-6 space-y-4 border-t border-border/70 pt-5">
+                  <StepItem
+                    index="01"
+                    title={t("dashboard.recruiterStep1Title")}
+                    description={t("dashboard.recruiterStep1Description")}
+                  />
+                  <StepItem
+                    index="02"
+                    title={t("dashboard.recruiterStep2Title")}
+                    description={t("dashboard.recruiterStep2Description")}
+                  />
+                  <StepItem
+                    index="03"
+                    title={t("dashboard.recruiterStep3Title")}
+                    description={t("dashboard.recruiterStep3Description")}
+                  />
+                </div>
+
+                <Button asChild variant="outline" className="mt-6 w-full rounded-full">
+                  <Link href="/company/profile">
+                    <Building2 className="mr-2 h-4 w-4" />
+                    {t("dashboard.recruiterCompanyProfile")}
+                  </Link>
+                </Button>
               </div>
-            </Link>
+            </div>
           </div>
         </section>
       </div>
@@ -122,137 +223,108 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 w-full">
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(16,185,129,0.12),transparent_35%)]" />
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {t("dashboard.heroTitle")}
-            </h1>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              {t("dashboard.heroDescription")}
-            </p>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <Button asChild size="lg" className="rounded-xl w-full sm:w-auto">
-              <Link href="/onboarding?new=1">
-                <Upload className="h-4 w-4 mr-2" />
+    <div className="w-full space-y-6">
+      <section className="relative overflow-hidden rounded-[32px] border border-border/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,248,244,0.96))] p-6 sm:p-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(191,219,254,0.32),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(217,249,157,0.24),transparent_32%)]" />
+        <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
+        <div className="relative space-y-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl space-y-4">
+              <span className="inline-flex w-fit items-center rounded-full border border-border/80 bg-background/80 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
+                {t("dashboard.candidateEyebrow")}
+              </span>
+              <div className="space-y-3">
+                <h1 className="text-3xl font-semibold tracking-[-0.03em] text-foreground sm:text-4xl">
+                  {t("dashboard.heroTitle")}
+                </h1>
+                <p className="max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
+                  {t("dashboard.candidateMinimalDescription")}
+                </p>
+              </div>
+            </div>
+            <Button asChild size="lg" className="rounded-full px-6">
+              <Link href="/applications/new">
+                <Upload className="mr-2 h-4 w-4" />
                 {t("dashboard.newApplication")}
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-xl w-full sm:w-auto">
-              <Link href="/applications">
-                <Briefcase className="h-4 w-4 mr-2" />
-                {t("dashboard.viewPipeline")}
-              </Link>
-            </Button>
           </div>
-        </div>
-      </section>
 
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.unlockedFeatures")}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link href="/applications" className="block group">
-            <div className="relative overflow-hidden bg-card rounded-3xl border border-border p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/30 h-full cursor-pointer">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full" />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600/10 text-blue-600">
-                      <Briefcase className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground">{t("dashboard.boardTitle")}</h3>
-                      <p className="text-sm text-muted-foreground">{t("dashboard.boardSummary")}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t("dashboard.boardDescription")}
-                </p>
-              </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.8fr)]">
+            <div className="grid gap-4 md:grid-cols-2">
+              <ActionPanel
+                href="/applications/new"
+                icon={Upload}
+                title={t("dashboard.candidatePrimaryTitle")}
+                description={t("dashboard.candidatePrimaryDescription")}
+                cta={t("dashboard.candidatePrimaryCta")}
+                accentClassName="bg-foreground"
+              />
+              <ActionPanel
+                href="/applications"
+                icon={Briefcase}
+                title={t("dashboard.candidateSecondaryTitle")}
+                description={t("dashboard.candidateSecondaryDescription")}
+                cta={t("dashboard.candidateSecondaryCta")}
+                accentClassName="bg-lime-bright"
+              />
             </div>
-          </Link>
 
-          <div className="grid grid-rows-2 gap-4">
-            <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
-                  <Coins className="h-5 w-5 text-amber-600" />
+            <div className="space-y-4 rounded-[28px] border border-border/70 bg-background/80 p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-foreground text-background">
+                  <Coins className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.creditsAvailable")}</p>
-                  {creditsLoading ? (
-                    <Skeleton className="h-6 w-12 mt-1" />
-                  ) : (
-                    <p className="text-xl font-bold text-foreground">{credits?.creditsRemaining ?? 0}</p>
-                  )}
+                  <p className="text-sm font-medium text-foreground">
+                    {t("dashboard.candidateSupportTitle")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("dashboard.candidateSupportDescription")}
+                  </p>
                 </div>
               </div>
-              <Button asChild variant="ghost" size="icon" className="rounded-full">
-                <Link href="/billing"><ArrowRight className="h-4 w-4" /></Link>
-              </Button>
-            </div>
-            <Link href="/scenarios" className="block w-full h-full">
-              <div className="bg-card rounded-3xl border border-border p-5 flex items-center justify-between h-full group hover:border-primary/50 transition-colors cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-100 group-hover:bg-purple-200 transition-colors">
-                    <Mic className="h-5 w-5 text-purple-600" />
+
+              <CreditsStat
+                label={t("dashboard.creditsAvailable")}
+                value={credits?.creditsRemaining ?? 0}
+                loading={creditsLoading}
+              />
+
+              <div className="space-y-4 border-t border-border/70 pt-5">
+                <StepItem
+                  index="01"
+                  title={t("dashboard.candidateStep1Title")}
+                  description={t("dashboard.candidateStep1Description")}
+                />
+                <StepItem
+                  index="02"
+                  title={t("dashboard.candidateStep2Title")}
+                  description={t("dashboard.candidateStep2Description")}
+                />
+              </div>
+
+              <Link
+                href="/scenarios"
+                className="group flex items-center justify-between rounded-2xl border border-border/70 bg-white/80 px-4 py-4 transition-colors hover:border-foreground/15"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-lime text-lime-foreground">
+                    <Mic className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{t("dashboard.scenariosTitle")}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.scenariosSummary")}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {t("dashboard.scenariosTitle")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("dashboard.candidatePracticeDescription")}
+                    </p>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-          {t("dashboard.comingSoon")}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              title: t("dashboard.interviewTitle"),
-              icon: MessageSquare,
-              color: "amber",
-              desc: t("dashboard.interviewSummary"),
-            },
-            {
-              title: t("dashboard.aiCoachTitle"),
-              icon: BrainCircuit,
-              color: "emerald",
-              desc: t("dashboard.aiCoachSummary"),
-            },
-          ].map((item, i) => (
-            <div key={i} className="relative overflow-hidden bg-card/60 rounded-3xl border border-border/80 p-5 opacity-80 transition-all hover:opacity-100">
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-${item.color}-500/10 to-transparent rounded-bl-full`} />
-              <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-${item.color}-500/10 text-${item.color}-600`}>
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <span className="rounded bg-gradient-to-br from-amber-500/10 to-orange-500/10 px-1.5 py-[2px] text-xs font-medium uppercase tracking-widest text-amber-600 ring-1 ring-inset ring-amber-500/20 shadow-sm">
-                    {t("dashboard.soonBadge")}
-                  </span>
-                </div>
-                <h3 className="text-base font-semibold text-foreground">{item.title}</h3>
-                <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                  {item.desc}
-                </p>
-              </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground" />
+              </Link>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 

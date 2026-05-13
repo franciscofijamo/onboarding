@@ -34,7 +34,8 @@ export function PublicHeader() {
       <nav className="fixed z-20 w-full">
         <div
           className={cn(
-            "mx-auto mt-2 max-w-7xl px-4 transition-all duration-300 sm:px-6 lg:px-10",
+            "mx-auto mt-2 max-w-7xl border-border/70 px-4 transition-all duration-300 sm:px-6 lg:px-10",
+            "max-sm:border-y max-sm:bg-background/90 max-sm:backdrop-blur-lg",
             isScrolled && "bg-background/85 border-y border-border/70 backdrop-blur-lg"
           )}
         >

@@ -14,6 +14,8 @@ const UpdateResumeSchema = z.object({
   id: z.string(),
   title: z.string().max(200).optional(),
   content: z.string().max(50000).optional(),
+  fileUrl: z.string().url().nullable().optional(),
+  filePath: z.string().nullable().optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -107,6 +109,8 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...(parsed.data.title !== undefined && { title: parsed.data.title }),
         ...(parsed.data.content !== undefined && { content: parsed.data.content }),
+        ...(parsed.data.fileUrl !== undefined && { fileUrl: parsed.data.fileUrl }),
+        ...(parsed.data.filePath !== undefined && { filePath: parsed.data.filePath }),
       },
     })
 

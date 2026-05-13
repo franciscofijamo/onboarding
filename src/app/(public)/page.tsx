@@ -64,8 +64,8 @@ const STEP_COLORS = [
 
 export default function HomePage() {
   return (
-    <main className="w-full pb-16">
-      <section className="relative min-h-svh overflow-hidden px-4">
+    <div className="w-full pb-14 sm:pb-16">
+      <section className="relative overflow-hidden px-4 pt-24 sm:pt-28 lg:min-h-svh lg:pt-0">
         <div
           aria-hidden
           className="absolute inset-x-0 top-24 -z-10 h-px bg-gradient-to-r from-transparent via-border to-transparent"
@@ -75,19 +75,19 @@ export default function HomePage() {
           className="absolute bottom-0 left-0 right-0 -z-10 h-32 border-t border-border/60 bg-muted/20"
         />
 
-        <div className="mx-auto flex min-h-svh w-full max-w-7xl flex-col justify-between pt-8 sm:pt-9">
-          <div className="grid flex-1 gap-10 py-2.5 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:py-3">
-            <div className="space-y-8">
-              <div className="space-y-5">
-                <p className="inline-flex rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="mx-auto flex w-full max-w-7xl flex-col justify-start lg:min-h-svh lg:justify-between lg:pt-8">
+          <div className="grid flex-1 gap-8 py-2 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:py-3 xl:grid-cols-[minmax(0,1fr)_460px]">
+            <div className="space-y-7 sm:space-y-8">
+              <div className="space-y-4 sm:space-y-5">
+                <p className="inline-flex max-w-full rounded-full border border-border bg-card px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground shadow-sm sm:text-xs sm:tracking-[0.16em]">
                   AI career fit check
                 </p>
-                <div className="space-y-5">
-                  <h1 className="max-w-5xl text-4xl font-semibold tracking-tight text-foreground md:text-6xl lg:text-7xl">
+                <div className="space-y-4 sm:space-y-5">
+                  <h1 className="max-w-5xl text-[2.7rem] font-semibold leading-[1.03] tracking-tight text-foreground min-[390px]:text-5xl sm:text-6xl lg:text-7xl">
                     Melhore o seu CV para conquistar mais entrevistas na vaga
                     certa.
                   </h1>
-                  <p className="max-w-2xl text-base leading-7 text-muted-foreground md:text-lg">
+                  <p className="max-w-2xl text-[1.05rem] leading-8 text-muted-foreground sm:text-lg">
                     O StandOut compara o seu CV com a descrição real da vaga,
                     mostra o seu Match Score e aponta o que precisa de melhorar
                     para aumentar as hipóteses de entrevista.
@@ -95,40 +95,40 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="grid gap-3 sm:grid-cols-[auto_auto]">
                 <a
                   href="#avaliador"
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
+                  className="inline-flex h-[3.25rem] items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 sm:h-12"
                 >
                   Melhorar o meu CV agora
                   <ArrowRight className="h-4 w-4" />
                 </a>
                 <Link
                   href="/sign-up"
-                  className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+                  className="inline-flex h-[3.25rem] items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted sm:h-12"
                 >
                   Criar conta grátis
                 </Link>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-lg">
-              <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-lg sm:p-5">
+              <div className="mb-4 flex items-start justify-between gap-4 sm:mb-5">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground sm:text-xs">
                     Caminho completo
                   </p>
-                  <h2 className="text-xl font-semibold tracking-tight">
+                  <h2 className="text-2xl font-semibold tracking-tight sm:text-xl lg:text-2xl">
                     Da análise ao treino.
                   </h2>
                 </div>
-                <div className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">
+                <div className="shrink-0 rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">
                   4 etapas
                 </div>
               </div>
 
               <div className="relative">
-                <div className="pointer-events-none absolute inset-y-4 left-[1.35rem] w-px overflow-hidden bg-border">
+                <div className="pointer-events-none absolute inset-y-4 left-5 w-px overflow-hidden bg-border sm:left-[1.35rem]">
                   <span
                     className="block h-1/4 w-full bg-gradient-to-b from-transparent via-primary to-transparent"
                     style={{
@@ -136,7 +136,7 @@ export default function HomePage() {
                     }}
                   />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2.5 sm:space-y-3">
                   {proofPoints.map((point, index) => {
                     const Icon = point.icon;
                     const animationDelay = `${index * 1.8}s`;
@@ -144,7 +144,7 @@ export default function HomePage() {
                     return (
                       <div
                         key={point.title}
-                        className="group relative flex items-center gap-3 rounded-xl border border-border bg-background/80 p-3 transition-colors"
+                        className="group relative flex items-center gap-3 rounded-xl border border-border bg-background/80 p-2.5 transition-colors sm:p-3"
                         style={{
                           animation: `step-focus ${LOOP_DURATION} ease-in-out infinite`,
                           animationDelay,
@@ -153,7 +153,7 @@ export default function HomePage() {
                         }}
                       >
                         <div
-                          className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm"
+                          className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-primary shadow-sm sm:h-11 sm:w-11"
                           style={{
                             animation: `step-icon ${LOOP_DURATION} ease-in-out infinite`,
                             animationDelay,
@@ -169,11 +169,11 @@ export default function HomePage() {
                               animationDelay,
                             }}
                           />
-                          <Icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                          <Icon className="h-4 w-4 transition-transform duration-300 group-hover:scale-110 sm:h-5 sm:w-5" />
                         </div>
                         <div className="min-w-0">
                           <p
-                            className="text-sm font-semibold text-foreground"
+                            className="text-[0.95rem] font-semibold leading-tight text-foreground sm:text-sm"
                             style={{
                               animation: `step-text ${LOOP_DURATION} ease-in-out infinite`,
                               animationDelay,
@@ -198,7 +198,7 @@ export default function HomePage() {
               </div>
 
               <div
-                className="mt-5 rounded-xl border border-border bg-background/70 p-4 opacity-0"
+                className="mt-4 rounded-xl border border-border bg-background/70 p-4 opacity-0 sm:mt-5"
                 style={{
                   animation: `score-box ${LOOP_DURATION} ease-in-out infinite`,
                 }}
@@ -250,7 +250,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid gap-3 pb-6 md:grid-cols-3 lg:pb-8">
+          <div className="hidden gap-3 pb-6 md:grid md:grid-cols-3 lg:pb-8">
             {resultHighlights.map((item) => {
               const Icon = item.icon;
 
@@ -277,17 +277,17 @@ export default function HomePage() {
 
       <section
         id="avaliador"
-        className="mx-auto w-full max-w-6xl scroll-mt-24 mt-24 pt-12"
+        className="mx-auto mt-16 w-full max-w-6xl scroll-mt-24 pt-8 sm:mt-24 sm:pt-12"
       >
-        <div className="mb-12 mx-auto max-w-3xl space-y-5 px-4 text-center flex flex-col items-center">
-          <p className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-600 shadow-sm">
+        <div className="mx-auto mb-8 flex max-w-3xl flex-col items-center space-y-4 px-4 text-center sm:mb-12 sm:space-y-5">
+          <p className="inline-flex rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-600 shadow-sm sm:text-xs">
             Teste gratuito
           </p>
-          <div className="space-y-3 mt-5">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl text-balance">
+          <div className="mt-4 space-y-3 sm:mt-5">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground text-balance sm:text-3xl md:text-4xl">
               Compare o seu CV com uma vaga em poucos minutos.
             </h2>
-            <p className="max-w-2xl mx-auto text-base leading-7 text-muted-foreground md:text-lg text-pretty">
+            <p className="mx-auto max-w-2xl text-base leading-7 text-muted-foreground text-pretty md:text-lg">
               Carregue o documento, indique a oportunidade e veja uma
               pré-análise clara antes de criar o perfil completo.
             </p>
@@ -426,6 +426,6 @@ export default function HomePage() {
           }
         }
       `}</style>
-    </main>
+    </div>
   );
 }
